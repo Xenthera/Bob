@@ -46,7 +46,13 @@ public:
 			}
 
 			this->run(line);
+			hadError = false;
 		}
+	}
+
+	void error(int line, string message)
+	{
+
 	}
 	
 
@@ -59,8 +65,13 @@ private:
 		vector<Token> tokens = lexer.Tokenize(source);
 
 		for(Token t : tokens){
-			cout << "{type: " << t.type << ", value: " << t.value << "}" << endl;
+			cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
 		}
+	}
+
+	void report(int line, string where, string message)
+	{
+		hadError = true;
 	}
 };
 int main(){
@@ -77,8 +88,8 @@ int main(){
 	
 	Bob bobLang;
 
-	//bobLang.runFile("source.bob");
-	bobLang.runPrompt();
+	bobLang.runFile("source.bob");
+	//bobLang.runPrompt();
 
 
 	return 0;
