@@ -64,12 +64,14 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             else if(t == ' ' || t == '\t' || t == '\n')
             {
-                    src.erase(src.begin());
+                    src.erase(src.begin()); //ignore t
             }
             else
             {
                 throw std::runtime_error("Unknown Token: '" + std::string(1, t) + "'");
             }
+
+           
         }
         
     }
