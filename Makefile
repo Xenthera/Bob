@@ -7,22 +7,26 @@ CC = g++
 CFLAGS = -Wall -Wextra -std=c++11
 
 # Source directory
-SRC_DIR = ./src
+SRC_DIR = ./source
 
 # Output directory
 BUILD_DIR = ./build
 
-# Get all CPP files in the source directory
-CPP_FILES := $(wildcard $(SRC_DIR)/*.cpp)
+# Find all C++ files recursively in the source directory
+CPP_FILES := $(shell find $(SRC_DIR) -type f -name '*.cpp')
 
 # Generate object file names by replacing the source directory with the build directory
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
 
+# Create directories for object files
+$(shell mkdir -p $(dir $(OBJ_FILES)))
+
 # Default target
 all: $(BUILD_DIR)/bob
 
-# Rule to create the build directory if it doesn't exist
-$(shell mkdir -p $(BUILD_DIR))
+# Rule to create necessary directories
+$(DIRS):
+	mkdir -p $(patsubst $(SRC_DIR)/%, $(OUTPUT_DIR)/%, $@)
 
 # Rule to compile object files
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp

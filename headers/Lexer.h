@@ -24,7 +24,21 @@ enum TokenType{
 };
 
 const std::map<std::string, TokenType> KEYWORDS {
-    
+        {"and", AND},
+        {"or", OR},
+        {"true", TRUE},
+        {"false", FALSE},
+        {"if", IF},
+        {"else", ELSE},
+        {"func", FUNCTION},
+        {"for", FOR},
+        {"while", WHILE},
+        {"var", VAR},
+        {"class", CLASS},
+        {"super", SUPER},
+        {"this", THIS},
+        {"none", NONE},
+        {"return", RETURN}
 };
 
 struct Token
@@ -41,6 +55,8 @@ public:
     std::vector<Token> Tokenize(std::string source);
 private:
     int line;
+    std::vector<char> src;
 private:
-    bool matchOn(char expected, std::vector<char>& src);
+    bool matchOn(char expected);
+    void advance();
 };
