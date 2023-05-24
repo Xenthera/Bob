@@ -6,7 +6,7 @@
 class ASTPrinter : public Visitor<std::string>
 {
     std::string visitBinaryExpr(BinaryExpr<std::string>* expression) override;
-//    std::string visitGroupingExpr(GroupingExpr<std::string> expression);
+    std::string visitGroupingExpr(GroupingExpr<std::string>* expression) override;
     std::string visitLiteralExpr(LiteralExpr<std::string>* expression) override;
     std::string visitUnaryExpr(UnaryExpr<std::string>* expression) override;
 public:

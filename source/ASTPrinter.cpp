@@ -9,9 +9,9 @@ std::string ASTPrinter::visitBinaryExpr(BinaryExpr<std::string>* expression){
     return parenthesize(expression->oper.lexeme, std::vector<std::shared_ptr<Expr<std::string> > >{expression->left, expression->right});
 }
 
-//std::string ASTPrinter::visitGroupingExpr(GroupingExpr<std::string> expression){
-//    return "hi";
-//}
+std::string ASTPrinter::visitGroupingExpr(GroupingExpr<std::string>* expression){
+    return parenthesize("group", std::vector<std::shared_ptr<Expr<std::string> > >{expression->expression});
+}
 std::string ASTPrinter::visitLiteralExpr(LiteralExpr<std::string>* expression){
     return expression->value;
 }

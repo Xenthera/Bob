@@ -29,24 +29,24 @@ struct BinaryExpr : Expr<T>
         return visitor->visitBinaryExpr(this);
     }
 };
-//template <typename T>
-//struct GroupingExpr : Expr<T>, Visitor<T>
-//{
-//    Expr<T> expression;
-//
-//    GroupingExpr(Expr<T> expression) : expression(expression)
-//    {
-//    }
-//    T accept(Visitor<T> visitor){
-//        return visitor.visitGroupingExpr(this);
-//    }
-//};
+template <typename T>
+struct GroupingExpr : Expr<T>
+{
+    const std::shared_ptr<Expr<T> > expression;
+
+    GroupingExpr(std::shared_ptr<Expr<T> > expression) : expression(expression)
+    {
+    }
+    T accept(Visitor<T>* visitor) override{
+        return visitor->visitGroupingExpr(this);
+    }
+};
 template <typename T>
 struct LiteralExpr : Expr<T>
 {
     const std::string value;
-
-    LiteralExpr(std::string value) : value(value)
+    const bool isNumber;
+    LiteralExpr(std::string value, bool isNumber) : value(value), isNumber(isNumber)
     {
     }
     T accept(Visitor<T>* visitor) override{
@@ -72,7 +72,7 @@ template <typename T>
 struct Visitor
 {
     virtual T visitBinaryExpr(BinaryExpr<T>* expression) = 0;
-//    virtual T visitGroupingExpr(GroupingExpr<T> expression){};
+    virtual T visitGroupingExpr(GroupingExpr<T>* expression) = 0;
     virtual T visitLiteralExpr(LiteralExpr<T>* expression) = 0;
     virtual T visitUnaryExpr(UnaryExpr<T>* expression) = 0;
 };
