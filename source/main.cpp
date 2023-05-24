@@ -1,37 +1,44 @@
 //
 // Created by Bobby Lucero on 5/21/23.
 //
+
+
 #include "../headers/bob.h"
 #include "../headers/Expression.h"
 #include "../headers/Lexer.h"
+#include "../headers/ASTPrinter.h"
 int main(){
 
     Bob bobLang;
 
     //bobLang.runFile("source.bob");
 
+    ASTPrinter printer;
 
-    Expr a;
-    Expr b;
-    Token t = {PLUS, "+", 1};
-    Token t2 = {MINUS, "-", 1};
-    BinaryExpr e = BinaryExpr(a, t, b);
+    std::shared_ptr<Expr<std::string> > expression = std::make_shared<BinaryExpr<std::string> >(
+            std::make_shared<UnaryExpr<std::string> >(
+                Token{MINUS, "-", 0},
+                std::make_shared<LiteralExpr<std::string> >("123")
+            ),
+            Token{STAR, "*", 0},
+            std::make_shared<UnaryExpr<std::string> >(
+                    Token{MINUS, "+", 0},
+                    std::make_shared<LiteralExpr<std::string> >("987")
+            )
+            );
 
-    std::shared_ptr<Expr> any = std::make_shared<BinaryExpr>(a, t, b);
-    if(std::shared_ptr<BinaryExpr> binexpr = std::dynamic_pointer_cast<BinaryExpr>(any))
-    {
-        std::cout << binexpr->oper.lexeme;
-    }
+//    Expr<std::string>* e = new BinaryExpr<std::string>(
+//                new UnaryExpr<std::string>(Token{MINUS, "-", 0}, new LiteralExpr<std::string>("123")),
+//                Token{STAR, "*", 0},
+//                new UnaryExpr<std::string>(Token{PLUS, "+", 0}, new LiteralExpr<std::string>("535"))
+//            );
+    LiteralExpr<std::string>* le = new LiteralExpr<std::string>("123");
 
-    any = std::make_shared<BinaryExpr>(a, t2, b);
-    if(std::shared_ptr<BinaryExpr> binexpr = std::dynamic_pointer_cast<BinaryExpr>(any))
-    {
-        std::cout << binexpr->oper.lexeme;
-    }
+    std::cout << printer.print(expression.get());
 
     std::cout << std::endl;
 
-    bobLang.runPrompt();
+    //bobLang.runPrompt();
 
     return 0;
 }

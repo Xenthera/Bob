@@ -5,45 +5,74 @@
 #pragma once
 #include "Lexer.h"
 #include <iostream>
+
+template <typename T>
+struct Visitor;
+
+template <typename T>
 struct Expr{
-    virtual ~Expr()
-    {
-
-    }
+    virtual T accept(Visitor<T>* visitor) = 0;
+    virtual ~Expr(){}
 };
 
-struct BinaryExpr : Expr
+template <typename T>
+struct BinaryExpr : Expr<T>
 {
-    const Expr left;
+    const std::shared_ptr<Expr<T> > left;
     const Token oper;
-    const Expr right;
+    const std::shared_ptr<Expr<T> > right;
 
-    BinaryExpr(Expr left, Token oper, Expr right) : left(left), oper(oper), right(right)
+    BinaryExpr(std::shared_ptr<Expr<T> > left, Token oper, std::shared_ptr<Expr<T> > right) : left(left), oper(oper), right(right)
     {
     }
-};
-struct GroupingExpr : Expr
-{
-    const Expr expression;
-
-    GroupingExpr(Expr expression) : expression(expression)
-    {
+    T accept(Visitor<T>* visitor) override{
+        return visitor->visitBinaryExpr(this);
     }
 };
-struct LiteralExpr : Expr
+//template <typename T>
+//struct GroupingExpr : Expr<T>, Visitor<T>
+//{
+//    Expr<T> expression;
+//
+//    GroupingExpr(Expr<T> expression) : expression(expression)
+//    {
+//    }
+//    T accept(Visitor<T> visitor){
+//        return visitor.visitGroupingExpr(this);
+//    }
+//};
+template <typename T>
+struct LiteralExpr : Expr<T>
 {
     const std::string value;
 
     LiteralExpr(std::string value) : value(value)
     {
     }
+    T accept(Visitor<T>* visitor) override{
+        return visitor->visitLiteralExpr(this);
+    }
 };
-struct UnaryExpr : Expr
+template <typename T>
+struct UnaryExpr : Expr<T>
 {
     const Token oper;
-    const Expr right;
+    const std::shared_ptr<Expr<T> > right;
 
-    UnaryExpr(Token oper, Expr right) : oper(oper), right(right)
+    UnaryExpr(Token oper, std::shared_ptr<Expr<T> > right) : oper(oper), right(right)
     {
     }
+    T accept(Visitor<T>* visitor) override{
+        return visitor->visitUnaryExpr(this);
+    }
+};
+
+////
+template <typename T>
+struct Visitor
+{
+    virtual T visitBinaryExpr(BinaryExpr<T>* expression) = 0;
+//    virtual T visitGroupingExpr(GroupingExpr<T> expression){};
+    virtual T visitLiteralExpr(LiteralExpr<T>* expression) = 0;
+    virtual T visitUnaryExpr(UnaryExpr<T>* expression) = 0;
 };

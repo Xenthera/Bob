@@ -8,21 +8,29 @@
 
 void defineType(std::ofstream &out, std::string baseName, std::string className, std::string fieldList)
 {
-    out << "struct " << className << "Expr : " << baseName << "\n{\n";
+    out << "template <typename T>\n";
+    out << "struct " << className << "Expr : " << baseName << "<T>" << ", Visitor<T>" << "\n{\n";
     std::vector<std::string> fields = splitString(fieldList, ", ");
     for(std::string field : fields)
     {
-        out << "    const " << trim(field) << ";\n";
+        std::cout << trim(field) << std::endl;
+        std::string fieldClass = splitString(trim(field), " ")[0];
+        std::string fieldName = splitString(trim(field), " ")[1];
+        fieldClass = trim(fieldClass) == "Expr" ? "Expr<T>" : trim(fieldClass);
+        out << "    const " << fieldClass << " " << fieldName << ";\n";
     }
-
+    fieldList = replaceSubstring(fieldList, "Expr", "Expr<T>");
     out << "\n    " << className << "Expr(" << fieldList << ") : ";
 
     std::string explicitDeclaration;
     for(std::string field : fields)
     {
-        std::string name = splitString(trim(field), " ")[1];
+        std::cout << trim(field) << std::endl;
+        std::string fieldClass = splitString(trim(field), " ")[0];
+        std::string fieldName = splitString(trim(field), " ")[1];
+        fieldClass = trim(fieldClass) == "Expr" ? "Expr<T>" : trim(fieldClass);
 
-        explicitDeclaration += trim(name) + "(" + trim(name) + "), ";
+        explicitDeclaration += trim(fieldName) + "(" + trim(fieldName) + "), ";
     }
     explicitDeclaration = trim(explicitDeclaration);
     explicitDeclaration.pop_back();
@@ -31,6 +39,11 @@ void defineType(std::ofstream &out, std::string baseName, std::string className,
 
     out << "\n    {\n";
     out << "    }\n";
+
+    out << "    T accept(Visitor<T> visitor){\n";
+    out << "        return visitor.visit" << className << "Expr(this);\n";
+    out << "    }\n";
+
     out << "};" << std::endl;
 }
 

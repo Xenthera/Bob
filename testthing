@@ -1,35 +1,51 @@
-struct BinaryExpr : Expr
+template <typename T>
+struct BinaryExpr : Expr<T>, Visitor<T>
 {
-    const Expr left;
+    const Expr<T> left;
     const Token oper;
-    const Expr right;
+    const Expr<T> right;
 
-    BinaryExpr(Expr left, Token oper, Expr right) : left(left), oper(oper), right(right)
+    BinaryExpr(Expr<T> left, Token oper, Expr<T> right) : left(left), oper(oper), right(right)
     {
     }
+    T accept(Visitor<T> visitor){
+        return visitor.visitBinaryExpr(this);
+    }
 };
-struct GroupingExpr : Expr
+template <typename T>
+struct GroupingExpr : Expr<T>, Visitor<T>
 {
-    const Expr expression;
+    const Expr<T> expression;
 
-    GroupingExpr(Expr expression) : expression(expression)
+    GroupingExpr(Expr<T> expression) : expression(expression)
     {
     }
+    T accept(Visitor<T> visitor){
+        return visitor.visitGroupingExpr(this);
+    }
 };
-struct LiteralExpr : Expr
+template <typename T>
+struct LiteralExpr : Expr<T>, Visitor<T>
 {
     const std::string value;
 
     LiteralExpr(std::string value) : value(value)
     {
     }
+    T accept(Visitor<T> visitor){
+        return visitor.visitLiteralExpr(this);
+    }
 };
-struct UnaryExpr : Expr
+template <typename T>
+struct UnaryExpr : Expr<T>, Visitor<T>
 {
     const Token oper;
-    const Expr right;
+    const Expr<T> right;
 
-    UnaryExpr(Token oper, Expr right) : oper(oper), right(right)
+    UnaryExpr(Token oper, Expr<T> right) : oper(oper), right(right)
     {
+    }
+    T accept(Visitor<T> visitor){
+        return visitor.visitUnaryExpr(this);
     }
 };

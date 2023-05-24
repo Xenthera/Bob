@@ -38,3 +38,15 @@ std::string trim(const std::string& str) {
     // Extract the trimmed substring
     return str.substr(start, end - start + 1);
 }
+
+std::string replaceSubstring(const std::string& str, const std::string& findSubstring, const std::string& replacement) {
+    std::string result = str;
+    size_t startPos = result.find(findSubstring);
+
+    while (startPos != std::string::npos) {
+        result.replace(startPos, findSubstring.length(), replacement);
+        startPos = result.find(findSubstring, startPos + replacement.length());
+    }
+
+    return result;
+}
