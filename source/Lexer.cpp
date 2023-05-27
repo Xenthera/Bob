@@ -130,7 +130,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             if(src.empty())
             {
-                throw std::runtime_error("Unterminated string at line: " + std::to_string(this->line));
+                throw std::runtime_error("LEXER: Unterminated string at line: " + std::to_string(this->line));
             }
             else if(src[0] == '"')
             {
@@ -172,7 +172,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                     }
                     else
                     {
-                        throw std::runtime_error("malformed number at: " + std::to_string(this->line));
+                        throw std::runtime_error("LEXER: malformed number at: " + std::to_string(this->line));
                     }
                     
                 }
@@ -205,14 +205,14 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             else
             {
 
-                throw std::runtime_error("Unknown Token: '" + std::string(1, t) + "'");
+                throw std::runtime_error("LEXER: Unknown Token: '" + std::string(1, t) + "'");
             }
 
            
         }
         
     }
-
+    tokens.push_back({END_OF_FILE, "eof", line});
     return tokens;
 }
 

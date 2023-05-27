@@ -1,18 +1,18 @@
 #pragma once
 #include "Expression.h"
+#include "TypeWrapper.h"
 #include <string>
 #include <initializer_list>
 
-class ASTPrinter : public Visitor<std::string>
+class ASTPrinter : public Visitor<std::shared_ptr<Object>>
 {
-    std::string visitBinaryExpr(BinaryExpr<std::string>* expression) override;
-    std::string visitGroupingExpr(GroupingExpr<std::string>* expression) override;
-    std::string visitLiteralExpr(LiteralExpr<std::string>* expression) override;
-    std::string visitUnaryExpr(UnaryExpr<std::string>* expression) override;
+    std::shared_ptr<Object> visitBinaryExpr(BinaryExpr<std::shared_ptr<Object>>* expression) override;
+    std::shared_ptr<Object> visitGroupingExpr(GroupingExpr<std::shared_ptr<Object>>* expression) override;
+    std::shared_ptr<Object> visitLiteralExpr(LiteralExpr<std::shared_ptr<Object>>* expression) override;
+    std::shared_ptr<Object> visitUnaryExpr(UnaryExpr<std::shared_ptr<Object>>* expression) override;
 public:
-    int test = 10;
-    std::string print(Expr<std::string>* expr);
+    std::shared_ptr<Object> print(Expr<std::shared_ptr<Object>>* expr);
 private:
-    std::string parenthesize(std::string name,  std::vector<std::shared_ptr<Expr<std::string>>> exprs);
+    std::shared_ptr<Object> parenthesize(std::string name,  std::vector<std::shared_ptr<Expr<std::shared_ptr<Object>>>> exprs);
 
 };

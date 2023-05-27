@@ -1,4 +1,6 @@
 #include "../headers/bob.h"
+#include "../headers/Parser.h"
+#include "../headers/ASTPrinter.h"
 using namespace std;
 
 void Bob::runFile(string path)
@@ -45,11 +47,31 @@ void Bob::error(int line, string message)
 
 void Bob::run(string source)
 {
-    vector<Token> tokens = lexer.Tokenize(source);
+    try {
+        vector<Token> tokens = lexer.Tokenize(source);
+        Parser p(tokens);
+        shared_ptr<Expr<shared_ptr<Object>>> expr = p.parse();
 
-    for(Token t : tokens){
-        cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
+
+        ASTPrinter printer;
+
+        cout << dynamic_pointer_cast<String>(printer.print(expr.get()))->value << endl;
+
+
+        for(Token t : tokens){
+            //cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
+        }
+
+
     }
+    catch(std::exception &e)
+    {
+        cout << "ERROR OCCURRED: " << e.what() << endl;
+        return;
+    }
+
+    cout << "Current object count: " << Object::count << endl;
+
 }
 
 void Bob::report(int line, string where, string message)
