@@ -9,7 +9,6 @@
 #include "../headers/ASTPrinter.h"
 #include "../headers/TypeWrapper.h"
 int main(){
-    Object::count = 0;
     Bob bobLang;
 
     //bobLang.runFile("source.bob");

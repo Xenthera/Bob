@@ -4,6 +4,7 @@
 #include "Lexer.h"
 #include "Expression.h"
 #include "TypeWrapper.h"
+#include "helperFunctions/ShortHands.h"
 
 class Parser
 {
@@ -13,16 +14,16 @@ private:
 
 public:
     explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)){};
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> parse();
+    sptr(Expr) parse();
 
 private:
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> expression();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> equality();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> comparison();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> term();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> factor();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> unary();
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> primary();
+    sptr(Expr) expression();
+    sptr(Expr) equality();
+    sptr(Expr) comparison();
+    sptr(Expr) term();
+    sptr(Expr) factor();
+    sptr(Expr) unary();
+    sptr(Expr) primary();
 
     bool match(std::vector<TokenType> types);
 

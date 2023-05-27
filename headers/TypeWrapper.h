@@ -2,9 +2,7 @@
 #include <string>
 struct Object
 {
-    static int count;
-    Object();
-    virtual ~Object();
+    virtual ~Object(){};
 };
 
 struct Number : public Object

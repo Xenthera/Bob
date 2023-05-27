@@ -8,94 +8,94 @@
 // to all the morons on facebook who don't know what pemdas is, fuck you
 ///////////////////////////////////////////
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::expression()
+sptr(Expr) Parser::expression()
 {
     return equality();
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::equality()
+sptr(Expr) Parser::equality()
 {
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> expr = comparison();
+    sptr(Expr) expr = comparison();
 
     while(match({BANG_EQUAL, DOUBLE_EQUAL}))
     {
         Token op = previous();
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> right = comparison();
-        expr = std::make_shared<BinaryExpr<std::shared_ptr<Object>>>(expr, op, right);
+        sptr(Expr) right = comparison();
+        expr = msptr(BinaryExpr)(expr, op, right);
     }
 
     return expr;
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::comparison()
+sptr(Expr) Parser::comparison()
 {
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> expr = term();
+    sptr(Expr) expr = term();
 
     while(match({GREATER, GREATER_EQUAL, LESS, LESS_EQUAL}))
     {
         Token op = previous();
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> right = term();
-        expr = std::make_shared<BinaryExpr<std::shared_ptr<Object>>>(expr, op, right);
+        sptr(Expr) right = term();
+        expr = msptr(BinaryExpr)(expr, op, right);
     }
 
     return expr;
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::term()
+sptr(Expr) Parser::term()
 {
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> expr = factor();
+    sptr(Expr) expr = factor();
 
     while(match({MINUS, PLUS}))
     {
         std::cout << "Found comparison" << std::endl;
         Token op = previous();
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> right = factor();
-        expr = std::make_shared<BinaryExpr<std::shared_ptr<Object>>>(expr, op, right);
+        sptr(Expr) right = factor();
+        expr = msptr(BinaryExpr)(expr, op, right);
     }
 
     return expr;
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::factor()
+sptr(Expr) Parser::factor()
 {
-    std::shared_ptr<Expr<std::shared_ptr<Object>>> expr = unary();
+    sptr(Expr) expr = unary();
 
     while(match({SLASH, STAR}))
     {
         Token op = previous();
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> right = unary();
-        expr = std::make_shared<BinaryExpr<std::shared_ptr<Object>>>(expr, op, right);
+        sptr(Expr) right = unary();
+        expr = msptr(BinaryExpr)(expr, op, right);
     }
 
     return expr;
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::unary()
+sptr(Expr) Parser::unary()
 {
     if(match({BANG, MINUS}))
     {
         Token op = previous();
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> right = unary();
-        return std::make_shared<UnaryExpr<std::shared_ptr<Object>>>(op, right);
+        sptr(Expr) right = unary();
+        return msptr(UnaryExpr)(op, right);
     }
 
     return primary();
 }
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::primary()
+sptr(Expr) Parser::primary()
 {
-    if(match({FALSE})) return std::make_shared<LiteralExpr<std::shared_ptr<Object>>>("true", false);
-    if(match({TRUE})) return std::make_shared<LiteralExpr<std::shared_ptr<Object>>>("true", false);
-    if(match({NONE})) return std::make_shared<LiteralExpr<std::shared_ptr<Object>>>("none", false);
+    if(match({FALSE})) return msptr(LiteralExpr)("true", false);
+    if(match({TRUE})) return msptr(LiteralExpr)("true", false);
+    if(match({NONE})) return msptr(LiteralExpr)("none", false);
 
-    if(match({NUMBER})) return std::make_shared<LiteralExpr<std::shared_ptr<Object>>>(previous().lexeme, true);
-    if(match({STRING})) return std::make_shared<LiteralExpr<std::shared_ptr<Object>>>(previous().lexeme, false);
+    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true);
+    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false);
 
     if(match({OPEN_PAREN}))
     {
-        std::shared_ptr<Expr<std::shared_ptr<Object>>> expr = expression();
+        sptr(Expr) expr = expression();
         consume(CLOSE_PAREN, "Expected ')' after expression on line " + std::to_string(peek().line));
-        return std::make_shared<GroupingExpr<std::shared_ptr<Object>>>(expr);
+        return msptr(GroupingExpr)(expr);
     }
 
     throw std::runtime_error("Expression expected at: " + std::to_string(peek().line));
@@ -104,7 +104,7 @@ std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::primary()
 ///////////////////////////////////////////
 
 
-std::shared_ptr<Expr<std::shared_ptr<Object>>> Parser::parse() {
+sptr(Expr) Parser::parse() {
 
         return expression();
 

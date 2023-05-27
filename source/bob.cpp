@@ -50,7 +50,7 @@ void Bob::run(string source)
     try {
         vector<Token> tokens = lexer.Tokenize(source);
         Parser p(tokens);
-        shared_ptr<Expr<shared_ptr<Object>>> expr = p.parse();
+        shared_ptr<Expr> expr = p.parse();
 
 
         ASTPrinter printer;
@@ -59,7 +59,7 @@ void Bob::run(string source)
 
 
         for(Token t : tokens){
-            //cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
+            cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
         }
 
 
@@ -70,7 +70,7 @@ void Bob::run(string source)
         return;
     }
 
-    cout << "Current object count: " << Object::count << endl;
+
 
 }
 

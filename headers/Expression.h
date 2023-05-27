@@ -3,76 +3,81 @@
 //
 
 #pragma once
-#include "Lexer.h"
 #include <iostream>
+#include "Lexer.h"
+#include "helperFunctions/ShortHands.h"
+#include "TypeWrapper.h"
 
-template <typename T>
-struct Visitor;
+struct BinaryExpr;
+struct GroupingExpr;
+struct LiteralExpr;
+struct UnaryExpr;
 
-template <typename T>
+struct Visitor
+{
+    virtual sptr(Object) visitBinaryExpr(BinaryExpr* expression) = 0;
+    virtual sptr(Object) visitGroupingExpr(GroupingExpr* expression) = 0;
+    virtual sptr(Object) visitLiteralExpr(LiteralExpr* expression) = 0;
+    virtual sptr(Object) visitUnaryExpr(UnaryExpr* expression) = 0;
+};
+
+
 struct Expr{
-    virtual T accept(Visitor<T>* visitor) = 0;
+    virtual sptr(Object) accept(Visitor* visitor) = 0;
     virtual ~Expr(){}
 };
 
-template <typename T>
-struct BinaryExpr : Expr<T>
-{
-    const std::shared_ptr<Expr<T>> left;
-    const Token oper;
-    const std::shared_ptr<Expr<T>> right;
 
-    BinaryExpr(std::shared_ptr<Expr<T>> left, Token oper, std::shared_ptr<Expr<T>> right) : left(left), oper(oper), right(right)
+struct BinaryExpr : Expr
+{
+    const std::shared_ptr<Expr> left;
+    const Token oper;
+    const std::shared_ptr<Expr> right;
+
+    BinaryExpr(sptr(Expr) left, Token oper, sptr(Expr) right) : left(left), oper(oper), right(right)
     {
     }
-    T accept(Visitor<T>* visitor) override{
+    sptr(Object) accept(Visitor* visitor) override{
         return visitor->visitBinaryExpr(this);
     }
 };
-template <typename T>
-struct GroupingExpr : Expr<T>
-{
-    const std::shared_ptr<Expr<T>> expression;
 
-    GroupingExpr(std::shared_ptr<Expr<T>> expression) : expression(expression)
+struct GroupingExpr : Expr
+{
+    const std::shared_ptr<Expr> expression;
+
+    GroupingExpr(sptr(Expr) expression) : expression(expression)
     {
     }
-    T accept(Visitor<T>* visitor) override{
+    sptr(Object) accept(Visitor* visitor) override{
         return visitor->visitGroupingExpr(this);
     }
 };
-template <typename T>
-struct LiteralExpr : Expr<T>
+
+struct LiteralExpr : Expr
 {
     const std::string value;
     const bool isNumber;
     LiteralExpr(std::string value, bool isNumber) : value(value), isNumber(isNumber)
     {
     }
-    T accept(Visitor<T>* visitor) override{
+    sptr(Object) accept(Visitor* visitor) override{
         return visitor->visitLiteralExpr(this);
     }
 };
-template <typename T>
-struct UnaryExpr : Expr<T>
+
+struct UnaryExpr : Expr
 {
     const Token oper;
-    const std::shared_ptr<Expr<T>> right;
+    const std::shared_ptr<Expr> right;
 
-    UnaryExpr(Token oper, std::shared_ptr<Expr<T>> right) : oper(oper), right(right)
+    UnaryExpr(Token oper, sptr(Expr) right) : oper(oper), right(right)
     {
     }
-    T accept(Visitor<T>* visitor) override{
+    sptr(Object) accept(Visitor* visitor) override{
         return visitor->visitUnaryExpr(this);
     }
 };
 
 ////
-template <typename T>
-struct Visitor
-{
-    virtual T visitBinaryExpr(BinaryExpr<T>* expression) = 0;
-    virtual T visitGroupingExpr(GroupingExpr<T>* expression) = 0;
-    virtual T visitLiteralExpr(LiteralExpr<T>* expression) = 0;
-    virtual T visitUnaryExpr(UnaryExpr<T>* expression) = 0;
-};
+
