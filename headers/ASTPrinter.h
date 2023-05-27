@@ -13,6 +13,6 @@ public:
     int test = 10;
     std::string print(Expr<std::string>* expr);
 private:
-    std::string parenthesize(std::string name,  std::vector<std::shared_ptr<Expr<std::string> > > exprs);
+    std::string parenthesize(std::string name,  std::vector<std::shared_ptr<Expr<std::string>>> exprs);
 
 };

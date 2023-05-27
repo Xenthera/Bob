@@ -7,6 +7,7 @@
 #include "../headers/Expression.h"
 #include "../headers/Lexer.h"
 #include "../headers/ASTPrinter.h"
+#include "../headers/TypeWrapper.h"
 int main(){
 
     Bob bobLang;
@@ -15,14 +16,14 @@ int main(){
 
     ASTPrinter printer;
 
-    std::shared_ptr<Expr<std::string> > expression = std::make_shared<BinaryExpr<std::string> >(
-            std::make_shared<UnaryExpr<std::string> >(
+    std::shared_ptr<Expr<std::string>> expression = std::make_shared<BinaryExpr<std::string> >(
+            std::make_shared<UnaryExpr<std::string>>(
                     Token{MINUS, "-", 1},
                     std::make_shared<LiteralExpr<std::string>>("123", true)
                     ),
             Token{STAR, "*", 1},
-            std::make_shared<GroupingExpr<std::string> >(
-                    std::make_shared<LiteralExpr<std::string> >("45.67", true)
+            std::make_shared<GroupingExpr<std::string>>(
+                    std::make_shared<LiteralExpr<std::string>>("45.67", true)
                     )
             );
 
@@ -38,6 +39,16 @@ int main(){
     std::cout << std::endl;
 
     //bobLang.runPrompt();
+
+    std::shared_ptr<Object> object = std::make_shared<String>(String{"Hi"});
+
+    if(auto num = std::dynamic_pointer_cast<Number>(object))
+    {
+        std::cout << num->value << std::endl;
+    }else if(auto str = std::dynamic_pointer_cast<String>(object))
+    {
+        std::cout << str->value << std::endl;
+    }
 
     return 0;
 }

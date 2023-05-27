@@ -18,11 +18,11 @@ struct Expr{
 template <typename T>
 struct BinaryExpr : Expr<T>
 {
-    const std::shared_ptr<Expr<T> > left;
+    const std::shared_ptr<Expr<T>> left;
     const Token oper;
-    const std::shared_ptr<Expr<T> > right;
+    const std::shared_ptr<Expr<T>> right;
 
-    BinaryExpr(std::shared_ptr<Expr<T> > left, Token oper, std::shared_ptr<Expr<T> > right) : left(left), oper(oper), right(right)
+    BinaryExpr(std::shared_ptr<Expr<T>> left, Token oper, std::shared_ptr<Expr<T> > right) : left(left), oper(oper), right(right)
     {
     }
     T accept(Visitor<T>* visitor) override{
@@ -32,9 +32,9 @@ struct BinaryExpr : Expr<T>
 template <typename T>
 struct GroupingExpr : Expr<T>
 {
-    const std::shared_ptr<Expr<T> > expression;
+    const std::shared_ptr<Expr<T>> expression;
 
-    GroupingExpr(std::shared_ptr<Expr<T> > expression) : expression(expression)
+    GroupingExpr(std::shared_ptr<Expr<T>> expression) : expression(expression)
     {
     }
     T accept(Visitor<T>* visitor) override{
@@ -57,9 +57,9 @@ template <typename T>
 struct UnaryExpr : Expr<T>
 {
     const Token oper;
-    const std::shared_ptr<Expr<T> > right;
+    const std::shared_ptr<Expr<T>> right;
 
-    UnaryExpr(Token oper, std::shared_ptr<Expr<T> > right) : oper(oper), right(right)
+    UnaryExpr(Token oper, std::shared_ptr<Expr<T>> right) : oper(oper), right(right)
     {
     }
     T accept(Visitor<T>* visitor) override{
