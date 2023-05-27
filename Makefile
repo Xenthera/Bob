@@ -4,7 +4,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -std=c++11
+CFLAGS = -Wall -Wextra -std=c++17 -Wno-unused-variable -Wno-unused-parameter
 
 # Source directory
 SRC_DIR = ./source
@@ -22,7 +22,7 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
 $(shell mkdir -p $(dir $(OBJ_FILES)))
 
 # Default target
-all: $(BUILD_DIR)/bob
+all: clean $(BUILD_DIR)/bob
 
 # Rule to create necessary directories
 $(DIRS):
@@ -35,6 +35,9 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 # Rule to link object files into the final executable
 $(BUILD_DIR)/bob: $(OBJ_FILES)
 	$(CC) $(CFLAGS) $^ -o $@
+
+
+	./$(BUILD_DIR)/bob
 
 # Clean build directory
 clean:

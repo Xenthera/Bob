@@ -21,7 +21,7 @@ int main(){
                     Token{MINUS, "-", 1},
                     std::make_shared<LiteralExpr<std::string>>("123", true)
                     ),
-            Token{STAR, "*", 1},
+            Token{MINUS, "-", 1},
             std::make_shared<GroupingExpr<std::string>>(
                     std::make_shared<LiteralExpr<std::string>>("45.67", true)
                     )

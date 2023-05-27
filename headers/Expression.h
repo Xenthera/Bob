@@ -22,7 +22,7 @@ struct BinaryExpr : Expr<T>
     const Token oper;
     const std::shared_ptr<Expr<T>> right;
 
-    BinaryExpr(std::shared_ptr<Expr<T>> left, Token oper, std::shared_ptr<Expr<T> > right) : left(left), oper(oper), right(right)
+    BinaryExpr(std::shared_ptr<Expr<T>> left, Token oper, std::shared_ptr<Expr<T>> right) : left(left), oper(oper), right(right)
     {
     }
     T accept(Visitor<T>* visitor) override{
