@@ -47,7 +47,6 @@ sptr(Expr) Parser::term()
 
     while(match({MINUS, PLUS}))
     {
-        std::cout << "Found comparison" << std::endl;
         Token op = previous();
         sptr(Expr) right = factor();
         expr = msptr(BinaryExpr)(expr, op, right);
@@ -84,12 +83,12 @@ sptr(Expr) Parser::unary()
 
 sptr(Expr) Parser::primary()
 {
-    if(match({FALSE})) return msptr(LiteralExpr)("true", false);
-    if(match({TRUE})) return msptr(LiteralExpr)("true", false);
-    if(match({NONE})) return msptr(LiteralExpr)("none", false);
+    if(match({FALSE})) return msptr(LiteralExpr)("true", false, false);
+    if(match({TRUE})) return msptr(LiteralExpr)("true", false, false);
+    if(match({NONE})) return msptr(LiteralExpr)("none", false, false);
 
-    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true);
-    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false);
+    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false);
+    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false);
 
     if(match({OPEN_PAREN}))
     {

@@ -15,10 +15,10 @@ struct UnaryExpr;
 
 struct Visitor
 {
-    virtual sptr(Object) visitBinaryExpr(BinaryExpr* expression) = 0;
-    virtual sptr(Object) visitGroupingExpr(GroupingExpr* expression) = 0;
-    virtual sptr(Object) visitLiteralExpr(LiteralExpr* expression) = 0;
-    virtual sptr(Object) visitUnaryExpr(UnaryExpr* expression) = 0;
+    virtual sptr(Object) visitBinaryExpr(sptr(BinaryExpr) expr) = 0;
+    virtual sptr(Object) visitGroupingExpr(sptr(GroupingExpr) expr) = 0;
+    virtual sptr(Object) visitLiteralExpr(sptr(LiteralExpr) expr) = 0;
+    virtual sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expr) = 0;
 };
 
 
@@ -28,7 +28,7 @@ struct Expr{
 };
 
 
-struct BinaryExpr : Expr
+struct BinaryExpr : Expr, public std::enable_shared_from_this<BinaryExpr>
 {
     const std::shared_ptr<Expr> left;
     const Token oper;
@@ -38,11 +38,11 @@ struct BinaryExpr : Expr
     {
     }
     sptr(Object) accept(Visitor* visitor) override{
-        return visitor->visitBinaryExpr(this);
+        return visitor->visitBinaryExpr(shared_from_this() );
     }
 };
 
-struct GroupingExpr : Expr
+struct GroupingExpr : Expr, public std::enable_shared_from_this<GroupingExpr>
 {
     const std::shared_ptr<Expr> expression;
 
@@ -50,23 +50,24 @@ struct GroupingExpr : Expr
     {
     }
     sptr(Object) accept(Visitor* visitor) override{
-        return visitor->visitGroupingExpr(this);
+        return visitor->visitGroupingExpr(shared_from_this());
     }
 };
 
-struct LiteralExpr : Expr
+struct LiteralExpr : Expr, public std::enable_shared_from_this<LiteralExpr>
 {
     const std::string value;
     const bool isNumber;
-    LiteralExpr(std::string value, bool isNumber) : value(value), isNumber(isNumber)
+    const bool isNull;
+    LiteralExpr(std::string value, bool isNumber, bool isNull) : value(value), isNumber(isNumber), isNull(isNull)
     {
     }
     sptr(Object) accept(Visitor* visitor) override{
-        return visitor->visitLiteralExpr(this);
+        return visitor->visitLiteralExpr(shared_from_this());
     }
 };
 
-struct UnaryExpr : Expr
+struct UnaryExpr : Expr, public std::enable_shared_from_this<UnaryExpr>
 {
     const Token oper;
     const std::shared_ptr<Expr> right;
@@ -75,7 +76,7 @@ struct UnaryExpr : Expr
     {
     }
     sptr(Object) accept(Visitor* visitor) override{
-        return visitor->visitUnaryExpr(this);
+        return visitor->visitUnaryExpr(shared_from_this());
     }
 };
 

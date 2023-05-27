@@ -51,11 +51,7 @@ void Bob::run(string source)
         vector<Token> tokens = lexer.Tokenize(source);
         Parser p(tokens);
         shared_ptr<Expr> expr = p.parse();
-
-
-        ASTPrinter printer;
-
-        cout << dynamic_pointer_cast<String>(printer.print(expr.get()))->value << endl;
+        interpreter.interpret(expr);
 
 
         for(Token t : tokens){

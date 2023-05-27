@@ -4,22 +4,22 @@
 #include "../headers/ASTPrinter.h"
 
 
-sptr(Object) ASTPrinter::visitBinaryExpr(BinaryExpr* expression){
+sptr(Object) ASTPrinter::visitBinaryExpr(sptr(BinaryExpr) expression){
     std::cout << expression->left << std::endl;
     return parenthesize(expression->oper.lexeme, std::vector<sptr(Expr)>{expression->left, expression->right});
 }
 
-sptr(Object) ASTPrinter::visitGroupingExpr(GroupingExpr* expression){
+sptr(Object) ASTPrinter::visitGroupingExpr(sptr(GroupingExpr) expression){
     return parenthesize("group", std::vector<sptr(Expr)>{expression->expression});
 }
-sptr(Object) ASTPrinter::visitLiteralExpr(LiteralExpr* expression){
+sptr(Object) ASTPrinter::visitLiteralExpr(sptr(LiteralExpr) expression){
     return msptr(String)(expression->value);
 }
-sptr(Object) ASTPrinter::visitUnaryExpr(UnaryExpr* expression){
+sptr(Object) ASTPrinter::visitUnaryExpr(sptr(UnaryExpr) expression){
     return parenthesize(expression->oper.lexeme, std::vector<sptr(Expr)>{expression->right});
 }
 
-sptr(Object) ASTPrinter::print(Expr *expr) {
+sptr(Object) ASTPrinter::print(sptr(Expr) expr) {
     return expr->accept(this);
 }
 

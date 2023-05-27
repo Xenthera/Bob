@@ -6,14 +6,14 @@
 #include <initializer_list>
 
 
-class ASTPrinter : public Visitor
+class ASTPrinter : Visitor
 {
-    sptr(Object) visitBinaryExpr(BinaryExpr* expression) override;
-    sptr(Object) visitGroupingExpr(GroupingExpr* expression) override;
-    sptr(Object) visitLiteralExpr(LiteralExpr* expression) override;
-    sptr(Object) visitUnaryExpr(UnaryExpr* expression) override;
+    sptr(Object) visitBinaryExpr(sptr(BinaryExpr) expr) override;
+    sptr(Object) visitGroupingExpr(sptr(GroupingExpr) expr) override;
+    sptr(Object) visitLiteralExpr(sptr(LiteralExpr) expr) override;
+    sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expr) override;
 public:
-    sptr(Object) print(Expr* expr);
+    sptr(Object) print(sptr(Expr) expr);
 private:
     sptr(Object) parenthesize(std::string name,  std::vector<sptr(Expr)> exprs);
 

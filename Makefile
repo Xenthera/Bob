@@ -22,7 +22,7 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
 $(shell mkdir -p $(dir $(OBJ_FILES)))
 
 # Default target
-all: clean $(BUILD_DIR)/bob
+all: build run
 
 # Rule to create necessary directories
 $(DIRS):
@@ -37,7 +37,11 @@ $(BUILD_DIR)/bob: $(OBJ_FILES)
 	$(CC) $(CFLAGS) $^ -o $@
 
 
+run:
 	./$(BUILD_DIR)/bob
+
+build: clean $(BUILD_DIR)/bob
+
 
 # Clean build directory
 clean:

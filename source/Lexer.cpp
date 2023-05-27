@@ -120,7 +120,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         }
         else if(t == '"')
         {
-            std::string str = std::string(1, src[0]);
+            std::string str;
             advance();
             while(!src.empty() && src[0] != '"')
             {
@@ -134,7 +134,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             else if(src[0] == '"')
             {
-                str += '"';
+
                 advance();
                 tokens.push_back(Token{STRING, str, line});
             }

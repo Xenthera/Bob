@@ -4,6 +4,7 @@
 #include <fstream>
 #include <string>
 #include "../headers/Lexer.h"
+#include "../headers/Interpreter.h"
 
 #define VERSION "0.0.1"
 
@@ -11,6 +12,7 @@ class Bob
 {
 public:
     Lexer lexer;
+    Interpreter interpreter;
 
 public:
     void runFile(std::string path);
