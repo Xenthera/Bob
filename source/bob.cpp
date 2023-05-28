@@ -58,7 +58,7 @@ void Bob::run(string source)
         //cout << dynamic_pointer_cast<String>(printer.print(expr))->value << endl;
 
         for(Token t : tokens){
-            //cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
+            //cout << "{type: " << enum_mapping[t.type] << ", value: " << t.lexeme << "}" << endl;
         }
 
 

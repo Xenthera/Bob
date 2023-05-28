@@ -23,6 +23,23 @@ enum TokenType{
     END_OF_FILE
 };
 
+inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", "CLOSE_BRACE",
+                           "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR",
+
+                           "BINARY_OP",
+
+                           "BANG", "BANG_EQUAL",
+                           "EQUAL", "DOUBLE_EQUAL",
+                           "GREATER", "GREATER_EQUAL",
+                           "LESS", "LESS_EQUAL",
+
+                           "IDENTIFIER", "STRING", "NUMBER",
+
+                           "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
+                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN",
+
+                           "END_OF_FILE"};
+
 const std::map<std::string, TokenType> KEYWORDS {
         {"and", AND},
         {"or", OR},

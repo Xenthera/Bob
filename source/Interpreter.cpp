@@ -24,6 +24,8 @@ sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
         }
         return msptr(Number)(num);
     }
+    if(expr->value == "true") return msptr(Boolean)(true);
+    if(expr->value == "false") return msptr(Boolean)(false);
     return msptr(String)(expr->value);
 }
 
@@ -54,6 +56,9 @@ sptr(Object) Interpreter::visitUnaryExpr(sptr(UnaryExpr) expression)
     {
         return msptr(Boolean)(!isTruthy(right));
     }
+
+    //unreachable
+    throw std::runtime_error("Invalid unary expression");
 
 }
 
@@ -145,7 +150,7 @@ bool Interpreter::isTruthy(sptr(Object) object) {
 
     if(auto boolean = std::dynamic_pointer_cast<Boolean>(object))
     {
-        boolean->value;
+        return boolean->value;
     }
 
     if(auto obj = std::dynamic_pointer_cast<None>(object))
@@ -193,6 +198,8 @@ bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
 
         return false;
     }
+
+    throw std::runtime_error("Invalid isEqual compariosn");
 }
 
 void Interpreter::interpret(std::shared_ptr<Expr> expr) {
@@ -239,6 +246,8 @@ std::string Interpreter::stringify(std::shared_ptr<Object> object) {
     {
         return Bool->value == 1 ? "true" : "false";
     }
+
+    throw std::runtime_error("Could not convert object to string");
 }
 
 bool Interpreter::isWholeNumer(double num) {

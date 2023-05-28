@@ -287,6 +287,8 @@ char Lexer::peekNext()
     {
         return src[1];
     }
+
+    return '\0';
 }
 
 

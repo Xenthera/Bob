@@ -83,7 +83,7 @@ sptr(Expr) Parser::unary()
 
 sptr(Expr) Parser::primary()
 {
-    if(match({FALSE})) return msptr(LiteralExpr)("true", false, false);
+    if(match({FALSE})) return msptr(LiteralExpr)("false", false, false);
     if(match({TRUE})) return msptr(LiteralExpr)("true", false, false);
     if(match({NONE})) return msptr(LiteralExpr)("none", false, false);
 
