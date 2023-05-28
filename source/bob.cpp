@@ -27,7 +27,7 @@ void Bob::runPrompt()
     for(;;)
     {
         string line;
-        cout << "-> ";
+        cout << "\033[0;36m" << "-> " << "\033[0;37m";
         std::getline(std::cin, line);
 
         if(std::cin.eof())
@@ -52,10 +52,13 @@ void Bob::run(string source)
         Parser p(tokens);
         shared_ptr<Expr> expr = p.parse();
         interpreter.interpret(expr);
+        //cout << "=========================" << endl;
+        ASTPrinter printer;
 
+        //cout << dynamic_pointer_cast<String>(printer.print(expr))->value << endl;
 
         for(Token t : tokens){
-            cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
+            //cout << "{type: " << t.type << ", value: " << t.lexeme << "}" << endl;
         }
 
 

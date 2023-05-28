@@ -7,11 +7,23 @@
 #include <iomanip>
 #include <limits>
 #include "../headers/Interpreter.h"
+#include "../headers/helperFunctions/HelperFunctions.h"
 
 
 sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
     if(expr->isNull) return msptr(None)();
-    if(expr->isNumber) return msptr(Number)(std::stod(expr->value));
+    if(expr->isNumber){
+        double num;
+        if(expr->value[1] == 'b')
+        {
+            num = binaryStringToLong(expr->value);
+        }
+        else
+        {
+            num = std::stod(expr->value);
+        }
+        return msptr(Number)(num);
+    }
     return msptr(String)(expr->value);
 }
 
@@ -86,9 +98,37 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
     }
     else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<String>(right))
     {
-        std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
-        std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
-        return msptr(String)(left_string + right_string);
+        switch (expression->oper.type) {
+            case PLUS:
+                std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
+                std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
+                return msptr(String)(left_string + right_string);
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on two strings");
+
+    }
+    else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<Number>(right))
+    {
+        switch (expression->oper.type) {
+            case STAR:
+                std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
+                double right_number = std::dynamic_pointer_cast<Number>(right)->value;
+                if(isWholeNumer(right_number))
+                {
+                    std::stringstream ss;
+                    for (int i = 0; i < (int)right_number; ++i) {
+                        ss << left_string;
+                    }
+                    return msptr(String)(ss.str());
+
+                }
+                else
+                {
+                    throw std::runtime_error("String multiplier must be whole number");
+                }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and a number");
+
     }
     else
     {
@@ -158,7 +198,7 @@ bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
 void Interpreter::interpret(std::shared_ptr<Expr> expr) {
 
     sptr(Object) value = evaluate(std::move(expr));
-    std::cout << stringify(value) << std::endl;
+    std::cout << "\033[0;32m" << stringify(value) << std::endl;
 
 }
 
@@ -181,7 +221,7 @@ std::string Interpreter::stringify(std::shared_ptr<Object> object) {
         }
         else
         {
-            ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10) << num->value;\
+            ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10 - 1) << num->value;
             std::string str = ss.str();
             str.erase(str.find_last_not_of('0') + 1, std::string::npos);
             if (str.back() == '.') {
@@ -198,6 +238,20 @@ std::string Interpreter::stringify(std::shared_ptr<Object> object) {
     else if(auto Bool = std::dynamic_pointer_cast<Boolean>(object))
     {
         return Bool->value == 1 ? "true" : "false";
+    }
+}
+
+bool Interpreter::isWholeNumer(double num) {
+    double integral = num;
+    double fractional = std::modf(num, &integral);
+
+    if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
+    {
+        return true;
+    }
+    else
+    {
+        return false;
     }
 }
 

@@ -20,4 +20,6 @@ private:
     bool isEqual(sptr(Object) a, sptr(Object) b);
 
     std::string stringify(sptr(Object) object);
+
+    bool isWholeNumer(double num);
 };

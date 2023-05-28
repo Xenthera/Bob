@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <vector>
+#include <bitset>
 
 std::vector<std::string> splitString(const std::string& input, std::string delimiter) {
     std::vector<std::string> tokens;
@@ -48,5 +49,19 @@ std::string replaceSubstring(const std::string& str, const std::string& findSubs
         startPos = result.find(findSubstring, startPos + replacement.length());
     }
 
+    return result;
+}
+
+bool isHexDigit(char c) {
+    return (std::isdigit(c) || (std::isxdigit(c) && std::islower(c)));
+}
+
+u_long binaryStringToLong(const std::string& binaryString) {
+    std::string binaryDigits = binaryString.substr(2);  // Remove the '0b' prefix
+    u_long result = 0;
+    for (char ch : binaryDigits) {
+        result <<= 1;
+        result += (ch - '0');
+    }
     return result;
 }

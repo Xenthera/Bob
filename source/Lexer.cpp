@@ -124,6 +124,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             while(!src.empty() && src[0] != '"')
             {
+
                 if(src[0] == '\n') line++;
                 str += src[0];
                 advance();
@@ -148,33 +149,80 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         }
         else
         {
+            bool isNotation = false;
+            bool notationInvalidated = false;
+            char notationChar;
             //Multi char tokens
             if(std::isdigit(t))
             {
                 std::string num;
-                while(!src.empty() && std::isdigit(src[0]))
-                {
-                    num += src[0];
-                    advance();
-                }
 
-                if(!src.empty() && src[0] == '.')
+                if(src[0] != '0') notationInvalidated = true;
+
+                while(!src.empty())
                 {
-                    advance();
-                    if(!src.empty() && std::isdigit(src[0]))
+                    if(std::isdigit(src[0]))
                     {
-                        num += '.';
-                        while(!src.empty() && std::isdigit(src[0]))
+                        if(src[0] == '0' && !notationInvalidated)
                         {
-                            num += src[0];
-                            advance();
+                            if(peekNext() == 'b' || peekNext() == 'x') {
+                                num += "0";
+                                num += peekNext();
+                                notationChar = peekNext();
+                                advance(2);
+                                isNotation = true;
+                                break;
+                            }
+                        }
+
+                        num += src[0];
+                        advance();
+
+                    }
+                    else
+                    {
+                        break;
+                    }
+
+                }
+                if(!isNotation) {
+                    if (!src.empty() && src[0] == '.') {
+                        advance();
+                        if (!src.empty() && std::isdigit(src[0])) {
+                            num += '.';
+                            while (!src.empty() && std::isdigit(src[0])) {
+                                num += src[0];
+                                advance();
+                            }
+                        } else {
+                            throw std::runtime_error("LEXER: malformed number at: " + std::to_string(this->line));
+                        }
+
+                    }
+                }
+                else
+                {
+                    if(!src.empty() && ishexnumber(src[0]))
+                    {
+                        if(notationChar == 'b') {
+                            while (!src.empty() && (src[0] == '0' || src[0] == '1')) {
+                                num += src[0];
+                                advance();
+                            }
+                        }
+                        else if(notationChar == 'x')
+                        {
+                            while (!src.empty() && ishexnumber(src[0])) {
+
+                                num += src[0];
+                                advance();
+                            }
                         }
                     }
                     else
                     {
-                        throw std::runtime_error("LEXER: malformed number at: " + std::to_string(this->line));
+                        throw std::runtime_error("LEXER: malformed notation at: " + std::to_string(this->line));
                     }
-                    
                 }
 
                 tokens.push_back(Token{NUMBER, num, line});
@@ -224,7 +272,19 @@ bool Lexer::matchOn(char expected)
     return true;
 }
 
-void Lexer::advance()
+void Lexer::advance(int by)
 {
-    src.erase(src.begin());
+    for (int i = 0; i < by; ++i) {
+        src.erase(src.begin());
+    }
 }
+
+char Lexer::peekNext()
+{
+    if(src.size() > 1)
+    {
+        return src[1];
+    }
+}
+
+

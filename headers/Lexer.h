@@ -58,5 +58,8 @@ private:
     std::vector<char> src;
 private:
     bool matchOn(char expected);
-    void advance();
+
+    char peekNext();
+
+    void advance(int by = 1);
 };
