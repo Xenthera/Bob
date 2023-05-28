@@ -1,5 +1,7 @@
 #include "../headers/Lexer.h"
+#include "../headers/helperFunctions/HelperFunctions.h"
 #include <cctype>
+#include <stdexcept>
 
 using namespace std;
 
@@ -202,7 +204,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                 }
                 else
                 {
-                    if(!src.empty() && ishexnumber(src[0]))
+                    if(!src.empty() && (src[0]))
                     {
                         if(notationChar == 'b') {
                             while (!src.empty() && (src[0] == '0' || src[0] == '1')) {
@@ -212,7 +214,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                         }
                         else if(notationChar == 'x')
                         {
-                            while (!src.empty() && ishexnumber(src[0])) {
+                            while (!src.empty() && std::isxdigit(src[0])) {
 
                                 num += src[0];
                                 advance();

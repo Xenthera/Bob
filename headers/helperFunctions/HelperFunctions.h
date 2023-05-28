@@ -4,7 +4,7 @@
 #include <vector>
 #include <bitset>
 
-std::vector<std::string> splitString(const std::string& input, std::string delimiter) {
+inline std::vector<std::string> splitString(const std::string& input, std::string delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     size_t start = 0;
@@ -24,7 +24,7 @@ std::vector<std::string> splitString(const std::string& input, std::string delim
     return tokens;
 }
 
-std::string trim(const std::string& str) {
+inline std::string trim(const std::string& str) {
     // Find the first non-whitespace character
     size_t start = str.find_first_not_of(" \t\n\r");
 
@@ -40,7 +40,7 @@ std::string trim(const std::string& str) {
     return str.substr(start, end - start + 1);
 }
 
-std::string replaceSubstring(const std::string& str, const std::string& findSubstring, const std::string& replacement) {
+inline std::string replaceSubstring(const std::string& str, const std::string& findSubstring, const std::string& replacement) {
     std::string result = str;
     size_t startPos = result.find(findSubstring);
 
@@ -52,11 +52,11 @@ std::string replaceSubstring(const std::string& str, const std::string& findSubs
     return result;
 }
 
-bool isHexDigit(char c) {
+inline bool isHexDigit(char c) {
     return (std::isdigit(c) || (std::isxdigit(c) && std::islower(c)));
 }
 
-u_long binaryStringToLong(const std::string& binaryString) {
+inline u_long binaryStringToLong(const std::string& binaryString) {
     std::string binaryDigits = binaryString.substr(2);  // Remove the '0b' prefix
     u_long result = 0;
     for (char ch : binaryDigits) {
