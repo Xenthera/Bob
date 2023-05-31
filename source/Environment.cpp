@@ -1,0 +1,34 @@
+//
+// Created by Bobby Lucero on 5/30/23.
+//
+
+#include "../headers/Environment.h"
+#include "../headers/Lexer.h"
+
+
+sptr(Object) Environment::get(Token name)
+{
+    if(variables.count(name.lexeme))
+    {
+        return variables[name.lexeme];
+    }
+
+    throw std::runtime_error("Undefined variable '" + name.lexeme + "'.");
+}
+
+void Environment::define(std::string name, sptr(Object) value) {
+    if(variables.count(name) > 0){
+        throw std::runtime_error("'" + name + "' already defined.");
+    }
+    variables.insert(std::make_pair(name, value));
+}
+
+void Environment::assign(Token name, std::shared_ptr<Object> value) {
+    if(variables.count(name.lexeme) > 0)
+    {
+        variables[name.lexeme] = value;
+        return;
+    }
+
+    throw std::runtime_error("Undefined variable '" + name.lexeme + "'.");
+}

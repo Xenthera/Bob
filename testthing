@@ -1,5 +1,5 @@
 template <typename T>
-struct BinaryExpr : Expr<T>, Visitor<T>
+struct BinaryExpr : Expr<T>, ExprVisitor<T>
 {
     const Expr<T> left;
     const Token oper;
@@ -8,36 +8,36 @@ struct BinaryExpr : Expr<T>, Visitor<T>
     BinaryExpr(Expr<T> left, Token oper, Expr<T> right) : left(left), oper(oper), right(right)
     {
     }
-    T accept(Visitor<T> visitor){
+    T accept(ExprVisitor<T> visitor){
         return visitor.visitBinaryExpr(this);
     }
 };
 template <typename T>
-struct GroupingExpr : Expr<T>, Visitor<T>
+struct GroupingExpr : Expr<T>, ExprVisitor<T>
 {
     const Expr<T> expression;
 
     GroupingExpr(Expr<T> expression) : expression(expression)
     {
     }
-    T accept(Visitor<T> visitor){
+    T accept(ExprVisitor<T> visitor){
         return visitor.visitGroupingExpr(this);
     }
 };
 template <typename T>
-struct LiteralExpr : Expr<T>, Visitor<T>
+struct LiteralExpr : Expr<T>, ExprVisitor<T>
 {
     const std::string value;
 
     LiteralExpr(std::string value) : value(value)
     {
     }
-    T accept(Visitor<T> visitor){
+    T accept(ExprVisitor<T> visitor){
         return visitor.visitLiteralExpr(this);
     }
 };
 template <typename T>
-struct UnaryExpr : Expr<T>, Visitor<T>
+struct UnaryExpr : Expr<T>, ExprVisitor<T>
 {
     const Token oper;
     const Expr<T> right;
@@ -45,7 +45,7 @@ struct UnaryExpr : Expr<T>, Visitor<T>
     UnaryExpr(Token oper, Expr<T> right) : oper(oper), right(right)
     {
     }
-    T accept(Visitor<T> visitor){
+    T accept(ExprVisitor<T> visitor){
         return visitor.visitUnaryExpr(this);
     }
 };

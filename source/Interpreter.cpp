@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iomanip>
 #include <limits>
+#include <cmath>
 #include "../headers/Interpreter.h"
 #include "../headers/helperFunctions/HelperFunctions.h"
 
@@ -94,9 +95,12 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
             case PLUS:
                 return msptr(Number)(left_double + right_double);
             case SLASH:
+                if(right_double == 0) throw std::runtime_error("DivisionByZeroError: Cannot divide by 0");
                 return msptr(Number)(left_double / right_double);
             case STAR:
                 return msptr(Number)(left_double * right_double);
+            case PERCENT:
+                return msptr(Number)(fmod(left_double, right_double));
             default:
                 return msptr(None)(); //unreachable
         }
@@ -120,11 +124,11 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                 double right_number = std::dynamic_pointer_cast<Number>(right)->value;
                 if(isWholeNumer(right_number))
                 {
-                    std::stringstream ss;
+                    std::string s;
                     for (int i = 0; i < (int)right_number; ++i) {
-                        ss << left_string;
+                        s += left_string;
                     }
-                    return msptr(String)(ss.str());
+                    return msptr(String)(s);
 
                 }
                 else
@@ -140,6 +144,56 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
         throw std::runtime_error("Operands must be of same type when using: " + expression->oper.lexeme);
     }
 
+}
+
+sptr(Object) Interpreter::visitVariableExpr(sptr(VarExpr) expression)
+{
+    return environment.get(expression->name);
+}
+
+sptr(Object) Interpreter::visitAssignExpr(sptr(AssignExpr) expression) {
+    sptr(Object) value = evaluate(expression->value);
+    environment.assign(expression->name, value);
+    return value;
+}
+
+void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
+    evaluate(statement->expression);
+}
+
+void Interpreter::visitPrintStmt(sptr(PrintStmt) statement) {
+    sptr(Object) value = evaluate(statement->expression);
+    std::cout << stringify(value) << std::endl;
+}
+
+void Interpreter::visitVarStmt(sptr(VarStmt) statement)
+{
+    sptr(Object) value = msptr(None)();
+    if(!std::dynamic_pointer_cast<None>(statement->initializer))
+    {
+        value = evaluate(statement->initializer);
+    }
+
+    //std::cout << "Visit var stmt: " << statement->name.lexeme << " set to: " << stringify(value) << std::endl;
+
+    environment.define(statement->name.lexeme, value);
+}
+
+void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
+
+
+    for(sptr(Stmt) s : statements)
+    {
+        execute(s);
+    }
+
+    //std::cout << "\033[0;32m" << stringify(value) << std::endl;
+
+}
+
+void Interpreter::execute(sptr(Stmt) statement)
+{
+    statement->accept(this);
 }
 
 sptr(Object) Interpreter::evaluate(sptr(Expr) expr) {
@@ -202,17 +256,10 @@ bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
     throw std::runtime_error("Invalid isEqual compariosn");
 }
 
-void Interpreter::interpret(std::shared_ptr<Expr> expr) {
-
-    sptr(Object) value = evaluate(std::move(expr));
-    std::cout << "\033[0;32m" << stringify(value) << std::endl;
-
-}
-
 std::string Interpreter::stringify(std::shared_ptr<Object> object) {
     if(std::dynamic_pointer_cast<None>(object))
     {
-        return "None";
+        return "none";
     }
     else if(auto num = std::dynamic_pointer_cast<Number>(object))
     {
@@ -263,6 +310,11 @@ bool Interpreter::isWholeNumer(double num) {
         return false;
     }
 }
+
+
+
+
+
 
 
 

@@ -6,12 +6,16 @@
 #include <initializer_list>
 
 
-class ASTPrinter : Visitor
+class ASTPrinter : ExprVisitor
 {
     sptr(Object) visitBinaryExpr(sptr(BinaryExpr) expr) override;
     sptr(Object) visitGroupingExpr(sptr(GroupingExpr) expr) override;
     sptr(Object) visitLiteralExpr(sptr(LiteralExpr) expr) override;
     sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expr) override;
+    sptr(Object) visitAssignExpr(sptr(AssignExpr) expr) override;
+    sptr(Object) visitVariableExpr(sptr(VarExpr) expr) override;
+
+
 public:
     sptr(Object) print(sptr(Expr) expr);
 private:

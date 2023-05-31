@@ -10,7 +10,32 @@
 
 sptr(Expr) Parser::expression()
 {
-    return equality();
+    return assignment();
+}
+
+sptr(Expr) Parser::assignment()
+{
+
+    sptr(Expr) expr = equality();
+
+    if(match({EQUAL}))
+    {
+        Token equals = previous();
+
+        sptr(Expr) value = assignment();
+
+        if(std::dynamic_pointer_cast<VarExpr>(expr))
+        {
+
+            Token name = std::dynamic_pointer_cast<VarExpr>(expr)->name;
+
+            return msptr(AssignExpr)(name, value);
+        }
+
+        throw std::runtime_error("Invalid assignment target.");
+    }
+
+    return expr;
 }
 
 sptr(Expr) Parser::equality()
@@ -59,7 +84,7 @@ sptr(Expr) Parser::factor()
 {
     sptr(Expr) expr = unary();
 
-    while(match({SLASH, STAR}))
+    while(match({SLASH, STAR, PERCENT}))
     {
         Token op = previous();
         sptr(Expr) right = unary();
@@ -85,10 +110,14 @@ sptr(Expr) Parser::primary()
 {
     if(match({FALSE})) return msptr(LiteralExpr)("false", false, false);
     if(match({TRUE})) return msptr(LiteralExpr)("true", false, false);
-    if(match({NONE})) return msptr(LiteralExpr)("none", false, false);
+    if(match({NONE})) return msptr(LiteralExpr)("none", false, true);
 
     if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false);
     if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false);
+
+    if(match( {IDENTIFIER})) {
+        return msptr(VarExpr)(previous());
+    }
 
     if(match({OPEN_PAREN}))
     {
@@ -103,10 +132,62 @@ sptr(Expr) Parser::primary()
 ///////////////////////////////////////////
 
 
-sptr(Expr) Parser::parse() {
+std::vector<sptr(Stmt)> Parser::parse() {
 
-        return expression();
+        std::vector<sptr(Stmt)> statements;
+        while(!isAtEnd())
+        {
+            statements.push_back(declaration());
+        }
 
+        return statements;
+
+}
+
+sptr(Stmt) Parser::statement()
+{
+    if(match({PRINT})) return printStatement();
+    return expressionStatement();
+}
+
+sptr(Stmt) Parser::printStatement()
+{
+    sptr(Expr) value = expression();
+    consume(SEMICOLON, "Expected ';' after value.");
+    return msptr(PrintStmt)(value);
+}
+
+sptr(Stmt) Parser::expressionStatement()
+{
+    sptr(Expr) expr = expression();
+    consume(SEMICOLON, "Expected ';' after expression.");
+    return msptr(ExpressionStmt)(expr);
+}
+
+sptr(Stmt) Parser::declaration()
+{
+    try{
+        if(match({VAR})) return varDeclaration();
+        return statement();
+    }
+    catch(std::runtime_error e)
+    {
+        sync();
+        throw std::runtime_error(e.what());
+    }
+}
+
+sptr(Stmt) Parser::varDeclaration()
+{
+    Token name = consume(IDENTIFIER, "Expected variable name.");
+
+    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true);
+    if(match({EQUAL}))
+    {
+        initializer = expression();
+    }
+    consume(SEMICOLON, "Expected ';' after variable declaration.");
+    return msptr(VarStmt)(name, initializer);
 }
 
 

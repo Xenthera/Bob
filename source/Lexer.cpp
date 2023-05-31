@@ -63,6 +63,11 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             tokens.push_back(Token{STAR, std::string(1, t), line});
             advance();
         }
+        else if(t == '%')
+        {
+            tokens.push_back(Token{PERCENT, std::string(1, t), line});
+            advance();
+        }
         else if(t == '=')
         {
             std::string token = std::string(1, t);

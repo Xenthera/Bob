@@ -3,6 +3,7 @@
 #include <vector>
 #include "Lexer.h"
 #include "Expression.h"
+#include "Statement.h"
 #include "TypeWrapper.h"
 #include "helperFunctions/ShortHands.h"
 
@@ -14,7 +15,7 @@ private:
 
 public:
     explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)){};
-    sptr(Expr) parse();
+    std::vector<sptr(Stmt)> parse();
 
 private:
     sptr(Expr) expression();
@@ -33,7 +34,17 @@ private:
     Token peek();
     Token previous();
     Token consume(TokenType type, std::string message);
+    sptr(Stmt) statement();
 
     void sync();
 
+    std::shared_ptr<Stmt> printStatement();
+
+    std::shared_ptr<Stmt> expressionStatement();
+
+    std::shared_ptr<Stmt> declaration();
+
+    std::shared_ptr<Stmt> varDeclaration();
+
+    std::shared_ptr<Expr> assignment();
 };

@@ -39,3 +39,11 @@ sptr(Object) ASTPrinter::parenthesize(std::string name, std::vector<sptr(Expr)> 
     return msptr(String)(builder);
 
 }
+
+sptr(Object) ASTPrinter::visitAssignExpr(std::shared_ptr<AssignExpr> expr) {
+    return std::shared_ptr<String>();
+}
+
+sptr(Object) ASTPrinter::visitVariableExpr(std::shared_ptr<VarExpr> expr) {
+    return std::shared_ptr<String>();
+}

@@ -49,17 +49,16 @@ void Bob::run(string source)
 {
     try {
         vector<Token> tokens = lexer.Tokenize(source);
+//        for(Token t : tokens){
+//            cout << "{type: " << enum_mapping[t.type] << ", value: " << t.lexeme << "}" << endl;
+//        }
+
+
         Parser p(tokens);
-        shared_ptr<Expr> expr = p.parse();
-        interpreter.interpret(expr);
+        vector<sptr(Stmt)> statements = p.parse();
+        interpreter.interpret(statements);
         //cout << "=========================" << endl;
-        ASTPrinter printer;
 
-        //cout << dynamic_pointer_cast<String>(printer.print(expr))->value << endl;
-
-        for(Token t : tokens){
-            //cout << "{type: " << enum_mapping[t.type] << ", value: " << t.lexeme << "}" << endl;
-        }
 
 
     }

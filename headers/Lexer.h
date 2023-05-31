@@ -6,7 +6,7 @@
 
 enum TokenType{
     OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
-    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR,
+    COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, PERCENT,
 
     BINARY_OP,
 
@@ -15,16 +15,16 @@ enum TokenType{
     GREATER, GREATER_EQUAL,
     LESS, LESS_EQUAL,
 
-    IDENTIFIER, STRING, NUMBER,
+    IDENTIFIER, STRING, NUMBER, BOOL,
 
     AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
-    WHILE, VAR, CLASS, SUPER, THIS, NONE, RETURN,
+    WHILE, VAR, CLASS, SUPER, THIS, NONE, RETURN, PRINT,
 
     END_OF_FILE
 };
 
 inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", "CLOSE_BRACE",
-                           "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR",
+                           "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR", "PERCENT",
 
                            "BINARY_OP",
 
@@ -33,10 +33,10 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
                            "GREATER", "GREATER_EQUAL",
                            "LESS", "LESS_EQUAL",
 
-                           "IDENTIFIER", "STRING", "NUMBER",
+                           "IDENTIFIER", "STRING", "NUMBER", "BOOL",
 
                            "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
-                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN",
+                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN", "PRINT",
 
                            "END_OF_FILE"};
 
@@ -55,7 +55,8 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"super", SUPER},
         {"this", THIS},
         {"none", NONE},
-        {"return", RETURN}
+        {"return", RETURN},
+        {"print", PRINT}
 };
 
 struct Token
