@@ -147,6 +147,7 @@ std::vector<sptr(Stmt)> Parser::parse() {
 sptr(Stmt) Parser::statement()
 {
     if(match({PRINT})) return printStatement();
+    if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     return expressionStatement();
 }
 
@@ -162,6 +163,19 @@ sptr(Stmt) Parser::expressionStatement()
     sptr(Expr) expr = expression();
     consume(SEMICOLON, "Expected ';' after expression.");
     return msptr(ExpressionStmt)(expr);
+}
+
+std::vector<sptr(Stmt)> Parser::block()
+{
+    std::vector<sptr(Stmt)> statements;
+
+    while(!check(CLOSE_BRACE) && !isAtEnd())
+    {
+        statements.push_back(declaration());
+    }
+
+    consume(CLOSE_BRACE, "Expected '}' after block.");
+    return statements;
 }
 
 sptr(Stmt) Parser::declaration()

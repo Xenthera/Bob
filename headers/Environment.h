@@ -15,7 +15,19 @@ public:
 
     std::shared_ptr<Object> get(Token name);
 
+    sptr(Environment) enclosing;
+
+    Environment(){
+        enclosing = nullptr;
+    }
+
+    Environment(sptr(Environment) environment) : enclosing(environment)
+    {
+
+    }
 private:
     std::unordered_map<std::string, sptr(Object)> variables;
+
+
 
 };

@@ -63,7 +63,6 @@ struct Token
 {
     TokenType type;
     std::string lexeme;
-    //TODO Object literal;
     int line;
 };
 

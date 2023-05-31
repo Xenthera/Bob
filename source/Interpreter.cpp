@@ -148,13 +148,17 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
 
 sptr(Object) Interpreter::visitVariableExpr(sptr(VarExpr) expression)
 {
-    return environment.get(expression->name);
+    return environment->get(expression->name);
 }
 
 sptr(Object) Interpreter::visitAssignExpr(sptr(AssignExpr) expression) {
     sptr(Object) value = evaluate(expression->value);
-    environment.assign(expression->name, value);
+    environment->assign(expression->name, value);
     return value;
+}
+
+void Interpreter::visitBlockStmt(std::shared_ptr<BlockStmt> statement) {
+    executeBlock(statement->statements, msptr(Environment)(environment));
 }
 
 void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
@@ -176,7 +180,7 @@ void Interpreter::visitVarStmt(sptr(VarStmt) statement)
 
     //std::cout << "Visit var stmt: " << statement->name.lexeme << " set to: " << stringify(value) << std::endl;
 
-    environment.define(statement->name.lexeme, value);
+    environment->define(statement->name.lexeme, value);
 }
 
 void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
@@ -193,7 +197,28 @@ void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
 
 void Interpreter::execute(sptr(Stmt) statement)
 {
-    statement->accept(this);
+    try {
+        statement->accept(this);
+    }
+    catch(std::exception &e)
+    {
+        std::cout << "ERROR OCCURRED: " << e.what() << std::endl;
+        return;
+    }
+}
+
+void Interpreter::executeBlock(std::vector<sptr(Stmt)> statements, sptr(Environment) env)
+{
+    sptr(Environment) previous = this->environment;
+    this->environment = env;
+
+    for(sptr(Stmt) s : statements)
+    {
+        execute(s);
+    }
+
+    this->environment = previous;
+
 }
 
 sptr(Object) Interpreter::evaluate(sptr(Expr) expr) {

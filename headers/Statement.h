@@ -8,9 +8,11 @@
 struct ExpressionStmt;
 struct PrintStmt;
 struct VarStmt;
+struct BlockStmt;
 
 struct StmtVisitor
 {
+    virtual void visitBlockStmt(sptr(BlockStmt) stmt) = 0;
     virtual void visitExpressionStmt(sptr(ExpressionStmt) stmt) = 0;
     virtual void visitPrintStmt(sptr(PrintStmt) stmt) = 0;
     virtual void visitVarStmt(sptr(VarStmt) stmt) = 0;
@@ -21,6 +23,18 @@ struct Stmt
     const sptr(Expr) expression;
     virtual void accept(StmtVisitor* visitor) = 0;
     virtual ~Stmt(){};
+};
+
+struct BlockStmt : Stmt, public std::enable_shared_from_this<BlockStmt>
+{
+    const std::vector<sptr(Stmt)> statements;
+    explicit BlockStmt(std::vector<sptr(Stmt)> statements) : statements(statements)
+    {
+    }
+    void accept(StmtVisitor* visitor) override
+    {
+        visitor->visitBlockStmt(shared_from_this());
+    }
 };
 
 struct ExpressionStmt : Stmt, public std::enable_shared_from_this<ExpressionStmt>

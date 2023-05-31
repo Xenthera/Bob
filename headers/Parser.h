@@ -47,4 +47,6 @@ private:
     std::shared_ptr<Stmt> varDeclaration();
 
     std::shared_ptr<Expr> assignment();
+
+    std::vector<std::shared_ptr<Stmt>> block();
 };

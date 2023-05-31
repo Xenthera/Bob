@@ -16,15 +16,22 @@ public:
     sptr(Object) visitVariableExpr(sptr(VarExpr) expression) override;
     sptr(Object) visitAssignExpr(sptr(AssignExpr) expression) override;
 
+    void visitBlockStmt(sptr(BlockStmt) statement) override;
     void visitExpressionStmt(sptr(ExpressionStmt) statement) override;
     void visitPrintStmt(sptr(PrintStmt) statement) override;
     void visitVarStmt(sptr(VarStmt) statement) override;
 
     void interpret(std::vector<sptr(Stmt)> statements);
 
+    Interpreter(){
+        environment = msptr(Environment)();
+    }
+
 private:
 
-    Environment environment;
+    sptr(Environment) environment;
+
+
 
     sptr(Object) evaluate(sptr(Expr) expr);
     bool isTruthy(sptr(Object) object);
@@ -35,4 +42,6 @@ private:
     bool isWholeNumer(double num);
 
     void execute(std::shared_ptr<Stmt> statement);
+
+    void executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env);
 };

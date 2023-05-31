@@ -13,6 +13,11 @@ sptr(Object) Environment::get(Token name)
         return variables[name.lexeme];
     }
 
+    if(enclosing != nullptr)
+    {
+        return enclosing->get(name);
+    }
+
     throw std::runtime_error("Undefined variable '" + name.lexeme + "'.");
 }
 
@@ -27,6 +32,12 @@ void Environment::assign(Token name, std::shared_ptr<Object> value) {
     if(variables.count(name.lexeme) > 0)
     {
         variables[name.lexeme] = value;
+        return;
+    }
+
+    if(enclosing != nullptr)
+    {
+        enclosing->assign(name, value);
         return;
     }
 

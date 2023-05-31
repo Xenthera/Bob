@@ -8,8 +8,8 @@
 int main(){
     Bob bobLang;
 
-    //bobLang.runFile("source.bob");
-    bobLang.runPrompt();
+    bobLang.runFile("source.bob");
+    //bobLang.runPrompt();
 
     return 0;
 }
