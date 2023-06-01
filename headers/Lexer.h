@@ -8,7 +8,7 @@ enum TokenType{
     OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, PERCENT,
 
-    BINARY_OP,
+    BIN_OR, BIN_AND, BIN_NOT, BIN_XOR, BIN_SLEFT, BIN_SRIGHT,
 
     BANG, BANG_EQUAL,
     EQUAL, DOUBLE_EQUAL,
@@ -56,7 +56,8 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"this", THIS},
         {"none", NONE},
         {"return", RETURN},
-        {"print", PRINT}
+        {"print", PRINT},
+
 };
 
 struct Token

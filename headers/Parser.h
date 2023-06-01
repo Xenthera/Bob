@@ -26,14 +26,14 @@ private:
     sptr(Expr) unary();
     sptr(Expr) primary();
 
-    bool match(std::vector<TokenType> types);
+    bool match(const std::vector<TokenType>& types);
 
     bool check(TokenType type);
     bool isAtEnd();
     Token advance();
     Token peek();
     Token previous();
-    Token consume(TokenType type, std::string message);
+    Token consume(TokenType type, const std::string& message);
     sptr(Stmt) statement();
 
     void sync();

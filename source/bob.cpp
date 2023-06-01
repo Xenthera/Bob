@@ -1,13 +1,16 @@
+#include <utility>
+
 #include "../headers/bob.h"
 #include "../headers/Parser.h"
 #include "../headers/ASTPrinter.h"
 using namespace std;
 
-void Bob::runFile(string path)
+void Bob::runFile(const string& path)
 {
+    this->interpreter = new Interpreter(false);
     ifstream file = ifstream(path);
 
-    string source = "";
+    string source;
 
     if(file.is_open()){
         source = string(istreambuf_iterator<char>(file), istreambuf_iterator<char>());
@@ -23,6 +26,8 @@ void Bob::runFile(string path)
 
 void Bob::runPrompt()
 {
+    this->interpreter = new Interpreter(true);
+
     cout << "Bob v" << VERSION << ", 2023" << endl;
     for(;;)
     {
@@ -40,7 +45,7 @@ void Bob::runPrompt()
     }
 }
 
-void Bob::error(int line, string message)
+void Bob::error(int line, const string& message)
 {
 
 }
@@ -48,7 +53,7 @@ void Bob::error(int line, string message)
 void Bob::run(string source)
 {
     try {
-        vector<Token> tokens = lexer.Tokenize(source);
+        vector<Token> tokens = lexer.Tokenize(std::move(source));
 //        for(Token t : tokens){
 //            cout << "{type: " << enum_mapping[t.type] << ", value: " << t.lexeme << "}" << endl;
 //        }
@@ -56,7 +61,7 @@ void Bob::run(string source)
 
         Parser p(tokens);
         vector<sptr(Stmt)> statements = p.parse();
-        interpreter.interpret(statements);
+        interpreter->interpret(statements);
         //cout << "=========================" << endl;
 
 

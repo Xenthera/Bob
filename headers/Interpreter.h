@@ -23,25 +23,21 @@ public:
 
     void interpret(std::vector<sptr(Stmt)> statements);
 
-    Interpreter(){
+    explicit Interpreter(bool IsInteractive) : IsInteractive(IsInteractive){
         environment = msptr(Environment)();
     }
+    ~Interpreter();
 
 private:
 
     sptr(Environment) environment;
-
-
+    bool IsInteractive;
 
     sptr(Object) evaluate(sptr(Expr) expr);
     bool isTruthy(sptr(Object) object);
     bool isEqual(sptr(Object) a, sptr(Object) b);
-
     std::string stringify(sptr(Object) object);
-
     bool isWholeNumer(double num);
-
     void execute(std::shared_ptr<Stmt> statement);
-
     void executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env);
 };

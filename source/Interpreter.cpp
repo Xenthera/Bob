@@ -58,6 +58,19 @@ sptr(Object) Interpreter::visitUnaryExpr(sptr(UnaryExpr) expression)
         return msptr(Boolean)(!isTruthy(right));
     }
 
+    if(expression->oper.type == BIN_NOT)
+    {
+        if(std::dynamic_pointer_cast<Number>(right))
+        {
+            double value = std::dynamic_pointer_cast<Number>(right)->value;
+            return msptr(Number)((~(long)value));
+        }
+        else
+        {
+            throw std::runtime_error("Operand must be an int when using: " + expression->oper.lexeme);
+        }
+    }
+
     //unreachable
     throw std::runtime_error("Invalid unary expression");
 
@@ -162,7 +175,10 @@ void Interpreter::visitBlockStmt(std::shared_ptr<BlockStmt> statement) {
 }
 
 void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
-    evaluate(statement->expression);
+    sptr(Object) value = evaluate(statement->expression);
+
+    if(IsInteractive)
+        std::cout << "\u001b[38;5;8m[" << stringify(value) << "]\u001b[38;5;15m" << std::endl;
 }
 
 void Interpreter::visitPrintStmt(sptr(PrintStmt) statement) {
@@ -335,6 +351,8 @@ bool Interpreter::isWholeNumer(double num) {
         return false;
     }
 }
+
+Interpreter::~Interpreter() = default;
 
 
 

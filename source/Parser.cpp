@@ -96,7 +96,7 @@ sptr(Expr) Parser::factor()
 
 sptr(Expr) Parser::unary()
 {
-    if(match({BANG, MINUS}))
+    if(match({BANG, MINUS, BIN_NOT}))
     {
         Token op = previous();
         sptr(Expr) right = unary();
@@ -144,6 +144,32 @@ std::vector<sptr(Stmt)> Parser::parse() {
 
 }
 
+sptr(Stmt) Parser::declaration()
+{
+    try{
+        if(match({VAR})) return varDeclaration();
+        return statement();
+    }
+    catch(std::runtime_error& e)
+    {
+        sync();
+        throw std::runtime_error(e.what());
+    }
+}
+
+sptr(Stmt) Parser::varDeclaration()
+{
+    Token name = consume(IDENTIFIER, "Expected variable name.");
+
+    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true);
+    if(match({EQUAL}))
+    {
+        initializer = expression();
+    }
+    consume(SEMICOLON, "Expected ';' after variable declaration.");
+    return msptr(VarStmt)(name, initializer);
+}
+
 sptr(Stmt) Parser::statement()
 {
     if(match({PRINT})) return printStatement();
@@ -178,35 +204,11 @@ std::vector<sptr(Stmt)> Parser::block()
     return statements;
 }
 
-sptr(Stmt) Parser::declaration()
-{
-    try{
-        if(match({VAR})) return varDeclaration();
-        return statement();
-    }
-    catch(std::runtime_error e)
-    {
-        sync();
-        throw std::runtime_error(e.what());
-    }
-}
-
-sptr(Stmt) Parser::varDeclaration()
-{
-    Token name = consume(IDENTIFIER, "Expected variable name.");
-
-    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true);
-    if(match({EQUAL}))
-    {
-        initializer = expression();
-    }
-    consume(SEMICOLON, "Expected ';' after variable declaration.");
-    return msptr(VarStmt)(name, initializer);
-}
 
 
 
-bool Parser::match(std::vector<TokenType> types) {
+
+bool Parser::match(const std::vector<TokenType>& types) {
     for(TokenType t : types)
     {
         if(check(t))
@@ -241,10 +243,10 @@ Token Parser::previous() {
     return tokens[current - 1];
 }
 
-Token Parser::consume(TokenType type, std::string message) {
+Token Parser::consume(TokenType type, const std::string& message) {
     if(check(type)) return advance();
 
-    throw std::runtime_error(peek().lexeme +": "+ message);
+    throw std::runtime_error("Unexpected symbol '" + peek().lexeme +"': "+ message);
 }
 
 void Parser::sync()

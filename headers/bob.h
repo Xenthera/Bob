@@ -12,14 +12,19 @@ class Bob
 {
 public:
     Lexer lexer;
-    Interpreter interpreter;
+    Interpreter* interpreter;
+
+    ~Bob()
+    {
+        delete interpreter;
+    }
 
 public:
-    void runFile(std::string path);
+    void runFile(const std::string& path);
 
     void runPrompt();
 
-    void error(int line, std::string message);
+    void error(int line, const std::string& message);
 
 
 private:

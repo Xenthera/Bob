@@ -28,7 +28,7 @@ struct ExprVisitor
 
 struct Expr{
     virtual sptr(Object) accept(ExprVisitor* visitor) = 0;
-    virtual ~Expr(){}
+    virtual ~Expr() = default;
 };
 
 struct AssignExpr : Expr, public std::enable_shared_from_this<AssignExpr>

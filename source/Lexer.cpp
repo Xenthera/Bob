@@ -68,6 +68,11 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             tokens.push_back(Token{PERCENT, std::string(1, t), line});
             advance();
         }
+        else if(t == '~')
+        {
+            tokens.push_back(Token{BIN_NOT, std::string(1, t), line});
+            advance();
+        }
         else if(t == '=')
         {
             std::string token = std::string(1, t);
@@ -88,9 +93,19 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         {
             std::string token = std::string(1, t);
             advance();
-            bool match = matchOn('=');
-            token += match ? "=" : "";
-            tokens.push_back(Token{match ? LESS_EQUAL : LESS, token, line});
+            if(matchOn('='))
+            {
+                tokens.push_back(Token{LESS_EQUAL, "<=", line});
+            }
+            else if(matchOn('<'))
+            {
+                tokens.push_back(Token{BIN_SLEFT, "<<", line});
+            }
+            else
+            {
+                tokens.push_back(Token{LESS, token, line});
+            }
+
         }
         else if(t == '>')
         {
