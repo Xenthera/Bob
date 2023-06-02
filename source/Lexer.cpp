@@ -142,15 +142,25 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         }
         else if(t == '"')
         {
+            bool last_was_escape = false;
             std::string str;
             advance();
-            while(!src.empty() && src[0] != '"')
-            {
 
-                if(src[0] == '\n') line++;
-                str += src[0];
+            while(!src.empty())
+            {
+                std::string next_c =  std::string(1, src[0]);
+                if(next_c == "\"") break;
+                if(next_c == "\\")
+                {
+                    advance();
+                    next_c = "\\" + std::string(1, src[0]);
+                }
+
+                if(next_c == "\n") line++;
+                str += next_c;
                 advance();
             }
+
             if(src.empty())
             {
                 throw std::runtime_error("LEXER: Unterminated string at line: " + std::to_string(this->line));
@@ -159,7 +169,10 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             {
 
                 advance();
-                tokens.push_back(Token{STRING, str, line});
+
+
+                std::string escaped_str = parseEscapeCharacters(str);
+                tokens.push_back(Token{STRING, escaped_str, line});
             }
             
 
@@ -309,6 +322,39 @@ char Lexer::peekNext()
     }
 
     return '\0';
+}
+
+std::string Lexer::parseEscapeCharacters(const std::string& input) {
+    std::string output;
+    bool escapeMode = false;
+
+    for (char c : input) {
+        if (escapeMode) {
+            switch (c) {
+                case 'n':
+                    output += '\n';
+                    break;
+                case 't':
+                    output += '\t';
+                    break;
+                case '"':
+                    output += '\"';
+                    break;
+                case '\\':
+                    output += '\\';
+                    break;
+                default:
+                    throw runtime_error("Invalid escape character: " + std::string(1, c));
+            }
+            escapeMode = false;
+        } else if (c == '\\') {
+            escapeMode = true;
+        } else {
+            output += c;
+        }
+    }
+
+    return output;
 }
 
 

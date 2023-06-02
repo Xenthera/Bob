@@ -80,4 +80,6 @@ private:
     char peekNext();
 
     void advance(int by = 1);
+
+    std::string parseEscapeCharacters(const std::string &input);
 };
