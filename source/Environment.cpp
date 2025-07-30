@@ -22,10 +22,8 @@ sptr(Object) Environment::get(Token name)
 }
 
 void Environment::define(std::string name, sptr(Object) value) {
-    if(variables.count(name) > 0){
-        throw std::runtime_error("'" + name + "' already defined.");
-    }
-    variables.insert(std::make_pair(name, value));
+    // Allow redefinition - just overwrite the existing value
+    variables[name] = value;
 }
 
 void Environment::assign(Token name, std::shared_ptr<Object> value) {

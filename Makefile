@@ -4,7 +4,7 @@
 CC = g++
 
 # Compiler flags
-CFLAGS = -Wall -Wextra -std=c++17 -Wno-unused-variable -Wno-unused-parameter -Wno-switch
+CFLAGS = -Wall -Wextra -std=c++17 -Wno-unused-variable -Wno-unused-parameter -Wno-switch -O3 -march=native
 
 # Source directory
 SRC_DIR = ./source

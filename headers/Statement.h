@@ -10,6 +10,7 @@ struct VarStmt;
 struct BlockStmt;
 struct FunctionStmt;
 struct ReturnStmt;
+struct IfStmt;
 
 struct StmtVisitor
 {
@@ -18,6 +19,7 @@ struct StmtVisitor
     virtual void visitVarStmt(sptr(VarStmt) stmt) = 0;
     virtual void visitFunctionStmt(sptr(FunctionStmt) stmt) = 0;
     virtual void visitReturnStmt(sptr(ReturnStmt) stmt) = 0;
+    virtual void visitIfStmt(sptr(IfStmt) stmt) = 0;
 };
 
 struct Stmt
@@ -93,5 +95,20 @@ struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt>
     void accept(StmtVisitor* visitor) override
     {
         visitor->visitReturnStmt(shared_from_this());
+    }
+};
+
+struct IfStmt : Stmt, public std::enable_shared_from_this<IfStmt>
+{
+    const sptr(Expr) condition;
+    const sptr(Stmt) thenBranch;
+    const sptr(Stmt) elseBranch;
+
+    IfStmt(sptr(Expr) condition, sptr(Stmt) thenBranch, sptr(Stmt) elseBranch) 
+        : condition(condition), thenBranch(thenBranch), elseBranch(elseBranch) {}
+
+    void accept(StmtVisitor* visitor) override
+    {
+        visitor->visitIfStmt(shared_from_this());
     }
 };

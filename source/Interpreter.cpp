@@ -9,6 +9,8 @@
 #include <cmath>
 #include "../headers/Interpreter.h"
 #include "../headers/helperFunctions/HelperFunctions.h"
+#include <unordered_map>
+
 
 
 sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
@@ -24,7 +26,7 @@ sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
             // Use stod for all numbers to handle both integers and decimals correctly
             num = std::stod(expr->value);
         }
-        return msptr(Number)(num);
+        return std::make_shared<Number>(num);
     }
     if(expr->value == "true") return msptr(Boolean)(true);
     if(expr->value == "false") return msptr(Boolean)(false);
@@ -105,14 +107,14 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
             case LESS_EQUAL:
                 return msptr(Boolean)(left_double <= right_double);
             case MINUS:
-                return msptr(Number)(left_double - right_double);
+                return std::make_shared<Number>(left_double - right_double);
             case PLUS:
-                return msptr(Number)(left_double + right_double);
+                return std::make_shared<Number>(left_double + right_double);
             case SLASH:
                 if(right_double == 0) throw std::runtime_error("DivisionByZeroError: Cannot divide by 0");
-                return msptr(Number)(left_double / right_double);
+                return std::make_shared<Number>(left_double / right_double);
             case STAR:
-                return msptr(Number)(left_double * right_double);
+                return std::make_shared<Number>(left_double * right_double);
             case PERCENT:
                 return msptr(Number)(fmod(left_double, right_double));
             default:
@@ -286,7 +288,7 @@ sptr(Object) Interpreter::visitCallExpr(sptr(CallExpr) expression) {
         }
         
         // Create new environment for function execution
-        sptr(Environment) functionEnv = msptr(Environment)(std::static_pointer_cast<Environment>(function->closure));
+        sptr(Environment) functionEnv = std::make_shared<Environment>(std::static_pointer_cast<Environment>(function->closure));
         
         // Bind parameters to arguments
         for (size_t i = 0; i < function->params.size(); i++) {
@@ -366,6 +368,15 @@ void Interpreter::visitReturnStmt(sptr(ReturnStmt) statement)
     }
     
     throw Return(value);
+}
+
+void Interpreter::visitIfStmt(sptr(IfStmt) statement)
+{
+    if (isTruthy(evaluate(statement->condition))) {
+        execute(statement->thenBranch);
+    } else if (statement->elseBranch != nullptr) {
+        execute(statement->elseBranch);
+    }
 }
 
 void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
@@ -509,6 +520,14 @@ std::string Interpreter::stringify(sptr(Object) object) {
     {
         return Bool->value == 1 ? "true" : "false";
     }
+    else if(auto func = std::dynamic_pointer_cast<Function>(object))
+    {
+        return "<function " + func->name + ">";
+    }
+    else if(auto builtinFunc = std::dynamic_pointer_cast<BuiltinFunction>(object))
+    {
+        return "<builtin_function " + builtinFunc->name + ">";
+    }
 
     throw std::runtime_error("Could not convert object to string");
 }
@@ -526,6 +545,8 @@ bool Interpreter::isWholeNumer(double num) {
         return false;
     }
 }
+
+
 
 
 

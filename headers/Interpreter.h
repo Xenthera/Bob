@@ -35,6 +35,7 @@ public:
     void visitVarStmt(sptr(VarStmt) statement) override;
     void visitFunctionStmt(sptr(FunctionStmt) statement) override;
     void visitReturnStmt(sptr(ReturnStmt) statement) override;
+    void visitIfStmt(sptr(IfStmt) statement) override;
 
     void interpret(std::vector<sptr(Stmt)> statements);
 

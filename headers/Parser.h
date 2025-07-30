@@ -44,6 +44,8 @@ private:
 
     std::shared_ptr<Stmt> returnStatement();
 
+    std::shared_ptr<Stmt> ifStatement();
+
     std::shared_ptr<Stmt> declaration();
 
     std::shared_ptr<Stmt> varDeclaration();
