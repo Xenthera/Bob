@@ -21,6 +21,7 @@ sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
         }
         else
         {
+            // Use stod for all numbers to handle both integers and decimals correctly
             num = std::stod(expr->value);
         }
         return msptr(Number)(num);
@@ -131,10 +132,33 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
     }
     else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<Number>(right))
     {
+        std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
+        double right_number = std::dynamic_pointer_cast<Number>(right)->value;
+        
         switch (expression->oper.type) {
+            case PLUS: {
+                // Use the same logic as stringify for consistent formatting
+                double integral = right_number;
+                double fractional = std::modf(right_number, &integral);
+                
+                std::stringstream ss;
+                if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
+                {
+                    ss << std::fixed << std::setprecision(0) << integral;
+                }
+                else
+                {
+                    ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10 - 1) << right_number;
+                    std::string str = ss.str();
+                    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+                    if (str.back() == '.') {
+                        str.pop_back();
+                    }
+                    return msptr(String)(left_string + str);
+                }
+                return msptr(String)(left_string + ss.str());
+            }
             case STAR:
-                std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
-                double right_number = std::dynamic_pointer_cast<Number>(right)->value;
                 if(isWholeNumer(right_number))
                 {
                     std::string s;
@@ -142,7 +166,6 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                         s += left_string;
                     }
                     return msptr(String)(s);
-
                 }
                 else
                 {
@@ -150,7 +173,76 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                 }
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and a number");
-
+    }
+    else if(std::dynamic_pointer_cast<Number>(left) && std::dynamic_pointer_cast<String>(right))
+    {
+        double left_number = std::dynamic_pointer_cast<Number>(left)->value;
+        std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
+        
+        switch (expression->oper.type) {
+            case PLUS: {
+                // Use the same logic as stringify for consistent formatting
+                double integral = left_number;
+                double fractional = std::modf(left_number, &integral);
+                
+                std::stringstream ss;
+                if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
+                {
+                    ss << std::fixed << std::setprecision(0) << integral;
+                }
+                else
+                {
+                    ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10 - 1) << left_number;
+                    std::string str = ss.str();
+                    str.erase(str.find_last_not_of('0') + 1, std::string::npos);
+                    if (str.back() == '.') {
+                        str.pop_back();
+                    }
+                    return msptr(String)(str + right_string);
+                }
+                return msptr(String)(ss.str() + right_string);
+            }
+            case STAR:
+                if(isWholeNumer(left_number))
+                {
+                    std::string s;
+                    for (int i = 0; i < (int)left_number; ++i) {
+                        s += right_string;
+                    }
+                    return msptr(String)(s);
+                }
+                else
+                {
+                    throw std::runtime_error("String multiplier must be whole number");
+                }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a number and a string");
+    }
+    else if(std::dynamic_pointer_cast<Boolean>(left) && std::dynamic_pointer_cast<String>(right))
+    {
+        bool left_bool = std::dynamic_pointer_cast<Boolean>(left)->value;
+        std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
+        
+        switch (expression->oper.type) {
+            case PLUS: {
+                std::string bool_str = left_bool ? "true" : "false";
+                return msptr(String)(bool_str + right_string);
+            }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a boolean and a string");
+    }
+    else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<Boolean>(right))
+    {
+        std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
+        bool right_bool = std::dynamic_pointer_cast<Boolean>(right)->value;
+        
+        switch (expression->oper.type) {
+            case PLUS: {
+                std::string bool_str = right_bool ? "true" : "false";
+                return msptr(String)(left_string + bool_str);
+            }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and a boolean");
     }
     else
     {
@@ -164,13 +256,62 @@ sptr(Object) Interpreter::visitVariableExpr(sptr(VarExpr) expression)
     return environment->get(expression->name);
 }
 
+void Interpreter::addStdLibFunctions() {
+    // Add standard library functions to the environment
+    StdLib::addToEnvironment(environment, this);
+}
+
 sptr(Object) Interpreter::visitAssignExpr(sptr(AssignExpr) expression) {
     sptr(Object) value = evaluate(expression->value);
     environment->assign(expression->name, value);
     return value;
 }
 
-void Interpreter::visitBlockStmt(std::shared_ptr<BlockStmt> statement) {
+sptr(Object) Interpreter::visitCallExpr(sptr(CallExpr) expression) {
+    sptr(Object) callee = evaluate(expression->callee);
+    
+    std::vector<sptr(Object)> arguments;
+    for (sptr(Expr) argument : expression->arguments) {
+        arguments.push_back(evaluate(argument));
+    }
+    
+    if (auto builtin = std::dynamic_pointer_cast<BuiltinFunction>(callee)) {
+        return builtin->func(arguments);
+    }
+    
+    if (auto function = std::dynamic_pointer_cast<Function>(callee)) {
+        if (arguments.size() != function->params.size()) {
+            throw std::runtime_error("Expected " + std::to_string(function->params.size()) + 
+                                   " arguments but got " + std::to_string(arguments.size()) + ".");
+        }
+        
+        // Create new environment for function execution
+        sptr(Environment) functionEnv = msptr(Environment)(std::static_pointer_cast<Environment>(function->closure));
+        
+        // Bind parameters to arguments
+        for (size_t i = 0; i < function->params.size(); i++) {
+            functionEnv->define(function->params[i], arguments[i]);
+        }
+        
+        // Execute function body
+        try {
+            // Convert void pointers back to statements
+            std::vector<sptr(Stmt)> bodyStatements;
+            for (const auto& stmtPtr : function->body) {
+                bodyStatements.push_back(std::static_pointer_cast<Stmt>(stmtPtr));
+            }
+            executeBlock(bodyStatements, functionEnv);
+        } catch (Return& returnValue) {
+            return returnValue.value;
+        }
+        
+        return msptr(None)();
+    }
+    
+    throw std::runtime_error("Can only call functions and classes.");
+}
+
+void Interpreter::visitBlockStmt(sptr(BlockStmt) statement) {
     executeBlock(statement->statements, msptr(Environment)(environment));
 }
 
@@ -181,10 +322,7 @@ void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
         std::cout << "\u001b[38;5;8m[" << stringify(value) << "]\u001b[38;5;15m" << std::endl;
 }
 
-void Interpreter::visitPrintStmt(sptr(PrintStmt) statement) {
-    sptr(Object) value = evaluate(statement->expression);
-    std::cout << stringify(value) << std::endl;
-}
+
 
 void Interpreter::visitVarStmt(sptr(VarStmt) statement)
 {
@@ -197,6 +335,37 @@ void Interpreter::visitVarStmt(sptr(VarStmt) statement)
     //std::cout << "Visit var stmt: " << statement->name.lexeme << " set to: " << stringify(value) << std::endl;
 
     environment->define(statement->name.lexeme, value);
+}
+
+void Interpreter::visitFunctionStmt(sptr(FunctionStmt) statement)
+{
+    // Convert Token parameters to string parameters
+    std::vector<std::string> paramNames;
+    for (const Token& param : statement->params) {
+        paramNames.push_back(param.lexeme);
+    }
+    
+    // Convert statements to void pointers for storage
+    std::vector<std::shared_ptr<void>> bodyStatements;
+    for (const sptr(Stmt)& stmt : statement->body) {
+        bodyStatements.push_back(std::static_pointer_cast<void>(stmt));
+    }
+    
+    auto function = msptr(Function)(statement->name.lexeme, 
+                                   paramNames, 
+                                   bodyStatements, 
+                                   std::static_pointer_cast<void>(environment));
+    environment->define(statement->name.lexeme, function);
+}
+
+void Interpreter::visitReturnStmt(sptr(ReturnStmt) statement)
+{
+    sptr(Object) value = msptr(None)();
+    if (!std::dynamic_pointer_cast<None>(statement->value)) {
+        value = evaluate(statement->value);
+    }
+    
+    throw Return(value);
 }
 
 void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
@@ -216,10 +385,13 @@ void Interpreter::execute(sptr(Stmt) statement)
     try {
         statement->accept(this);
     }
+    catch(Return& returnValue) {
+        throw returnValue;  // Re-throw Return exceptions
+    }
     catch(std::exception &e)
     {
         std::cout << "ERROR OCCURRED: " << e.what() << std::endl;
-        return;
+        throw e;  // Re-throw the exception to stop execution
     }
 }
 
@@ -228,13 +400,17 @@ void Interpreter::executeBlock(std::vector<sptr(Stmt)> statements, sptr(Environm
     sptr(Environment) previous = this->environment;
     this->environment = env;
 
-    for(sptr(Stmt) s : statements)
-    {
-        execute(s);
+    try {
+        for(sptr(Stmt) s : statements)
+        {
+            execute(s);
+        }
+    } catch (Return& returnValue) {
+        this->environment = previous;
+        throw returnValue;
     }
 
     this->environment = previous;
-
 }
 
 sptr(Object) Interpreter::evaluate(sptr(Expr) expr) {
@@ -297,7 +473,7 @@ bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
     throw std::runtime_error("Invalid isEqual compariosn");
 }
 
-std::string Interpreter::stringify(std::shared_ptr<Object> object) {
+std::string Interpreter::stringify(sptr(Object) object) {
     if(std::dynamic_pointer_cast<None>(object))
     {
         return "none";
@@ -311,7 +487,6 @@ std::string Interpreter::stringify(std::shared_ptr<Object> object) {
         if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
         {
             ss << std::fixed << std::setprecision(0) << integral;
-
             return ss.str();
         }
         else
@@ -352,7 +527,7 @@ bool Interpreter::isWholeNumer(double num) {
     }
 }
 
-Interpreter::~Interpreter() = default;
+
 
 
 

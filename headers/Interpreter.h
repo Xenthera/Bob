@@ -4,6 +4,18 @@
 #include "helperFunctions/ShortHands.h"
 #include "TypeWrapper.h"
 #include "Environment.h"
+#include "StdLib.h"
+
+class Return : public std::exception {
+public:
+    sptr(Object) value;
+    
+    Return(sptr(Object) value) : value(value) {}
+    
+    const char* what() const noexcept override {
+        return "Return";
+    }
+};
 
 class Interpreter : ExprVisitor, StmtVisitor
 {
@@ -15,18 +27,24 @@ public:
     sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expression) override;
     sptr(Object) visitVariableExpr(sptr(VarExpr) expression) override;
     sptr(Object) visitAssignExpr(sptr(AssignExpr) expression) override;
+    sptr(Object) visitCallExpr(sptr(CallExpr) expression) override;
 
     void visitBlockStmt(sptr(BlockStmt) statement) override;
     void visitExpressionStmt(sptr(ExpressionStmt) statement) override;
-    void visitPrintStmt(sptr(PrintStmt) statement) override;
+
     void visitVarStmt(sptr(VarStmt) statement) override;
+    void visitFunctionStmt(sptr(FunctionStmt) statement) override;
+    void visitReturnStmt(sptr(ReturnStmt) statement) override;
 
     void interpret(std::vector<sptr(Stmt)> statements);
 
     explicit Interpreter(bool IsInteractive) : IsInteractive(IsInteractive){
         environment = msptr(Environment)();
+        
+        // Add standard library functions
+        addStdLibFunctions();
     }
-    ~Interpreter();
+    virtual ~Interpreter() = default;
 
 private:
 
@@ -36,8 +54,11 @@ private:
     sptr(Object) evaluate(sptr(Expr) expr);
     bool isTruthy(sptr(Object) object);
     bool isEqual(sptr(Object) a, sptr(Object) b);
-    std::string stringify(sptr(Object) object);
     bool isWholeNumer(double num);
-    void execute(std::shared_ptr<Stmt> statement);
-    void executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env);
+    void execute(sptr(Stmt) statement);
+    void executeBlock(std::vector<sptr(Stmt)> statements, sptr(Environment) env);
+    void addStdLibFunctions();
+    
+public:
+    std::string stringify(sptr(Object) object);
 };

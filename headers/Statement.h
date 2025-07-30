@@ -6,16 +6,18 @@
 #include "Expression.h"
 
 struct ExpressionStmt;
-struct PrintStmt;
 struct VarStmt;
 struct BlockStmt;
+struct FunctionStmt;
+struct ReturnStmt;
 
 struct StmtVisitor
 {
     virtual void visitBlockStmt(sptr(BlockStmt) stmt) = 0;
     virtual void visitExpressionStmt(sptr(ExpressionStmt) stmt) = 0;
-    virtual void visitPrintStmt(sptr(PrintStmt) stmt) = 0;
     virtual void visitVarStmt(sptr(VarStmt) stmt) = 0;
+    virtual void visitFunctionStmt(sptr(FunctionStmt) stmt) = 0;
+    virtual void visitReturnStmt(sptr(ReturnStmt) stmt) = 0;
 };
 
 struct Stmt
@@ -50,18 +52,7 @@ struct ExpressionStmt : Stmt, public std::enable_shared_from_this<ExpressionStmt
     }
 };
 
-struct PrintStmt : Stmt, public std::enable_shared_from_this<PrintStmt>
-{
-    const sptr(Expr) expression;
-    explicit PrintStmt(sptr(Expr) expression) : expression(expression)
-    {
-    }
 
-    void accept(StmtVisitor* visitor) override
-    {
-        visitor->visitPrintStmt(shared_from_this());
-    }
-};
 
 struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt>
 {
@@ -74,5 +65,33 @@ struct VarStmt : Stmt, public std::enable_shared_from_this<VarStmt>
     void accept(StmtVisitor* visitor) override
     {
         visitor->visitVarStmt(shared_from_this());
+    }
+};
+
+struct FunctionStmt : Stmt, public std::enable_shared_from_this<FunctionStmt>
+{
+    const Token name;
+    const std::vector<Token> params;
+    const std::vector<sptr(Stmt)> body;
+
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<sptr(Stmt)> body) 
+        : name(name), params(params), body(body) {}
+
+    void accept(StmtVisitor* visitor) override
+    {
+        visitor->visitFunctionStmt(shared_from_this());
+    }
+};
+
+struct ReturnStmt : Stmt, public std::enable_shared_from_this<ReturnStmt>
+{
+    const Token keyword;
+    const sptr(Expr) value;
+
+    ReturnStmt(Token keyword, sptr(Expr) value) : keyword(keyword), value(value) {}
+
+    void accept(StmtVisitor* visitor) override
+    {
+        visitor->visitReturnStmt(shared_from_this());
     }
 };

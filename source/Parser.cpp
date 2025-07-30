@@ -116,6 +116,9 @@ sptr(Expr) Parser::primary()
     if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false);
 
     if(match( {IDENTIFIER})) {
+        if (check(OPEN_PAREN)) {
+            return finishCall(msptr(VarExpr)(previous()));
+        }
         return msptr(VarExpr)(previous());
     }
 
@@ -123,6 +126,9 @@ sptr(Expr) Parser::primary()
     {
         sptr(Expr) expr = expression();
         consume(CLOSE_PAREN, "Expected ')' after expression on line " + std::to_string(peek().line));
+        if (check(OPEN_PAREN)) {
+            return finishCall(msptr(GroupingExpr)(expr));
+        }
         return msptr(GroupingExpr)(expr);
     }
 
@@ -148,6 +154,7 @@ sptr(Stmt) Parser::declaration()
 {
     try{
         if(match({VAR})) return varDeclaration();
+        if(match({FUNCTION})) return functionDeclaration();
         return statement();
     }
     catch(std::runtime_error& e)
@@ -170,18 +177,45 @@ sptr(Stmt) Parser::varDeclaration()
     return msptr(VarStmt)(name, initializer);
 }
 
+sptr(Stmt) Parser::functionDeclaration()
+{
+    Token name = consume(IDENTIFIER, "Expected function name.");
+    consume(OPEN_PAREN, "Expected '(' after function name.");
+    
+    std::vector<Token> parameters;
+    if (!check(CLOSE_PAREN)) {
+        do {
+            parameters.push_back(consume(IDENTIFIER, "Expected parameter name."));
+        } while (match({COMMA}));
+    }
+    
+    consume(CLOSE_PAREN, "Expected ')' after parameters.");
+    consume(OPEN_BRACE, "Expected '{' before function body.");
+    
+    std::vector<sptr(Stmt)> body = block();
+    return msptr(FunctionStmt)(name, parameters, body);
+}
+
 sptr(Stmt) Parser::statement()
 {
-    if(match({PRINT})) return printStatement();
+    if(match({RETURN})) return returnStatement();
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     return expressionStatement();
 }
 
-sptr(Stmt) Parser::printStatement()
+
+
+sptr(Stmt) Parser::returnStatement()
 {
-    sptr(Expr) value = expression();
-    consume(SEMICOLON, "Expected ';' after value.");
-    return msptr(PrintStmt)(value);
+    Token keyword = previous();
+    sptr(Expr) value = msptr(LiteralExpr)("none", false, true);
+    
+    if (!check(SEMICOLON)) {
+        value = expression();
+    }
+    
+    consume(SEMICOLON, "Expected ';' after return value.");
+    return msptr(ReturnStmt)(keyword, value);
 }
 
 sptr(Stmt) Parser::expressionStatement()
@@ -204,9 +238,22 @@ std::vector<sptr(Stmt)> Parser::block()
     return statements;
 }
 
+sptr(Expr) Parser::finishCall(sptr(Expr) callee) {
+    std::vector<sptr(Expr)> arguments;
+    
+    // Consume the opening parenthesis
+    consume(OPEN_PAREN, "Expected '(' after function name.");
+    
+    // Parse arguments if there are any
+    if (!check(CLOSE_PAREN)) {
+        do {
+            arguments.push_back(expression());
+        } while (match({COMMA}));
+    }
 
-
-
+    Token paren = consume(CLOSE_PAREN, "Expected ')' after arguments.");
+    return msptr(CallExpr)(callee, paren, arguments);
+}
 
 bool Parser::match(const std::vector<TokenType>& types) {
     for(TokenType t : types)

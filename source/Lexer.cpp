@@ -265,7 +265,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             else if(std::isalpha(t))
             {
                 std::string ident;
-                while(!src.empty() && std::isalpha(src[0]))
+                while(!src.empty() && (std::isalpha(src[0]) || std::isdigit(src[0]) || src[0] == '_'))
                 {
                     ident += src[0];
                     advance();

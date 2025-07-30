@@ -22,7 +22,7 @@ OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
 $(shell mkdir -p $(dir $(OBJ_FILES)))
 
 # Default target
-all: build run
+all: build
 
 # Rule to create necessary directories
 $(DIRS):

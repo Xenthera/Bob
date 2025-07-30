@@ -5,6 +5,7 @@
 #include <string>
 #include "../headers/Lexer.h"
 #include "../headers/Interpreter.h"
+#include "../headers/helperFunctions/ShortHands.h"
 
 #define VERSION "0.0.1"
 
@@ -12,12 +13,9 @@ class Bob
 {
 public:
     Lexer lexer;
-    Interpreter* interpreter;
+    sptr(Interpreter) interpreter;
 
-    ~Bob()
-    {
-        delete interpreter;
-    }
+    ~Bob() = default;
 
 public:
     void runFile(const std::string& path);

@@ -18,7 +18,7 @@ enum TokenType{
     IDENTIFIER, STRING, NUMBER, BOOL,
 
     AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
-    WHILE, VAR, CLASS, SUPER, THIS, NONE, RETURN, PRINT,
+    WHILE, VAR, CLASS, SUPER, THIS, NONE, RETURN,
 
     END_OF_FILE
 };
@@ -36,7 +36,7 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
                            "IDENTIFIER", "STRING", "NUMBER", "BOOL",
 
                            "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
-                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN", "PRINT",
+                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN",
 
                            "END_OF_FILE"};
 
@@ -56,8 +56,6 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"this", THIS},
         {"none", NONE},
         {"return", RETURN},
-        {"print", PRINT},
-
 };
 
 struct Token

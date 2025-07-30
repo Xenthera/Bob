@@ -3,11 +3,14 @@
 //
 #include "../headers/bob.h"
 
-int main(){
+int main(int argc, char* argv[]){
     Bob bobLang;
 
-    bobLang.runFile("source.bob");
-    bobLang.runPrompt();
+    if(argc > 1) {
+        bobLang.runFile(argv[1]);
+    } else {
+        bobLang.runPrompt();
+    }
 
     return 0;
 }

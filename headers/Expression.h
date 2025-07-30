@@ -14,6 +14,7 @@ struct GroupingExpr;
 struct LiteralExpr;
 struct UnaryExpr;
 struct VarExpr;
+struct CallExpr;
 
 struct ExprVisitor
 {
@@ -23,6 +24,7 @@ struct ExprVisitor
     virtual sptr(Object) visitLiteralExpr(sptr(LiteralExpr) expr) = 0;
     virtual sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expr) = 0;
     virtual sptr(Object) visitVariableExpr(sptr(VarExpr) expr) = 0;
+    virtual sptr(Object) visitCallExpr(sptr(CallExpr) expr) = 0;
 };
 
 
@@ -104,6 +106,21 @@ struct VarExpr : Expr, public std::enable_shared_from_this<VarExpr>
     sptr(Object) accept(ExprVisitor* visitor) override
     {
         return visitor->visitVariableExpr(shared_from_this());
+    }
+};
+
+struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr>
+{
+    const sptr(Expr) callee;
+    const Token paren;
+    const std::vector<sptr(Expr)> arguments;
+
+    CallExpr(sptr(Expr) callee, Token paren, std::vector<sptr(Expr)> arguments) 
+        : callee(callee), paren(paren), arguments(arguments) {}
+
+    sptr(Object) accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitCallExpr(shared_from_this());
     }
 };
 

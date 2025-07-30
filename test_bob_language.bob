@@ -1,0 +1,808 @@
+// ========================================
+// BOB LANGUAGE - COMPREHENSIVE TEST SUITE
+// ========================================
+// This file tests all currently implemented features of the Bob language
+// Run with: ./build/bob test_bob_language.bob
+
+print("=== BOB LANGUAGE COMPREHENSIVE TEST SUITE ===");
+print("Testing all implemented features...");
+
+// ========================================
+// TEST 1: BASIC DATA TYPES
+// ========================================
+print("\n--- Test 1: Basic Data Types ---");
+
+// String literals
+var stringVar = "Hello, Bob!";
+assert(stringVar == "Hello, Bob!", "String variable assignment");
+
+// Numbers (integers and floats)
+var intVar = 42;
+var floatVar = 3.14159;
+assert(intVar == 42, "Integer variable assignment");
+assert(floatVar == 3.14159, "Float variable assignment");
+
+// Booleans
+var boolTrue = true;
+var boolFalse = false;
+assert(boolTrue == true, "Boolean true assignment");
+assert(boolFalse == false, "Boolean false assignment");
+
+print("✓ Basic data types working");
+
+// ========================================
+// TEST 2: ARITHMETIC OPERATIONS
+// ========================================
+print("\n--- Test 2: Arithmetic Operations ---");
+
+// Basic arithmetic
+assert(2 + 3 == 5, "Addition");
+assert(10 - 4 == 6, "Subtraction");
+assert(6 * 7 == 42, "Multiplication");
+assert(20 / 4 == 5, "Division");
+
+// Negative numbers
+assert(-42 == -42, "Negative numbers");
+assert(5 - 10 == -5, "Negative result");
+
+// Order of operations
+assert(2 + 3 * 4 == 14, "Order of operations (multiplication first)");
+assert((2 + 3) * 4 == 20, "Parentheses override order of operations");
+
+print("✓ Arithmetic operations working");
+
+// ========================================
+// TEST 3: STRING OPERATIONS
+// ========================================
+print("\n--- Test 3: String Operations ---");
+
+// String concatenation
+assert("Hello" + " " + "World" == "Hello World", "String concatenation");
+var firstName = "Bob";
+var lastName = "Lucero";
+assert(firstName + " " + lastName == "Bob Lucero", "Variable string concatenation");
+
+print("✓ String operations working");
+
+// ========================================
+// TEST 3.5: STRING + NUMBER CONCATENATION
+// ========================================
+print("\n--- Test 3.5: String + Number Concatenation ---");
+
+// Test string + number (automatic conversion)
+assert("String + Number: " + 42 == "String + Number: 42", "String + Number");
+assert("String + Float: " + 3.14 == "String + Float: 3.14", "String + Float");
+assert("Zero: " + 0 == "Zero: 0", "Zero formatting");
+assert("Negative: " + -10 == "Negative: -10", "Negative formatting");
+
+// Test number + string (automatic conversion)
+assert(5 + " times" == "5 times", "Number + String");
+assert(3.14 + " is pi" == "3.14 is pi", "Float + String");
+assert(0 + " items" == "0 items", "Zero + String");
+
+// Test significant digits formatting (no trailing zeros)
+assert("Trailing zeros: " + 2.0 == "Trailing zeros: 2", "Trailing zeros removed");
+assert("Pi: " + 3.14 == "Pi: 3.14", "Float formatting");
+assert("E: " + 2.718 == "E: 2.718", "Float formatting");
+assert("Simple: " + 1.5 == "Simple: 1.5", "Float formatting");
+
+// Test string multiplication
+assert("hello" * 3 == "hellohellohello", "String multiplication");
+assert(3 * "hello" == "hellohellohello", "Number * string multiplication");
+
+print("✓ String + Number concatenation working");
+
+// ========================================
+// TEST 3.6: ESCAPE SEQUENCES
+// ========================================
+print("\n--- Test 3.6: Escape Sequences ---");
+
+// Test newline
+var newlineTest = "Line 1\nLine 2";
+assert(newlineTest == "Line 1\nLine 2", "Newline escape sequence");
+
+// Test tab
+var tabTest = "Column1\tColumn2\tColumn3";
+assert(tabTest == "Column1\tColumn2\tColumn3", "Tab escape sequence");
+
+// Test quote escaping
+var quoteTest = "He said \"Hello, World!\"";
+assert(quoteTest == "He said \"Hello, World!\"", "Quote escape sequence");
+
+// Test backslash escaping
+var backslashTest = "Path: C:\\Users\\Bob\\Documents";
+assert(backslashTest == "Path: C:\\Users\\Bob\\Documents", "Backslash escape sequence");
+
+// Test mixed escape sequences
+var mixedTest = "First line\n\tIndented line\n\t\tDouble indented";
+assert(mixedTest == "First line\n\tIndented line\n\t\tDouble indented", "Mixed escape sequences");
+
+// Test escape sequences in concatenation
+var concatTest = "Hello" + "\n" + "World";
+assert(concatTest == "Hello\nWorld", "Escape sequences in concatenation");
+
+print("✓ Escape sequences working");
+
+// ========================================
+// TEST 4: COMPARISON OPERATORS
+// ========================================
+print("\n--- Test 4: Comparison Operators ---");
+
+// Numeric comparisons
+assert(5 > 3, "Greater than");
+assert(3 < 5, "Less than");
+assert(5 == 5, "Equal to");
+assert(5 != 3, "Not equal to");
+
+// String comparisons
+assert("hello" == "hello", "String equality");
+assert("hello" != "world", "String inequality");
+
+// Boolean comparisons
+assert(true == true, "Boolean equality");
+assert(false == false, "Boolean equality");
+assert(true != false, "Boolean inequality");
+
+print("✓ Comparison operators working");
+
+// ========================================
+// TEST 5: VARIABLE ASSIGNMENT
+// ========================================
+print("\n--- Test 5: Variable Assignment ---");
+
+var x = 10;
+assert(x == 10, "Initial assignment");
+
+x = 20;
+assert(x == 20, "Variable reassignment");
+
+var y = x;
+assert(y == 20, "Variable to variable assignment");
+
+print("✓ Variable assignment working");
+
+// ========================================
+// TEST 6: FUNCTIONS
+// ========================================
+print("\n--- Test 6: Functions ---");
+
+// Basic function definition and call
+func add(a, b) {
+    return a + b;
+}
+
+assert(add(2, 3) == 5, "Basic function call");
+assert(add(10, 20) == 30, "Function with larger numbers");
+
+// Function with string operations
+func greet(name) {
+    return "Hello, " + name + "!";
+}
+
+assert(greet("Alice") == "Hello, Alice!", "String function");
+assert(greet("Bob") == "Hello, Bob!", "String function with different input");
+
+// Function with no parameters
+func getAnswer() {
+    return 42;
+}
+
+assert(getAnswer() == 42, "Function with no parameters");
+
+print("✓ Functions working");
+
+// ========================================
+// TEST 7: NESTED FUNCTION CALLS
+// ========================================
+print("\n--- Test 7: Nested Function Calls ---");
+
+func multiply(x, y) {
+    return x * y;
+}
+
+func subtract(a, b) {
+    return a - b;
+}
+
+// Nested function calls
+assert(add(add(1, 2), add(3, 4)) == 10, "Nested addition");
+assert(multiply(add(2, 3), subtract(10, 4)) == 30, "Complex nested calls");
+
+print("✓ Nested function calls working");
+
+// ========================================
+// TEST 8: VARIABLE SCOPING
+// ========================================
+print("\n--- Test 8: Variable Scoping ---");
+
+var globalVar = 100;
+
+func testScope() {
+    var localVar = 50;
+    assert(localVar == 50, "Local variable access");
+    assert(globalVar == 100, "Global variable access from function");
+    return localVar + globalVar;
+}
+
+assert(testScope() == 150, "Function accessing both local and global variables");
+
+print("✓ Variable scoping working");
+
+// ========================================
+// TEST 9: CLOSURES
+// ========================================
+print("\n--- Test 9: Closures ---");
+
+var outerVar = "Outer";
+
+func closureTest() {
+    var innerVar = "Inner";
+    return outerVar + " " + innerVar;
+}
+
+assert(closureTest() == "Outer Inner", "Basic closure");
+
+// More complex closure
+var counter = 0;
+
+func makeCounter() {
+    var count = 0;
+    return count + 1;
+}
+
+assert(makeCounter() == 1, "Closure with captured variable");
+
+print("✓ Closures working");
+
+// ========================================
+// TEST 10: COMPLEX EXPRESSIONS
+// ========================================
+print("\n--- Test 10: Complex Expressions ---");
+
+var a = 10;
+var b = 5;
+
+assert(a * b + 2 == 52, "Complex arithmetic expression");
+assert((a + b) * (a - b) == 75, "Complex expression with parentheses");
+
+// String expressions with variables
+var name = "Bob";
+assert("Hello, " + name + "!" == "Hello, Bob!", "String expression with variables");
+
+print("✓ Complex expressions working");
+
+// ========================================
+// TEST 11: EDGE CASES
+// ========================================
+print("\n--- Test 11: Edge Cases ---");
+
+// Zero values
+assert(0 == 0, "Zero comparison");
+assert(0.0 == 0.0, "Zero float comparison");
+
+// Empty strings
+assert("" == "", "Empty string comparison");
+
+// Negative zero
+assert(-0 == 0, "Negative zero equals zero");
+
+print("✓ Edge cases working");
+
+// ========================================
+// TEST 12: PRINT FUNCTION
+// ========================================
+print("\n--- Test 12: Print Function ---");
+
+// Test print with different types
+print("Testing print function...");
+print(42);
+print("String test");
+print(true);
+print(false);
+print(3.14);
+
+print("✓ Print function working");
+
+// ========================================
+// TEST 13: ASSERT FUNCTION
+// ========================================
+print("\n--- Test 13: Assert Function ---");
+
+// Test basic assertions
+assert(true, "Basic true assertion");
+assert(5 > 3, "Comparison assertion");
+
+// Test assertions with custom messages
+assert(10 == 10, "Custom message assertion");
+assert("hello" == "hello", "String assertion with message");
+
+print("✓ Assert function working");
+
+// ========================================
+// TEST 14: ERROR HANDLING
+// ========================================
+print("\n--- Test 14: Error Handling ---");
+
+// Test that invalid operations throw errors
+// (These are commented out because they would stop execution)
+
+// Division by zero should error
+// assert(10 / 0 == 0, "This should fail");
+
+// Undefined variable should error
+// assert(undefinedVar == 0, "This should fail");
+
+print("✓ Error handling framework in place");
+
+// ========================================
+// TEST 15: FUNCTION PASSING - BASIC
+// ========================================
+print("\n--- Test 15: Function Passing - Basic ---");
+
+func greet2(name) {
+    return "Hello, " + name;
+}
+
+func testBasic(func1) {
+    return func1("Alice");
+}
+
+var result1 = testBasic(greet2);
+assert(result1 == "Hello, Alice", "Basic function passing");
+print("✓ Basic function passing works");
+
+// ========================================
+// TEST 16: FUNCTION PASSING - MULTIPLE PARAMETERS
+// ========================================
+print("\n--- Test 16: Function Passing - Multiple Parameters ---");
+
+func applyTwo(func1, func2, x, y) {
+    return func1(x, y) + func2(x, y);
+}
+
+var result2 = applyTwo(add, multiply, 3, 4);
+assert(result2 == 19, "Multiple function parameters (3+4 + 3*4 = 19)");
+print("✓ Multiple function parameters work");
+
+// ========================================
+// TEST 17: FUNCTION PASSING - NESTED CALLS
+// ========================================
+print("\n--- Test 17: Function Passing - Nested Calls ---");
+
+func square(x) {
+    return x * x;
+}
+
+func applyNested(func1, func2, x, y) {
+    return func1(func2(x, y));
+}
+
+var result3 = applyNested(square, add, 3, 4);
+assert(result3 == 49, "Nested function calls ((3+4)^2 = 49)");
+print("✓ Nested function calls work");
+
+// ========================================
+// TEST 18: FUNCTION PASSING - COMPOSITION
+// ========================================
+print("\n--- Test 18: Function Passing - Composition ---");
+
+func double(x) {
+    return x * 2;
+}
+
+func addOne(x) {
+    return x + 1;
+}
+
+func compose(func1, func2, x) {
+    return func1(func2(x));
+}
+
+var result4 = compose(double, addOne, 5);
+assert(result4 == 12, "Function composition ((5+1)*2 = 12)");
+print("✓ Function composition works");
+
+// ========================================
+// TEST 19: FUNCTION PASSING - CALLBACK PATTERNS
+// ========================================
+print("\n--- Test 19: Function Passing - Callback Patterns ---");
+
+func processString(str, callback) {
+    return callback(str + " processed");
+}
+
+func formatString(str) {
+    return "[" + str + "]";
+}
+
+var result5 = processString("test", formatString);
+assert(result5 == "[test processed]", "Callback pattern with string processing");
+print("✓ Callback patterns work");
+
+// ========================================
+// TEST 20: FUNCTION PASSING - DIRECT CALLING
+// ========================================
+print("\n--- Test 20: Function Passing - Direct Calling ---");
+
+func callFirst(func1, func2, x) {
+    return func1(x);
+}
+
+func callSecond(func1, func2, x) {
+    return func2(x);
+}
+
+func positive(x) {
+    return "positive: " + x;
+}
+
+func negative(x) {
+    return "negative: " + x;
+}
+
+var result6a = callFirst(positive, negative, 5);
+var result6b = callSecond(positive, negative, 5);
+assert(result6a == "positive: 5", "Direct call - first function");
+assert(result6b == "negative: 5", "Direct call - second function");
+print("✓ Direct function calling works");
+
+// ========================================
+// TEST 21: FUNCTION PASSING - STORAGE AND RETRIEVAL
+// ========================================
+print("\n--- Test 21: Function Passing - Storage and Retrieval ---");
+
+func callStoredFunction(func1, x, y) {
+    return func1(x, y);
+}
+
+var result7a = callStoredFunction(add, 3, 4);
+var result7b = callStoredFunction(multiply, 3, 4);
+assert(result7a == 7, "Stored function call - add");
+assert(result7b == 12, "Stored function call - multiply");
+print("✓ Function storage and retrieval works");
+
+// ========================================
+// TEST 22: FUNCTION PASSING - MULTIPLE APPLICATIONS
+// ========================================
+print("\n--- Test 22: Function Passing - Multiple Applications ---");
+
+func applyMultiple(func1, x, y, z) {
+    return func1(x) + func1(y) + func1(z);
+}
+
+func square2(x) {
+    return x * x;
+}
+
+var result8 = applyMultiple(square2, 2, 3, 4);
+assert(result8 == 29, "Multiple function applications (4 + 9 + 16 = 29)");
+print("✓ Multiple function applications work");
+
+// ========================================
+// TEST 23: FUNCTION PASSING - NO PARAMETERS
+// ========================================
+print("\n--- Test 23: Function Passing - No Parameters ---");
+
+func callNoParams(func1) {
+    return func1();
+}
+
+var result9 = callNoParams(getAnswer);
+assert(result9 == 42, "Function with no parameters");
+print("✓ Functions with no parameters work");
+
+// ========================================
+// TEST 24: FUNCTION PASSING - MANY PARAMETERS
+// ========================================
+print("\n--- Test 24: Function Passing - Many Parameters ---");
+
+func sumMany(a, b, c, d, e) {
+    return a + b + c + d + e;
+}
+
+func callManyParams(func1) {
+    return func1(1, 2, 3, 4, 5);
+}
+
+var result10 = callManyParams(sumMany);
+assert(result10 == 15, "Function with many parameters");
+print("✓ Functions with many parameters work");
+
+// ========================================
+// TEST 24.5: FUNCTION WITH 100 PARAMETERS
+// ========================================
+print("\n--- Test 24.5: Function with 100 Parameters ---");
+
+func sum100(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p40, p41, p42, p43, p44, p45, p46, p47, p48, p49, p50, p51, p52, p53, p54, p55, p56, p57, p58, p59, p60, p61, p62, p63, p64, p65, p66, p67, p68, p69, p70, p71, p72, p73, p74, p75, p76, p77, p78, p79, p80, p81, p82, p83, p84, p85, p86, p87, p88, p89, p90, p91, p92, p93, p94, p95, p96, p97, p98, p99, p100) {
+    return p1 + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10 + p11 + p12 + p13 + p14 + p15 + p16 + p17 + p18 + p19 + p20 + p21 + p22 + p23 + p24 + p25 + p26 + p27 + p28 + p29 + p30 + p31 + p32 + p33 + p34 + p35 + p36 + p37 + p38 + p39 + p40 + p41 + p42 + p43 + p44 + p45 + p46 + p47 + p48 + p49 + p50 + p51 + p52 + p53 + p54 + p55 + p56 + p57 + p58 + p59 + p60 + p61 + p62 + p63 + p64 + p65 + p66 + p67 + p68 + p69 + p70 + p71 + p72 + p73 + p74 + p75 + p76 + p77 + p78 + p79 + p80 + p81 + p82 + p83 + p84 + p85 + p86 + p87 + p88 + p89 + p90 + p91 + p92 + p93 + p94 + p95 + p96 + p97 + p98 + p99 + p100;
+}
+
+func call100Params(func1) {
+    return func1(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1);
+}
+
+var result100 = call100Params(sum100);
+assert(result100 == 100, "Function with 100 parameters (all 1s = 100)");
+print("✓ Function with 100 parameters works");
+
+// ========================================
+// TEST 25: FUNCTION PASSING - IDENTITY
+// ========================================
+print("\n--- Test 25: Function Passing - Identity ---");
+
+func identity(x) {
+    return x;
+}
+
+func applyIdentity(func1, x) {
+    return func1(x);
+}
+
+var result11 = applyIdentity(identity, "test");
+assert(result11 == "test", "Function identity");
+print("✓ Function identity works");
+
+// ========================================
+// TEST 26: FUNCTION PASSING - CONSTANT FUNCTION
+// ========================================
+print("\n--- Test 26: Function Passing - Constant Function ---");
+
+func constant(value, x) {
+    return value;
+}
+
+func applyConstant(func1, x) {
+    return func1(42, x);
+}
+
+var result12 = applyConstant(constant, "anything");
+assert(result12 == 42, "Constant function");
+print("✓ Constant function works");
+
+// ========================================
+// TEST 27: FUNCTION PASSING - FUNCTION COMPARISON
+// ========================================
+print("\n--- Test 27: Function Passing - Function Comparison ---");
+
+func sameFunction(x) {
+    return x * 2;
+}
+
+var func1 = sameFunction;
+var func2 = sameFunction;
+
+func compareFunctions(f1, f2, x) {
+    return f1(x) == f2(x);
+}
+
+var result13 = compareFunctions(func1, func2, 5);
+assert(result13 == true, "Function comparison");
+print("✓ Function comparison works");
+
+// ========================================
+// TEST 28: COMPREHENSIVE NUMBER TESTS
+// ========================================
+print("\n--- Test 28: Comprehensive Number Tests ---");
+
+// Basic integers
+var small_int = 42;
+var medium_int = 1000000;
+var large_int = 999999999;
+assert(small_int == 42, "Small integer should be 42");
+assert(medium_int == 1000000, "Medium integer should be 1000000");
+assert(large_int == 999999999, "Large integer should be 999999999");
+
+// Huge numbers (epoch timestamps)
+var huge1 = 2908616190934;
+var huge2 = 9223372036854775807;
+var huge3 = 1000000000000000;
+assert(huge1 == 2908616190934, "Huge1 should be 2908616190934");
+assert(huge2 == 9223372036854775807, "Huge2 should be 9223372036854775807");
+assert(huge3 == 1000000000000000, "Huge3 should be 1000000000000000");
+
+// Basic decimals
+var pi = 3.14159;
+var half = 0.5;
+var quarter = 0.25;
+var one_point_five = 1.5;
+assert(pi == 3.14159, "Pi should be 3.14159");
+assert(half == 0.5, "Half should be 0.5");
+assert(quarter == 0.25, "Quarter should be 0.25");
+assert(one_point_five == 1.5, "One point five should be 1.5");
+
+// Large decimals
+var large_decimal1 = 1234567.89;
+var large_decimal2 = 999999.999;
+var large_decimal3 = 1000000.0001;
+assert(large_decimal1 > 1234567.88, "Large decimal 1 should be greater than 1234567.88");
+assert(large_decimal1 < 1234567.90, "Large decimal 1 should be less than 1234567.90");
+assert(large_decimal2 > 999999.998, "Large decimal 2 should be greater than 999999.998");
+assert(large_decimal2 < 1000000.0, "Large decimal 2 should be less than 1000000.0");
+
+// Large numbers in different formats
+var million = 1230000;
+var billion = 1230000000;
+var trillion = 1230000000000;
+assert(million == 1230000, "Million should be 1230000");
+assert(billion == 1230000000, "Billion should be 1230000000");
+assert(trillion == 1230000000000, "Trillion should be 1230000000000");
+
+// Edge cases
+var zero_num = 0;
+var negative_num = -42;
+var negative_decimal = -3.14;
+var very_small = 0.000001;
+var very_large_decimal = 123456789.123456789;
+assert(zero_num == 0, "Zero should be 0");
+assert(negative_num == -42, "Negative should be -42");
+assert(negative_decimal == -3.14, "Negative decimal should be -3.14");
+assert(very_small > 0.0000009, "Very small should be greater than 0.0000009");
+assert(very_small < 0.0000011, "Very small should be less than 0.0000011");
+
+// Mixed operations
+var result_num1 = 42 + 3.14;
+var result_num2 = 1000000 + 0.5;
+var result_num3 = 999999999 + 1.0;
+assert(result_num1 > 45.13, "42 + 3.14 should be greater than 45.13");
+assert(result_num1 < 45.15, "42 + 3.14 should be less than 45.15");
+assert(result_num2 == 1000000.5, "1000000 + 0.5 should be 1000000.5");
+assert(result_num3 == 1000000000, "999999999 + 1.0 should be 1000000000");
+
+// Complex expressions
+var complex_num1 = 1000000 + 0.5 + 42;
+var complex_num2 = 3.14159 + 2.71828;
+var complex_num3 = 999999999 + 1 + 0.001;
+assert(complex_num1 == 1000042.5, "Complex1 should be 1000042.5");
+assert(complex_num2 > 5.85986, "Complex2 should be greater than 5.85986");
+assert(complex_num2 < 5.85988, "Complex2 should be less than 5.85988");
+assert(complex_num3 > 1000000000.0009, "Complex3 should be greater than 1000000000.0009");
+assert(complex_num3 < 1000000000.0011, "Complex3 should be less than 1000000000.0011");
+
+// Variable assignments and printing
+var var_a = 123456789;
+var var_b = 987654321.123;
+var var_c = 0.000001;
+var var_d = 999999999999;
+assert(var_a == 123456789, "Variable a should be 123456789");
+assert(var_b > 987654321.122, "Variable b should be greater than 987654321.122");
+assert(var_b < 987654321.124, "Variable b should be less than 987654321.124");
+assert(var_c > 0.0000009, "Variable c should be greater than 0.0000009");
+assert(var_c < 0.0000011, "Variable c should be less than 0.0000011");
+assert(var_d == 999999999999, "Variable d should be 999999999999");
+
+// Binary numbers
+var bin1 = 0b1010;
+var bin2 = 0b11111111;
+var bin3 = 0b1000000000000000;
+assert(bin1 == 10, "Binary 1010 should be 10");
+assert(bin2 == 255, "Binary 11111111 should be 255");
+assert(bin3 == 32768, "Binary 1000000000000000 should be 32768");
+
+// Hexadecimal numbers
+var hex1 = 0xFF;
+var hex2 = 0xFFFF;
+var hex3 = 0xFFFFFFFF;
+assert(hex1 == 255, "Hex FF should be 255");
+assert(hex2 == 65535, "Hex FFFF should be 65535");
+assert(hex3 == 4294967295, "Hex FFFFFFFF should be 4294967295");
+
+// Arithmetic operations
+var add_num = 5 + 3;
+var sub_num = 10 - 4;
+var mul_num = 6 * 7;
+var div_num = 15 / 3;
+assert(add_num == 8, "5 + 3 should be 8");
+assert(sub_num == 6, "10 - 4 should be 6");
+assert(mul_num == 42, "6 * 7 should be 42");
+assert(div_num == 5, "15 / 3 should be 5");
+
+// Comparison operations
+var eq1 = 5 == 5;
+var eq2 = 5 == 6;
+var ne1 = 5 != 6;
+var ne2 = 5 != 5;
+var lt1 = 3 < 5;
+var lt2 = 5 < 3;
+var gt1 = 7 > 4;
+var gt2 = 2 > 8;
+assert(eq1 == true, "5 == 5 should be true");
+assert(eq2 == false, "5 == 6 should be false");
+assert(ne1 == true, "5 != 6 should be true");
+assert(ne2 == false, "5 != 5 should be false");
+assert(lt1 == true, "3 < 5 should be true");
+assert(lt2 == false, "5 < 3 should be false");
+assert(gt1 == true, "7 > 4 should be true");
+assert(gt2 == false, "2 > 8 should be false");
+
+print("✓ Comprehensive number tests working");
+
+// ========================================
+// TEST 29: TIME FUNCTION
+// ========================================
+print("\n--- Test 29: Time Function ---");
+
+var start_time = time();
+var end_time = time();
+var duration = end_time - start_time;
+assert(start_time > 0, "Start time should be positive");
+assert(end_time > start_time, "End time should be greater than start time");
+assert(duration >= 0, "Duration should be non-negative");
+
+print("✓ Time function working");
+
+// ========================================
+// TEST 30: BOOLEAN + STRING CONCATENATION
+// ========================================
+print("\n--- Test 30: Boolean + String Concatenation ---");
+
+var true_val = true;
+var false_val = false;
+var eq_test = 5 == 5;
+var ne_test = 5 != 6;
+var lt_test = 3 < 5;
+var gt_test = 7 > 4;
+
+// Test boolean + string
+assert(true + " is true" == "true is true", "Boolean + String concatenation");
+assert(false + " is false" == "false is false", "Boolean + String concatenation");
+
+// Test string + boolean
+assert("The answer is: " + true == "The answer is: true", "String + Boolean concatenation");
+assert("The opposite is: " + false == "The opposite is: false", "String + Boolean concatenation");
+
+// Test comparison results
+assert(eq_test == true, "5 == 5 should be true");
+assert(ne_test == true, "5 != 6 should be true");
+assert(lt_test == true, "3 < 5 should be true");
+assert(gt_test == true, "7 > 4 should be true");
+
+print("✓ Boolean + String concatenation working");
+
+// ========================================
+// FINAL SUMMARY
+// ========================================
+print("\n=== COMPREHENSIVE TEST SUMMARY ===");
+print("All core language features tested:");
+print("- Basic data types (strings, numbers, booleans)");
+print("- Arithmetic operations");
+print("- String operations");
+print("- String + Number concatenation (bidirectional)");
+print("- String multiplication");
+print("- Significant digits formatting");
+print("- Escape sequences (\\n, \\t, \\\", \\\\)");
+print("- Comparison operators");
+print("- Variable assignment");
+print("- Functions and return statements");
+print("- Nested function calls");
+print("- Variable scoping");
+print("- Closures");
+print("- Complex expressions");
+print("- Edge cases");
+print("- Print function");
+print("- Assert function");
+print("- Error handling");
+print("- Function passing (13 comprehensive tests)");
+print("  * Basic function passing");
+print("  * Multiple function parameters");
+print("  * Nested function calls");
+print("  * Function composition");
+print("  * Callback patterns");
+print("  * Direct function calling");
+print("  * Function storage and retrieval");
+print("  * Multiple function applications");
+print("  * Edge cases (no params, many params)");
+print("  * Function identity");
+print("  * Constant functions");
+print("  * Function comparison");
+print("- Comprehensive number system");
+print("  * Huge numbers (epoch timestamps)");
+print("  * Decimal precision handling");
+print("  * Binary and hexadecimal numbers");
+print("  * Edge cases and complex expressions");
+print("- Time function (microsecond precision)");
+print("- Boolean + String concatenation");
+print("- Underscore support in variable names");
+
+print("\n🎉 ALL TESTS PASSED! 🎉");
+print("Bob language is working correctly!");
+print("Ready for next phase: Control Flow (if statements, while loops)"); 

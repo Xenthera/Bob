@@ -7,7 +7,7 @@ using namespace std;
 
 void Bob::runFile(const string& path)
 {
-    this->interpreter = new Interpreter(false);
+    this->interpreter = msptr(Interpreter)(false);
     ifstream file = ifstream(path);
 
     string source;
@@ -26,7 +26,7 @@ void Bob::runFile(const string& path)
 
 void Bob::runPrompt()
 {
-    this->interpreter = new Interpreter(true);
+    this->interpreter = msptr(Interpreter)(true);
 
     cout << "Bob v" << VERSION << ", 2023" << endl;
     for(;;)
