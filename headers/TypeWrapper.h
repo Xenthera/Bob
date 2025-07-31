@@ -4,6 +4,12 @@
 #include <vector>
 #include <memory>
 #include <functional>
+#include "Value.h"
+
+// Forward declarations
+struct Stmt;
+struct Environment;
+
 struct Object
 {
     virtual ~Object(){};
@@ -39,21 +45,21 @@ struct Function : public Object
 {
     const std::string name;
     const std::vector<std::string> params;
-    const std::vector<std::shared_ptr<void>> body;  // Will cast to Stmt* when needed
-    const std::shared_ptr<void> closure;  // Will cast to Environment* when needed
+    const std::vector<std::shared_ptr<Stmt>> body;
+    const std::shared_ptr<Environment> closure;
 
     Function(std::string name, std::vector<std::string> params, 
-             std::vector<std::shared_ptr<void>> body, 
-             std::shared_ptr<void> closure)
+             std::vector<std::shared_ptr<Stmt>> body, 
+             std::shared_ptr<Environment> closure)
         : name(name), params(params), body(body), closure(closure) {}
 };
 
 struct BuiltinFunction : public Object
 {
     const std::string name;
-    const std::function<std::shared_ptr<Object>(std::vector<std::shared_ptr<Object> >)> func;
+    const std::function<Value(std::vector<Value>)> func;
     
-    BuiltinFunction(std::string name, std::function<std::shared_ptr<Object>(std::vector<std::shared_ptr<Object> >)> func)
+    BuiltinFunction(std::string name, std::function<Value(std::vector<Value>)> func)
         : name(name), func(func) {}
 };
 

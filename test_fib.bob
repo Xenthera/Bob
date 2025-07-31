@@ -1,0 +1,12 @@
+func fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    //print("Current operation: " + (n - 1) + ":" + (n-2));
+    return fib(n - 1) + fib(n - 2);
+}
+
+print("Fibonacci test:");
+var fib_result = fib(30);
+
+print("Result: " + fib_result);

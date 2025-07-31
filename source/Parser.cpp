@@ -108,12 +108,12 @@ sptr(Expr) Parser::unary()
 
 sptr(Expr) Parser::primary()
 {
-    if(match({FALSE})) return msptr(LiteralExpr)("false", false, false);
-    if(match({TRUE})) return msptr(LiteralExpr)("true", false, false);
-    if(match({NONE})) return msptr(LiteralExpr)("none", false, true);
+    if(match({FALSE})) return msptr(LiteralExpr)("false", false, false, true);
+    if(match({TRUE})) return msptr(LiteralExpr)("true", false, false, true);
+    if(match({NONE})) return msptr(LiteralExpr)("none", false, true, false);
 
-    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false);
-    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false);
+    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false, false);
+    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false, false);
 
     if(match( {IDENTIFIER})) {
         if (check(OPEN_PAREN)) {
@@ -168,7 +168,7 @@ sptr(Stmt) Parser::varDeclaration()
 {
     Token name = consume(IDENTIFIER, "Expected variable name.");
 
-    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true);
+    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true, false);
     if(match({EQUAL}))
     {
         initializer = expression();
@@ -199,16 +199,33 @@ sptr(Stmt) Parser::functionDeclaration()
 sptr(Stmt) Parser::statement()
 {
     if(match({RETURN})) return returnStatement();
+    if(match({IF})) return ifStatement();
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     return expressionStatement();
 }
 
 
 
+sptr(Stmt) Parser::ifStatement()
+{
+    consume(OPEN_PAREN, "Expected '(' after 'if'.");
+    sptr(Expr) condition = expression();
+    consume(CLOSE_PAREN, "Expected ')' after if condition.");
+    
+    sptr(Stmt) thenBranch = statement();
+    sptr(Stmt) elseBranch = nullptr;
+    
+    if (match({ELSE})) {
+        elseBranch = statement();
+    }
+    
+    return msptr(IfStmt)(condition, thenBranch, elseBranch);
+}
+
 sptr(Stmt) Parser::returnStatement()
 {
     Token keyword = previous();
-    sptr(Expr) value = msptr(LiteralExpr)("none", false, true);
+    sptr(Expr) value = msptr(LiteralExpr)("none", false, true, false);
     
     if (!check(SEMICOLON)) {
         value = expression();

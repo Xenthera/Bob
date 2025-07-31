@@ -2,7 +2,6 @@
 
 #include "../headers/bob.h"
 #include "../headers/Parser.h"
-#include "../headers/ASTPrinter.h"
 using namespace std;
 
 void Bob::runFile(const string& path)
@@ -54,22 +53,18 @@ void Bob::run(string source)
 {
     try {
         vector<Token> tokens = lexer.Tokenize(std::move(source));
-//        for(Token t : tokens){
-//            cout << "{type: " << enum_mapping[t.type] << ", value: " << t.lexeme << "}" << endl;
-//        }
-
-
         Parser p(tokens);
         vector<sptr(Stmt)> statements = p.parse();
         interpreter->interpret(statements);
-        //cout << "=========================" << endl;
-
-
-
     }
     catch(std::exception &e)
     {
         cout << "ERROR OCCURRED: " << e.what() << endl;
+        return;
+    }
+    catch(...)
+    {
+        cout << "UNKNOWN ERROR OCCURRED" << endl;
         return;
     }
 

@@ -4,9 +4,11 @@
 
 #pragma once
 #include <iostream>
+#include <memory>
 #include "Lexer.h"
 #include "helperFunctions/ShortHands.h"
 #include "TypeWrapper.h"
+#include "Value.h"
 
 struct AssignExpr;
 struct BinaryExpr;
@@ -16,111 +18,116 @@ struct UnaryExpr;
 struct VarExpr;
 struct CallExpr;
 
+// AST nodes use shared_ptr for proper memory management
 struct ExprVisitor
 {
-    virtual sptr(Object) visitAssignExpr(sptr(AssignExpr) expr) = 0;
-    virtual sptr(Object) visitBinaryExpr(sptr(BinaryExpr) expr) = 0;
-    virtual sptr(Object) visitGroupingExpr(sptr(GroupingExpr) expr) = 0;
-    virtual sptr(Object) visitLiteralExpr(sptr(LiteralExpr) expr) = 0;
-    virtual sptr(Object) visitUnaryExpr(sptr(UnaryExpr) expr) = 0;
-    virtual sptr(Object) visitVariableExpr(sptr(VarExpr) expr) = 0;
-    virtual sptr(Object) visitCallExpr(sptr(CallExpr) expr) = 0;
+    virtual Value visitAssignExpr(const std::shared_ptr<AssignExpr>& expr) = 0;
+    virtual Value visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expr) = 0;
+    virtual Value visitGroupingExpr(const std::shared_ptr<GroupingExpr>& expr) = 0;
+    virtual Value visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) = 0;
+    virtual Value visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expr) = 0;
+    virtual Value visitVariableExpr(const std::shared_ptr<VarExpr>& expr) = 0;
+    virtual Value visitCallExpr(const std::shared_ptr<CallExpr>& expr) = 0;
 };
 
 
-struct Expr{
-    virtual sptr(Object) accept(ExprVisitor* visitor) = 0;
+struct Expr : public std::enable_shared_from_this<Expr> {
+    virtual Value accept(ExprVisitor* visitor) = 0;
     virtual ~Expr() = default;
 };
 
-struct AssignExpr : Expr, public std::enable_shared_from_this<AssignExpr>
+struct AssignExpr : Expr
 {
     const Token name;
-    const sptr(Expr) value;
-    AssignExpr(Token name, sptr(Expr) value) : name(name), value(value)
+    std::shared_ptr<Expr> value;
+    AssignExpr(Token name, std::shared_ptr<Expr> value) : name(name), value(value)
     {
     }
 
-    sptr(Object) accept(ExprVisitor* visitor) override
+    Value accept(ExprVisitor* visitor) override
     {
-        return visitor->visitAssignExpr(shared_from_this());
+        return visitor->visitAssignExpr(std::static_pointer_cast<AssignExpr>(shared_from_this()));
     }
 };
 
-struct BinaryExpr : Expr, public std::enable_shared_from_this<BinaryExpr>
+struct BinaryExpr : Expr
 {
-    const std::shared_ptr<Expr> left;
+    std::shared_ptr<Expr> left;
     const Token oper;
-    const std::shared_ptr<Expr> right;
+    std::shared_ptr<Expr> right;
 
-    BinaryExpr(sptr(Expr) left, Token oper, sptr(Expr) right) : left(left), oper(oper), right(right)
+    BinaryExpr(std::shared_ptr<Expr> left, Token oper, std::shared_ptr<Expr> right) 
+        : left(left), oper(oper), right(right)
     {
     }
-    sptr(Object) accept(ExprVisitor* visitor) override{
-        return visitor->visitBinaryExpr(shared_from_this() );
+    Value accept(ExprVisitor* visitor) override{
+        return visitor->visitBinaryExpr(std::static_pointer_cast<BinaryExpr>(shared_from_this()));
     }
 };
 
-struct GroupingExpr : Expr, public std::enable_shared_from_this<GroupingExpr>
+struct GroupingExpr : Expr
 {
-    const std::shared_ptr<Expr> expression;
+    std::shared_ptr<Expr> expression;
 
-    explicit GroupingExpr(sptr(Expr) expression) : expression(expression)
+    explicit GroupingExpr(std::shared_ptr<Expr> expression) : expression(expression)
     {
     }
-    sptr(Object) accept(ExprVisitor* visitor) override{
-        return visitor->visitGroupingExpr(shared_from_this());
+    Value accept(ExprVisitor* visitor) override{
+        return visitor->visitGroupingExpr(std::static_pointer_cast<GroupingExpr>(shared_from_this()));
     }
 };
 
-struct LiteralExpr : Expr, public std::enable_shared_from_this<LiteralExpr>
+struct LiteralExpr : Expr
 {
-    const std::string value;
-    const bool isNumber;
-    const bool isNull;
-    LiteralExpr(std::string value, bool isNumber, bool isNull) : value(value), isNumber(isNumber), isNull(isNull)
-    {
-    }
-    sptr(Object) accept(ExprVisitor* visitor) override{
-        return visitor->visitLiteralExpr(shared_from_this());
+    std::string value;
+    bool isNumber;
+    bool isNull;
+    bool isBoolean;
+
+    LiteralExpr(const std::string& value, bool isNumber, bool isNull, bool isBoolean)
+        : value(value), isNumber(isNumber), isNull(isNull), isBoolean(isBoolean) {}
+    Value accept(ExprVisitor* visitor) override{
+        return visitor->visitLiteralExpr(std::static_pointer_cast<LiteralExpr>(shared_from_this()));
     }
 };
 
-struct UnaryExpr : Expr, public std::enable_shared_from_this<UnaryExpr>
+struct UnaryExpr : Expr
 {
     const Token oper;
-    const std::shared_ptr<Expr> right;
+    std::shared_ptr<Expr> right;
 
-    UnaryExpr(Token oper, sptr(Expr) right) : oper(oper), right(right)
+    UnaryExpr(Token oper, std::shared_ptr<Expr> right) : oper(oper), right(right)
     {
     }
-    sptr(Object) accept(ExprVisitor* visitor) override{
-        return visitor->visitUnaryExpr(shared_from_this());
+    Value accept(ExprVisitor* visitor) override{
+        return visitor->visitUnaryExpr(std::static_pointer_cast<UnaryExpr>(shared_from_this()));
     }
 };
 
-struct VarExpr : Expr, public std::enable_shared_from_this<VarExpr>
+struct VarExpr : Expr
 {
     const Token name;
     explicit VarExpr(Token name) : name(name){};
-    sptr(Object) accept(ExprVisitor* visitor) override
+    Value accept(ExprVisitor* visitor) override
     {
-        return visitor->visitVariableExpr(shared_from_this());
+        return visitor->visitVariableExpr(std::static_pointer_cast<VarExpr>(shared_from_this()));
     }
 };
 
-struct CallExpr : Expr, public std::enable_shared_from_this<CallExpr>
+struct CallExpr : Expr
 {
-    const sptr(Expr) callee;
+    std::shared_ptr<Expr> callee;
     const Token paren;
-    const std::vector<sptr(Expr)> arguments;
+    std::vector<std::shared_ptr<Expr>> arguments;
 
-    CallExpr(sptr(Expr) callee, Token paren, std::vector<sptr(Expr)> arguments) 
-        : callee(callee), paren(paren), arguments(arguments) {}
-
-    sptr(Object) accept(ExprVisitor* visitor) override
+    CallExpr(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
+        : callee(callee), paren(paren), arguments(arguments)
     {
-        return visitor->visitCallExpr(shared_from_this());
+    }
+
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitCallExpr(std::static_pointer_cast<CallExpr>(shared_from_this()));
     }
 };
 

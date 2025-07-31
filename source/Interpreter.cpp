@@ -11,10 +11,16 @@
 #include "../headers/helperFunctions/HelperFunctions.h"
 #include <unordered_map>
 
+struct ReturnContext {
+    Value returnValue;
+    bool hasReturn;
+    ReturnContext() : returnValue(NONE_VALUE), hasReturn(false) {}
+};
 
+static ReturnContext g_returnContext;
 
-sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
-    if(expr->isNull) return msptr(None)();
+Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
+    if(expr->isNull) return NONE_VALUE;
     if(expr->isNumber){
         double num;
         if(expr->value[1] == 'b')
@@ -23,31 +29,32 @@ sptr(Object) Interpreter::visitLiteralExpr(sptr(LiteralExpr) expr) {
         }
         else
         {
-            // Use stod for all numbers to handle both integers and decimals correctly
             num = std::stod(expr->value);
         }
-        return std::make_shared<Number>(num);
+        return Value(num);
     }
-    if(expr->value == "true") return msptr(Boolean)(true);
-    if(expr->value == "false") return msptr(Boolean)(false);
-    return msptr(String)(expr->value);
+    if(expr->isBoolean) {
+        if(expr->value == "true") return TRUE_VALUE;
+        if(expr->value == "false") return FALSE_VALUE;
+    }
+    return Value(expr->value);
 }
 
-sptr(Object) Interpreter::visitGroupingExpr(sptr(GroupingExpr) expression) {
+Value Interpreter::visitGroupingExpr(const std::shared_ptr<GroupingExpr>& expression) {
 
     return evaluate(expression->expression);
 }
 
-sptr(Object) Interpreter::visitUnaryExpr(sptr(UnaryExpr) expression)
+Value Interpreter::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 {
-    sptr(Object) right = evaluate(expression->right);
+    Value right = evaluate(expression->right);
 
     if(expression->oper.type == MINUS)
     {
-        if(std::dynamic_pointer_cast<Number>(right))
+        if(right.isNumber())
         {
-            double value = std::dynamic_pointer_cast<Number>(right)->value;
-            return msptr(Number)(-value);
+            double value = right.asNumber();
+            return Value(-value);
         }
         else
         {
@@ -58,15 +65,15 @@ sptr(Object) Interpreter::visitUnaryExpr(sptr(UnaryExpr) expression)
 
     if(expression->oper.type == BANG)
     {
-        return msptr(Boolean)(!isTruthy(right));
+        return Value(!isTruthy(right));
     }
 
     if(expression->oper.type == BIN_NOT)
     {
-        if(std::dynamic_pointer_cast<Number>(right))
+        if(right.isNumber())
         {
-            double value = std::dynamic_pointer_cast<Number>(right)->value;
-            return msptr(Number)((~(long)value));
+            double value = right.asNumber();
+            return Value(static_cast<double>(~(static_cast<long>(value))));
         }
         else
         {
@@ -79,63 +86,64 @@ sptr(Object) Interpreter::visitUnaryExpr(sptr(UnaryExpr) expression)
 
 }
 
-sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression) 
+Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
 {
-    sptr(Object) left = evaluate(expression->left);
-    sptr(Object) right = evaluate(expression->right);
+    Value left = evaluate(expression->left);
+    Value right = evaluate(expression->right);
 
     switch (expression->oper.type) {
         case BANG_EQUAL:
-            return msptr(Boolean)(!isEqual(left, right));
+            return Value(!isEqual(left, right));
         case DOUBLE_EQUAL:
-            return msptr(Boolean)(isEqual(left, right));
+            return Value(isEqual(left, right));
         default:
             ;
     }
 
-    if(std::dynamic_pointer_cast<Number>(left) && std::dynamic_pointer_cast<Number>(right))
+    if(left.isNumber() && right.isNumber())
     {
-        double left_double = std::dynamic_pointer_cast<Number>(left)->value;
-        double right_double = std::dynamic_pointer_cast<Number>(right)->value;
+        double left_double = left.asNumber();
+        double right_double = right.asNumber();
         switch (expression->oper.type) {
             case GREATER:
-                return msptr(Boolean)(left_double > right_double);
+                return Value(left_double > right_double);
             case GREATER_EQUAL:
-                return msptr(Boolean)(left_double >= right_double);
+                return Value(left_double >= right_double);
             case LESS:
-                return msptr(Boolean)(left_double < right_double);
+                return Value(left_double < right_double);
             case LESS_EQUAL:
-                return msptr(Boolean)(left_double <= right_double);
+                return Value(left_double <= right_double);
             case MINUS:
-                return std::make_shared<Number>(left_double - right_double);
+                return Value(left_double - right_double);
             case PLUS:
-                return std::make_shared<Number>(left_double + right_double);
+                return Value(left_double + right_double);
             case SLASH:
                 if(right_double == 0) throw std::runtime_error("DivisionByZeroError: Cannot divide by 0");
-                return std::make_shared<Number>(left_double / right_double);
+                return Value(left_double / right_double);
             case STAR:
-                return std::make_shared<Number>(left_double * right_double);
+                return Value(left_double * right_double);
             case PERCENT:
-                return msptr(Number)(fmod(left_double, right_double));
+                return Value(fmod(left_double, right_double));
             default:
-                return msptr(None)(); //unreachable
+                return NONE_VALUE; //unreachable
         }
     }
-    else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<String>(right))
+    else if(left.isString() && right.isString())
     {
         switch (expression->oper.type) {
-            case PLUS:
-                std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
-                std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
-                return msptr(String)(left_string + right_string);
+            case PLUS: {
+                std::string left_string = left.asString();
+                std::string right_string = right.asString();
+                return Value(left_string + right_string);
+            }
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on two strings");
 
     }
-    else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<Number>(right))
+    else if(left.isString() && right.isNumber())
     {
-        std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
-        double right_number = std::dynamic_pointer_cast<Number>(right)->value;
+        std::string left_string = left.asString();
+        double right_number = right.asNumber();
         
         switch (expression->oper.type) {
             case PLUS: {
@@ -156,9 +164,9 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                     if (str.back() == '.') {
                         str.pop_back();
                     }
-                    return msptr(String)(left_string + str);
+                    return Value(left_string + str);
                 }
-                return msptr(String)(left_string + ss.str());
+                return Value(left_string + ss.str());
             }
             case STAR:
                 if(isWholeNumer(right_number))
@@ -167,7 +175,7 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                     for (int i = 0; i < (int)right_number; ++i) {
                         s += left_string;
                     }
-                    return msptr(String)(s);
+                    return Value(s);
                 }
                 else
                 {
@@ -176,10 +184,10 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and a number");
     }
-    else if(std::dynamic_pointer_cast<Number>(left) && std::dynamic_pointer_cast<String>(right))
+    else if(left.isNumber() && right.isString())
     {
-        double left_number = std::dynamic_pointer_cast<Number>(left)->value;
-        std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
+        double left_number = left.asNumber();
+        std::string right_string = right.asString();
         
         switch (expression->oper.type) {
             case PLUS: {
@@ -200,9 +208,9 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                     if (str.back() == '.') {
                         str.pop_back();
                     }
-                    return msptr(String)(str + right_string);
+                    return Value(str + right_string);
                 }
-                return msptr(String)(ss.str() + right_string);
+                return Value(ss.str() + right_string);
             }
             case STAR:
                 if(isWholeNumer(left_number))
@@ -211,7 +219,7 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
                     for (int i = 0; i < (int)left_number; ++i) {
                         s += right_string;
                     }
-                    return msptr(String)(s);
+                    return Value(s);
                 }
                 else
                 {
@@ -220,31 +228,53 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a number and a string");
     }
-    else if(std::dynamic_pointer_cast<Boolean>(left) && std::dynamic_pointer_cast<String>(right))
+    else if(left.isBoolean() && right.isString())
     {
-        bool left_bool = std::dynamic_pointer_cast<Boolean>(left)->value;
-        std::string right_string = std::dynamic_pointer_cast<String>(right)->value;
+        bool left_bool = left.asBoolean();
+        std::string right_string = right.asString();
         
         switch (expression->oper.type) {
             case PLUS: {
                 std::string bool_str = left_bool ? "true" : "false";
-                return msptr(String)(bool_str + right_string);
+                return Value(bool_str + right_string);
             }
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a boolean and a string");
     }
-    else if(std::dynamic_pointer_cast<String>(left) && std::dynamic_pointer_cast<Boolean>(right))
+    else if(left.isString() && right.isBoolean())
     {
-        std::string left_string = std::dynamic_pointer_cast<String>(left)->value;
-        bool right_bool = std::dynamic_pointer_cast<Boolean>(right)->value;
+        std::string left_string = left.asString();
+        bool right_bool = right.asBoolean();
         
         switch (expression->oper.type) {
             case PLUS: {
                 std::string bool_str = right_bool ? "true" : "false";
-                return msptr(String)(left_string + bool_str);
+                return Value(left_string + bool_str);
             }
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and a boolean");
+    }
+    else if(left.isString() && right.isNone())
+    {
+        std::string left_string = left.asString();
+        
+        switch (expression->oper.type) {
+            case PLUS: {
+                return Value(left_string + "none");
+            }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and none");
+    }
+    else if(left.isNone() && right.isString())
+    {
+        std::string right_string = right.asString();
+        
+        switch (expression->oper.type) {
+            case PLUS: {
+                return Value("none" + right_string);
+            }
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on none and a string");
     }
     else
     {
@@ -253,72 +283,83 @@ sptr(Object) Interpreter::visitBinaryExpr(sptr(BinaryExpr) expression)
 
 }
 
-sptr(Object) Interpreter::visitVariableExpr(sptr(VarExpr) expression)
+Value Interpreter::visitVariableExpr(const std::shared_ptr<VarExpr>& expression)
 {
     return environment->get(expression->name);
 }
 
 void Interpreter::addStdLibFunctions() {
     // Add standard library functions to the environment
-    StdLib::addToEnvironment(environment, this);
+    StdLib::addToEnvironment(environment, *this);
 }
 
-sptr(Object) Interpreter::visitAssignExpr(sptr(AssignExpr) expression) {
-    sptr(Object) value = evaluate(expression->value);
+void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {
+    builtinFunctions.push_back(func);
+}
+
+Value Interpreter::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) {
+    Value value = evaluate(expression->value);
     environment->assign(expression->name, value);
     return value;
 }
 
-sptr(Object) Interpreter::visitCallExpr(sptr(CallExpr) expression) {
-    sptr(Object) callee = evaluate(expression->callee);
+Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
+    Value callee = evaluate(expression->callee);
     
-    std::vector<sptr(Object)> arguments;
-    for (sptr(Expr) argument : expression->arguments) {
+    std::vector<Value> arguments;
+    for (const std::shared_ptr<Expr>& argument : expression->arguments) {
         arguments.push_back(evaluate(argument));
     }
     
-    if (auto builtin = std::dynamic_pointer_cast<BuiltinFunction>(callee)) {
-        return builtin->func(arguments);
+    if (callee.isBuiltinFunction()) {
+        // Builtin functions now work directly with Value
+        return callee.asBuiltinFunction()->func(arguments);
     }
     
-    if (auto function = std::dynamic_pointer_cast<Function>(callee)) {
+    if (callee.isFunction()) {
+        Function* function = callee.asFunction();
         if (arguments.size() != function->params.size()) {
-            throw std::runtime_error("Expected " + std::to_string(function->params.size()) + 
+            throw std::runtime_error("Expected " + std::to_string(function->params.size()) +
                                    " arguments but got " + std::to_string(arguments.size()) + ".");
         }
         
-        // Create new environment for function execution
-        sptr(Environment) functionEnv = std::make_shared<Environment>(std::static_pointer_cast<Environment>(function->closure));
+        auto previousEnv = environment;
+        environment = std::make_shared<Environment>(function->closure);
         
-        // Bind parameters to arguments
         for (size_t i = 0; i < function->params.size(); i++) {
-            functionEnv->define(function->params[i], arguments[i]);
+            environment->define(function->params[i], arguments[i]);
         }
         
-        // Execute function body
-        try {
-            // Convert void pointers back to statements
-            std::vector<sptr(Stmt)> bodyStatements;
-            for (const auto& stmtPtr : function->body) {
-                bodyStatements.push_back(std::static_pointer_cast<Stmt>(stmtPtr));
+        Value returnValue = NONE_VALUE;
+        bool hasReturn = false;
+        
+        for (const auto& stmt : function->body) {
+            // Reset return context for each statement
+            g_returnContext.hasReturn = false;
+            g_returnContext.returnValue = NONE_VALUE;
+            
+            execute(stmt);
+            if (g_returnContext.hasReturn) {
+                returnValue = g_returnContext.returnValue;
+                hasReturn = true;
+                break;
             }
-            executeBlock(bodyStatements, functionEnv);
-        } catch (Return& returnValue) {
-            return returnValue.value;
         }
         
-        return msptr(None)();
+        environment = previousEnv;
+        return returnValue;
     }
     
     throw std::runtime_error("Can only call functions and classes.");
 }
 
-void Interpreter::visitBlockStmt(sptr(BlockStmt) statement) {
-    executeBlock(statement->statements, msptr(Environment)(environment));
+void Interpreter::visitBlockStmt(const std::shared_ptr<BlockStmt>& statement) {
+    auto newEnv = std::make_shared<Environment>(environment);
+    executeBlock(statement->statements, newEnv);
 }
 
-void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
-    sptr(Object) value = evaluate(statement->expression);
+void Interpreter::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement) {
+    Value value = evaluate(statement->expression);
 
     if(IsInteractive)
         std::cout << "\u001b[38;5;8m[" << stringify(value) << "]\u001b[38;5;15m" << std::endl;
@@ -326,10 +367,10 @@ void Interpreter::visitExpressionStmt(sptr(ExpressionStmt) statement) {
 
 
 
-void Interpreter::visitVarStmt(sptr(VarStmt) statement)
+void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement)
 {
-    sptr(Object) value = msptr(None)();
-    if(!std::dynamic_pointer_cast<None>(statement->initializer))
+    Value value = NONE_VALUE;
+    if(statement->initializer != nullptr)
     {
         value = evaluate(statement->initializer);
     }
@@ -339,7 +380,7 @@ void Interpreter::visitVarStmt(sptr(VarStmt) statement)
     environment->define(statement->name.lexeme, value);
 }
 
-void Interpreter::visitFunctionStmt(sptr(FunctionStmt) statement)
+void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement)
 {
     // Convert Token parameters to string parameters
     std::vector<std::string> paramNames;
@@ -347,30 +388,26 @@ void Interpreter::visitFunctionStmt(sptr(FunctionStmt) statement)
         paramNames.push_back(param.lexeme);
     }
     
-    // Convert statements to void pointers for storage
-    std::vector<std::shared_ptr<void>> bodyStatements;
-    for (const sptr(Stmt)& stmt : statement->body) {
-        bodyStatements.push_back(std::static_pointer_cast<void>(stmt));
-    }
-    
     auto function = msptr(Function)(statement->name.lexeme, 
                                    paramNames, 
-                                   bodyStatements, 
-                                   std::static_pointer_cast<void>(environment));
-    environment->define(statement->name.lexeme, function);
+                                   statement->body, 
+                                   environment);
+    functions.push_back(function); // Keep the shared_ptr alive
+    environment->define(statement->name.lexeme, Value(function.get()));
 }
 
-void Interpreter::visitReturnStmt(sptr(ReturnStmt) statement)
+void Interpreter::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement)
 {
-    sptr(Object) value = msptr(None)();
-    if (!std::dynamic_pointer_cast<None>(statement->value)) {
+    Value value = NONE_VALUE;
+    if (statement->value != nullptr) {
         value = evaluate(statement->value);
     }
     
-    throw Return(value);
+    g_returnContext.hasReturn = true;
+    g_returnContext.returnValue = value;
 }
 
-void Interpreter::visitIfStmt(sptr(IfStmt) statement)
+void Interpreter::visitIfStmt(const std::shared_ptr<IfStmt>& statement)
 {
     if (isTruthy(evaluate(statement->condition))) {
         execute(statement->thenBranch);
@@ -379,63 +416,43 @@ void Interpreter::visitIfStmt(sptr(IfStmt) statement)
     }
 }
 
-void Interpreter::interpret(std::vector<sptr(Stmt)> statements) {
-
-
-    for(sptr(Stmt) s : statements)
+void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> statements) {
+    for(const std::shared_ptr<Stmt>& s : statements)
     {
         execute(s);
     }
-
-    //std::cout << "\033[0;32m" << stringify(value) << std::endl;
-
 }
 
-void Interpreter::execute(sptr(Stmt) statement)
+void Interpreter::execute(const std::shared_ptr<Stmt>& statement)
 {
-    try {
-        statement->accept(this);
-    }
-    catch(Return& returnValue) {
-        throw returnValue;  // Re-throw Return exceptions
-    }
-    catch(std::exception &e)
-    {
-        std::cout << "ERROR OCCURRED: " << e.what() << std::endl;
-        throw e;  // Re-throw the exception to stop execution
-    }
+    statement->accept(this);
 }
 
-void Interpreter::executeBlock(std::vector<sptr(Stmt)> statements, sptr(Environment) env)
+void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env)
 {
-    sptr(Environment) previous = this->environment;
+    std::shared_ptr<Environment> previous = this->environment;
     this->environment = env;
 
-    try {
-        for(sptr(Stmt) s : statements)
-        {
-            execute(s);
-        }
-    } catch (Return& returnValue) {
-        this->environment = previous;
-        throw returnValue;
+    for(const std::shared_ptr<Stmt>& s : statements)
+    {
+        execute(s);
     }
 
     this->environment = previous;
 }
 
-sptr(Object) Interpreter::evaluate(sptr(Expr) expr) {
+Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
     return expr->accept(this);
 }
 
-bool Interpreter::isTruthy(sptr(Object) object) {
+bool Interpreter::isTruthy(Value object) {
 
-    if(auto boolean = std::dynamic_pointer_cast<Boolean>(object))
+    if(object.isBoolean())
     {
-        return boolean->value;
+        return object.asBoolean();
     }
 
-    if(auto obj = std::dynamic_pointer_cast<None>(object))
+    if(object.isNone())
     {
         return false;
     }
@@ -443,37 +460,37 @@ bool Interpreter::isTruthy(sptr(Object) object) {
     return true;
 }
 
-bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
-    if(auto left = std::dynamic_pointer_cast<Number>(a))
+bool Interpreter::isEqual(Value a, Value b) {
+    if(a.isNumber())
     {
-        if(auto right = std::dynamic_pointer_cast<Number>(b))
+        if(b.isNumber())
         {
-            return left->value == right->value;
+            return a.asNumber() == b.asNumber();
         }
 
         return false;
     }
-    else if(auto left = std::dynamic_pointer_cast<Boolean>(a))
+    else if(a.isBoolean())
     {
-        if(auto right = std::dynamic_pointer_cast<Boolean>(b))
+        if(b.isBoolean())
         {
-            return left->value == right->value;
+            return a.asBoolean() == b.asBoolean();
         }
 
         return false;
     }
-    else if(auto left = std::dynamic_pointer_cast<String>(a))
+    else if(a.isString())
     {
-        if(auto right = std::dynamic_pointer_cast<String>(b))
+        if(b.isString())
         {
-            return left->value == right->value;
+            return a.asString() == b.asString();
         }
 
         return false;
     }
-    else if(auto left = std::dynamic_pointer_cast<None>(a))
+    else if(a.isNone())
     {
-        if(auto right = std::dynamic_pointer_cast<None>(b))
+        if(b.isNone())
         {
             return true;
         }
@@ -484,15 +501,15 @@ bool Interpreter::isEqual(sptr(Object) a, sptr(Object) b) {
     throw std::runtime_error("Invalid isEqual compariosn");
 }
 
-std::string Interpreter::stringify(sptr(Object) object) {
-    if(std::dynamic_pointer_cast<None>(object))
+std::string Interpreter::stringify(Value object) {
+    if(object.isNone())
     {
         return "none";
     }
-    else if(auto num = std::dynamic_pointer_cast<Number>(object))
+    else if(object.isNumber())
     {
-        double integral = num->value;
-        double fractional = std::modf(num->value, &integral);
+        double integral = object.asNumber();
+        double fractional = std::modf(object.asNumber(), &integral);
 
         std::stringstream ss;
         if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
@@ -502,7 +519,7 @@ std::string Interpreter::stringify(sptr(Object) object) {
         }
         else
         {
-            ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10 - 1) << num->value;
+            ss << std::fixed << std::setprecision(std::numeric_limits<double>::digits10 - 1) << object.asNumber();
             std::string str = ss.str();
             str.erase(str.find_last_not_of('0') + 1, std::string::npos);
             if (str.back() == '.') {
@@ -512,21 +529,21 @@ std::string Interpreter::stringify(sptr(Object) object) {
             return str;
         }
     }
-    else if(auto string = std::dynamic_pointer_cast<String>(object))
+    else if(object.isString())
     {
-        return string->value;
+        return object.asString();
     }
-    else if(auto Bool = std::dynamic_pointer_cast<Boolean>(object))
+    else if(object.isBoolean())
     {
-        return Bool->value == 1 ? "true" : "false";
+        return object.asBoolean() == 1 ? "true" : "false";
     }
-    else if(auto func = std::dynamic_pointer_cast<Function>(object))
+    else if(object.isFunction())
     {
-        return "<function " + func->name + ">";
+        return "<function " + object.asFunction()->name + ">";
     }
-    else if(auto builtinFunc = std::dynamic_pointer_cast<BuiltinFunction>(object))
+    else if(object.isBuiltinFunction())
     {
-        return "<builtin_function " + builtinFunc->name + ">";
+        return "<builtin_function " + object.asBuiltinFunction()->name + ">";
     }
 
     throw std::runtime_error("Could not convert object to string");

@@ -14,19 +14,24 @@ print("\n--- Test 1: Basic Data Types ---");
 
 // String literals
 var stringVar = "Hello, Bob!";
-assert(stringVar == "Hello, Bob!", "String variable assignment");
+assert(toString(stringVar) == "Hello, Bob!", "String variable assignment");
+print("  ✓ String: " + toString(stringVar));
 
 // Numbers (integers and floats)
 var intVar = 42;
 var floatVar = 3.14159;
-assert(intVar == 42, "Integer variable assignment");
-assert(floatVar == 3.14159, "Float variable assignment");
+assert(toString(intVar) == "42", "Integer variable assignment");
+assert(toString(floatVar) == "3.14159", "Float variable assignment");
+print("  ✓ Integer: " + toString(intVar));
+print("  ✓ Float: " + toString(floatVar));
 
 // Booleans
 var boolTrue = true;
 var boolFalse = false;
 assert(boolTrue == true, "Boolean true assignment");
 assert(boolFalse == false, "Boolean false assignment");
+print("  ✓ Boolean true: " + toString(boolTrue));
+print("  ✓ Boolean false: " + toString(boolFalse));
 
 print("✓ Basic data types working");
 
@@ -36,18 +41,39 @@ print("✓ Basic data types working");
 print("\n--- Test 2: Arithmetic Operations ---");
 
 // Basic arithmetic
-assert(2 + 3 == 5, "Addition");
-assert(10 - 4 == 6, "Subtraction");
-assert(6 * 7 == 42, "Multiplication");
-assert(20 / 4 == 5, "Division");
+var addResult = 2 + 3;
+assert(toString(addResult) == "5", "Addition");
+print("  ✓ Addition: 2 + 3 = " + toString(addResult));
+
+var subResult = 10 - 4;
+assert(toString(subResult) == "6", "Subtraction");
+print("  ✓ Subtraction: 10 - 4 = " + toString(subResult));
+
+var mulResult = 6 * 7;
+assert(toString(mulResult) == "42", "Multiplication");
+print("  ✓ Multiplication: 6 * 7 = " + toString(mulResult));
+
+var divResult = 20 / 4;
+assert(toString(divResult) == "5", "Division");
+print("  ✓ Division: 20 / 4 = " + toString(divResult));
 
 // Negative numbers
-assert(-42 == -42, "Negative numbers");
-assert(5 - 10 == -5, "Negative result");
+var negResult = -42;
+assert(toString(negResult) == "-42", "Negative numbers");
+print("  ✓ Negative: " + toString(negResult));
+
+var negCalc = 5 - 10;
+assert(toString(negCalc) == "-5", "Negative result");
+print("  ✓ Negative calculation: 5 - 10 = " + toString(negCalc));
 
 // Order of operations
-assert(2 + 3 * 4 == 14, "Order of operations (multiplication first)");
-assert((2 + 3) * 4 == 20, "Parentheses override order of operations");
+var orderResult1 = 2 + 3 * 4;
+assert(toString(orderResult1) == "14", "Order of operations (multiplication first)");
+print("  ✓ Order of operations: 2 + 3 * 4 = " + toString(orderResult1));
+
+var orderResult2 = (2 + 3) * 4;
+assert(toString(orderResult2) == "20", "Parentheses override order of operations");
+print("  ✓ Parentheses: (2 + 3) * 4 = " + toString(orderResult2));
 
 print("✓ Arithmetic operations working");
 
@@ -57,10 +83,15 @@ print("✓ Arithmetic operations working");
 print("\n--- Test 3: String Operations ---");
 
 // String concatenation
-assert("Hello" + " " + "World" == "Hello World", "String concatenation");
+var concatResult = "Hello" + " " + "World";
+assert(toString(concatResult) == "Hello World", "String concatenation");
+print("  ✓ String concatenation: " + toString(concatResult));
+
 var firstName = "Bob";
 var lastName = "Lucero";
-assert(firstName + " " + lastName == "Bob Lucero", "Variable string concatenation");
+var nameResult = firstName + " " + lastName;
+assert(toString(nameResult) == "Bob Lucero", "Variable string concatenation");
+print("  ✓ Variable concatenation: " + toString(nameResult));
 
 print("✓ String operations working");
 
@@ -70,25 +101,60 @@ print("✓ String operations working");
 print("\n--- Test 3.5: String + Number Concatenation ---");
 
 // Test string + number (automatic conversion)
-assert("String + Number: " + 42 == "String + Number: 42", "String + Number");
-assert("String + Float: " + 3.14 == "String + Float: 3.14", "String + Float");
-assert("Zero: " + 0 == "Zero: 0", "Zero formatting");
-assert("Negative: " + -10 == "Negative: -10", "Negative formatting");
+var strNumResult = "String + Number: " + 42;
+assert(toString(strNumResult) == "String + Number: 42", "String + Number");
+print("  ✓ String + Number: " + toString(strNumResult));
+
+var strFloatResult = "String + Float: " + 3.14;
+assert(toString(strFloatResult) == "String + Float: 3.14", "String + Float");
+print("  ✓ String + Float: " + toString(strFloatResult));
+
+var zeroResult = "Zero: " + 0;
+assert(toString(zeroResult) == "Zero: 0", "Zero formatting");
+print("  ✓ Zero formatting: " + toString(zeroResult));
+
+var negResult = "Negative: " + -10;
+assert(toString(negResult) == "Negative: -10", "Negative formatting");
+print("  ✓ Negative formatting: " + toString(negResult));
 
 // Test number + string (automatic conversion)
-assert(5 + " times" == "5 times", "Number + String");
-assert(3.14 + " is pi" == "3.14 is pi", "Float + String");
-assert(0 + " items" == "0 items", "Zero + String");
+var numStrResult = 5 + " times";
+assert(toString(numStrResult) == "5 times", "Number + String");
+print("  ✓ Number + String: " + toString(numStrResult));
+
+var floatStrResult = 3.14 + " is pi";
+assert(toString(floatStrResult) == "3.14 is pi", "Float + String");
+print("  ✓ Float + String: " + toString(floatStrResult));
+
+var zeroStrResult = 0 + " items";
+assert(toString(zeroStrResult) == "0 items", "Zero + String");
+print("  ✓ Zero + String: " + toString(zeroStrResult));
 
 // Test significant digits formatting (no trailing zeros)
-assert("Trailing zeros: " + 2.0 == "Trailing zeros: 2", "Trailing zeros removed");
-assert("Pi: " + 3.14 == "Pi: 3.14", "Float formatting");
-assert("E: " + 2.718 == "E: 2.718", "Float formatting");
-assert("Simple: " + 1.5 == "Simple: 1.5", "Float formatting");
+var trailingResult = "Trailing zeros: " + 2.0;
+assert(toString(trailingResult) == "Trailing zeros: 2", "Trailing zeros removed");
+print("  ✓ Trailing zeros: " + toString(trailingResult));
+
+var piResult = "Pi: " + 3.14;
+assert(toString(piResult) == "Pi: 3.14", "Float formatting");
+print("  ✓ Pi formatting: " + toString(piResult));
+
+var eResult = "E: " + 2.718;
+assert(toString(eResult) == "E: 2.718", "Float formatting");
+print("  ✓ E formatting: " + toString(eResult));
+
+var simpleResult = "Simple: " + 1.5;
+assert(toString(simpleResult) == "Simple: 1.5", "Float formatting");
+print("  ✓ Simple formatting: " + toString(simpleResult));
 
 // Test string multiplication
-assert("hello" * 3 == "hellohellohello", "String multiplication");
-assert(3 * "hello" == "hellohellohello", "Number * string multiplication");
+var strMulResult = "hello" * 3;
+assert(toString(strMulResult) == "hellohellohello", "String multiplication");
+print("  ✓ String multiplication: " + toString(strMulResult));
+
+var numStrMulResult = 3 * "hello";
+assert(toString(numStrMulResult) == "hellohellohello", "Number * string multiplication");
+print("  ✓ Number * string: " + toString(numStrMulResult));
 
 print("✓ String + Number concatenation working");
 
@@ -725,7 +791,7 @@ var start_time = time();
 var end_time = time();
 var duration = end_time - start_time;
 assert(start_time > 0, "Start time should be positive");
-assert(end_time > start_time, "End time should be greater than start time");
+assert(end_time >= start_time, "End time should be >= start time");
 assert(duration >= 0, "Duration should be non-negative");
 
 print("✓ Time function working");

@@ -1,12 +1,12 @@
 #pragma once
 
-#include "TypeWrapper.h"
+#include "Value.h"
 #include "Environment.h"
-#include <functional>
+#include <memory>
 
-class Interpreter;  // Forward declaration
+class Interpreter;
 
 class StdLib {
 public:
-    static void addToEnvironment(sptr(Environment) env, Interpreter* interpreter);
+    static void addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter);
 }; 
