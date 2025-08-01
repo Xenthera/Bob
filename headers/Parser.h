@@ -6,19 +6,29 @@
 #include "Statement.h"
 #include "TypeWrapper.h"
 #include "helperFunctions/ShortHands.h"
+#include "ErrorReporter.h"
 
 class Parser
 {
 private:
     const std::vector<Token> tokens;
     int current = 0;
+    int functionDepth = 0; // Track nesting level of functions
+    ErrorReporter* errorReporter = nullptr;
 
 public:
     explicit Parser(std::vector<Token> tokens) : tokens(std::move(tokens)){};
     std::vector<sptr(Stmt)> parse();
+    void setErrorReporter(ErrorReporter* reporter) { errorReporter = reporter; }
 
 private:
     sptr(Expr) expression();
+    sptr(Expr) logical_or();
+    sptr(Expr) logical_and();
+    sptr(Expr) bitwise_or();
+    sptr(Expr) bitwise_xor();
+    sptr(Expr) bitwise_and();
+    sptr(Expr) shift();
     sptr(Expr) equality();
     sptr(Expr) comparison();
     sptr(Expr) term();
@@ -51,10 +61,16 @@ private:
     std::shared_ptr<Stmt> varDeclaration();
 
     std::shared_ptr<Stmt> functionDeclaration();
+    std::shared_ptr<Expr> functionExpression();
 
     sptr(Expr) assignment();
 
     std::vector<std::shared_ptr<Stmt>> block();
     
     sptr(Expr) finishCall(sptr(Expr) callee);
+    
+    // Helper methods for function scope tracking
+    void enterFunction() { functionDepth++; }
+    void exitFunction() { functionDepth--; }
+    bool isInFunction() const { return functionDepth > 0; }
 };

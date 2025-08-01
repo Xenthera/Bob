@@ -1,12 +1,17 @@
 #include "../headers/StdLib.h"
 #include "../headers/Interpreter.h"
+#include "../headers/ErrorReporter.h"
 #include <chrono>
 
-void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter) {
+void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter) {
     // Create a built-in toString function
     auto toStringFunc = std::make_shared<BuiltinFunction>("toString",
-        [&interpreter](std::vector<Value> args) -> Value {
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             
@@ -19,8 +24,12 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in print function
     auto printFunc = std::make_shared<BuiltinFunction>("print", 
-        [&interpreter](std::vector<Value> args) -> Value {
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             // Use the interpreter's stringify function
@@ -34,8 +43,12 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in assert function
     auto assertFunc = std::make_shared<BuiltinFunction>("assert",
-        [](std::vector<Value> args) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1 && args.size() != 2) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 or 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 1 or 2 arguments but got " + std::to_string(args.size()) + ".");
             }
             
@@ -56,6 +69,9 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
                         message += " - " + std::string(args[1].asString());
                     }
                 }
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", message, "", true);
+                }
                 throw std::runtime_error(message);
             }
             
@@ -68,8 +84,12 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in time function (returns microseconds since Unix epoch)
     auto timeFunc = std::make_shared<BuiltinFunction>("time",
-        [](std::vector<Value> args) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 0) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
             }
             
@@ -86,8 +106,12 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in input function
     auto inputFunc = std::make_shared<BuiltinFunction>("input",
-        [&interpreter](std::vector<Value> args) -> Value {
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() > 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 0 or 1 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 0 or 1 arguments but got " + std::to_string(args.size()) + ".");
             }
             
@@ -109,8 +133,12 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in type function
     auto typeFunc = std::make_shared<BuiltinFunction>("type",
-        [](std::vector<Value> args) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
                 throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             
@@ -140,13 +168,13 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
 
     // Create a built-in toNumber function for string-to-number conversion
     auto toNumberFunc = std::make_shared<BuiltinFunction>("toNumber",
-        [](std::vector<Value> args) -> Value {
+        [](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+                return NONE_VALUE;  // Return none for wrong argument count
             }
             
             if (!args[0].isString()) {
-                throw std::runtime_error("toNumber() expects a string argument.");
+                return NONE_VALUE;  // Return none for wrong type
             }
             
             std::string str = args[0].asString();
@@ -156,20 +184,58 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
             str.erase(str.find_last_not_of(" \t\n\r") + 1);
             
             if (str.empty()) {
-                throw std::runtime_error("Cannot convert empty string to number.");
+                return NONE_VALUE;  // Return none for empty string
             }
             
             try {
                 double value = std::stod(str);
                 return Value(value);
             } catch (const std::invalid_argument&) {
-                throw std::runtime_error("Cannot convert '" + str + "' to number.");
+                return NONE_VALUE;  // Return none for invalid conversion
             } catch (const std::out_of_range&) {
-                throw std::runtime_error("Number '" + str + "' is out of range.");
+                return NONE_VALUE;  // Return none for out of range
             }
         });
     env->define("toNumber", Value(toNumberFunc.get()));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toNumberFunc);
+
+    // Create a built-in toBoolean function for explicit boolean conversion
+    auto toBooleanFunc = std::make_shared<BuiltinFunction>("toBoolean",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            // Use the same logic as isTruthy() for consistency
+            Value value = args[0];
+            
+            if (value.isNone()) {
+                return Value(false);
+            }
+            
+            if (value.isBoolean()) {
+                return value;  // Already a boolean
+            }
+            
+            if (value.isNumber()) {
+                return Value(value.asNumber() != 0.0);
+            }
+            
+            if (value.isString()) {
+                return Value(!value.asString().empty());
+            }
+            
+            // For any other type (functions, etc.), consider them truthy
+            return Value(true);
+        });
+    env->define("toBoolean", Value(toBooleanFunc.get()));
+    
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(toBooleanFunc);
 } 

@@ -3,6 +3,9 @@
 #include <vector>
 #include <unordered_map>
 #include <utility>
+#include <cmath>
+#include <stdexcept>
+#include <algorithm>
 
 // Forward declarations
 class Environment;
@@ -150,6 +153,103 @@ struct Value {
             case ValueType::VAL_BUILTIN_FUNCTION: return "<builtin_function>";
             default: return "unknown";
         }
+    }
+
+    // Arithmetic operators
+    Value operator+(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(number + other.number);
+        }
+        if (isString() && other.isString()) {
+            return Value(string_value + other.string_value);
+        }
+        if (isString() && other.isNumber()) {
+            return Value(string_value + other.toString());
+        }
+        if (isNumber() && other.isString()) {
+            return Value(toString() + other.string_value);
+        }
+        throw std::runtime_error("Invalid operands for + operator");
+    }
+
+    Value operator-(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(number - other.number);
+        }
+        throw std::runtime_error("Invalid operands for - operator");
+    }
+
+    Value operator*(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(number * other.number);
+        }
+        if (isString() && other.isNumber()) {
+            std::string result;
+            for (int i = 0; i < static_cast<int>(other.number); ++i) {
+                result += string_value;
+            }
+            return Value(result);
+        }
+        if (isNumber() && other.isString()) {
+            std::string result;
+            for (int i = 0; i < static_cast<int>(number); ++i) {
+                result += other.string_value;
+            }
+            return Value(result);
+        }
+        throw std::runtime_error("Invalid operands for * operator");
+    }
+
+    Value operator/(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            if (other.number == 0) {
+                throw std::runtime_error("Division by zero");
+            }
+            return Value(number / other.number);
+        }
+        throw std::runtime_error("Invalid operands for / operator");
+    }
+
+    Value operator%(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(fmod(number, other.number));
+        }
+        throw std::runtime_error("Invalid operands for % operator");
+    }
+
+    Value operator&(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(static_cast<double>(static_cast<long>(number) & static_cast<long>(other.number)));
+        }
+        throw std::runtime_error("Invalid operands for & operator");
+    }
+
+    Value operator|(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(static_cast<double>(static_cast<long>(number) | static_cast<long>(other.number)));
+        }
+        throw std::runtime_error("Invalid operands for | operator");
+    }
+
+    Value operator^(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(static_cast<double>(static_cast<long>(number) ^ static_cast<long>(other.number)));
+        }
+        throw std::runtime_error("Invalid operands for ^ operator");
+    }
+
+    Value operator<<(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(static_cast<double>(static_cast<long>(number) << static_cast<long>(other.number)));
+        }
+        throw std::runtime_error("Invalid operands for << operator");
+    }
+
+    Value operator>>(const Value& other) const {
+        if (isNumber() && other.isNumber()) {
+            return Value(static_cast<double>(static_cast<long>(number) >> static_cast<long>(other.number)));
+        }
+        throw std::runtime_error("Invalid operands for >> operator");
     }
 };
 

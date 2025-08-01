@@ -2,6 +2,7 @@
 // Created by Bobby Lucero on 5/26/23.
 //
 #include "../headers/Parser.h"
+#include <stdexcept>
 
 
 //              Precedence
@@ -13,25 +14,110 @@ sptr(Expr) Parser::expression()
     return assignment();
 }
 
-sptr(Expr) Parser::assignment()
+sptr(Expr) Parser::logical_or()
 {
+    sptr(Expr) expr = logical_and();
 
+    while(match({OR}))
+    {
+        Token op = previous();
+        sptr(Expr) right = logical_and();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::logical_and()
+{
     sptr(Expr) expr = equality();
 
-    if(match({EQUAL}))
+    while(match({AND}))
     {
-        Token equals = previous();
+        Token op = previous();
+        sptr(Expr) right = equality();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
 
+    return expr;
+}
+
+// bitwise_or now calls comparison (not bitwise_xor)
+sptr(Expr) Parser::bitwise_or()
+{
+    sptr(Expr) expr = bitwise_xor();
+
+    while(match({BIN_OR}))
+    {
+        Token op = previous();
+        sptr(Expr) right = bitwise_xor();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::bitwise_xor()
+{
+    sptr(Expr) expr = bitwise_and();
+
+    while(match({BIN_XOR}))
+    {
+        Token op = previous();
+        sptr(Expr) right = bitwise_and();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::bitwise_and()
+{
+    sptr(Expr) expr = shift();
+
+    while(match({BIN_AND}))
+    {
+        Token op = previous();
+        sptr(Expr) right = shift();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::shift()
+{
+    sptr(Expr) expr = term();
+
+    while(match({BIN_SLEFT, BIN_SRIGHT}))
+    {
+        Token op = previous();
+        sptr(Expr) right = term();
+        expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::assignment()
+{
+    sptr(Expr) expr = logical_or();
+
+    if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
+              BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL}))
+    {
+        Token op = previous();
         sptr(Expr) value = assignment();
-
         if(std::dynamic_pointer_cast<VarExpr>(expr))
         {
-
             Token name = std::dynamic_pointer_cast<VarExpr>(expr)->name;
-
-            return msptr(AssignExpr)(name, value);
+            return msptr(AssignExpr)(name, op, value);
         }
-
+        
+        if (errorReporter) {
+            errorReporter->reportError(op.line, op.column, "Parse Error",
+                "Invalid assignment target", "");
+        }
         throw std::runtime_error("Invalid assignment target.");
     }
 
@@ -54,12 +140,12 @@ sptr(Expr) Parser::equality()
 
 sptr(Expr) Parser::comparison()
 {
-    sptr(Expr) expr = term();
+    sptr(Expr) expr = bitwise_or();
 
     while(match({GREATER, GREATER_EQUAL, LESS, LESS_EQUAL}))
     {
         Token op = previous();
-        sptr(Expr) right = term();
+        sptr(Expr) right = bitwise_or();
         expr = msptr(BinaryExpr)(expr, op, right);
     }
 
@@ -132,6 +218,14 @@ sptr(Expr) Parser::primary()
         return msptr(GroupingExpr)(expr);
     }
 
+    if(match({FUNCTION})) {
+        return functionExpression();
+    }
+
+    if (errorReporter) {
+        errorReporter->reportError(peek().line, peek().column, "Parse Error", 
+            "Expression expected", "");
+    }
     throw std::runtime_error("Expression expected at: " + std::to_string(peek().line));
 }
 
@@ -192,8 +286,44 @@ sptr(Stmt) Parser::functionDeclaration()
     consume(CLOSE_PAREN, "Expected ')' after parameters.");
     consume(OPEN_BRACE, "Expected '{' before function body.");
     
+    // Enter function scope
+    enterFunction();
+    
     std::vector<sptr(Stmt)> body = block();
+    
+    // Exit function scope
+    exitFunction();
+    
     return msptr(FunctionStmt)(name, parameters, body);
+}
+
+std::shared_ptr<Expr> Parser::functionExpression() {
+    consume(OPEN_PAREN, "Expect '(' after 'func'.");
+    std::vector<Token> parameters;
+    if (!check(CLOSE_PAREN)) {
+        do {
+            if (parameters.size() >= 255) {
+                if (errorReporter) {
+                                errorReporter->reportError(peek().line, 0, "Parse Error", 
+                "Cannot have more than 255 parameters", "");
+                }
+                throw std::runtime_error("Cannot have more than 255 parameters.");
+            }
+            parameters.push_back(consume(IDENTIFIER, "Expect parameter name."));
+        } while (match({COMMA}));
+    }
+    consume(CLOSE_PAREN, "Expect ')' after parameters.");
+    consume(OPEN_BRACE, "Expect '{' before function body.");
+    
+    // Enter function scope
+    enterFunction();
+    
+    std::vector<std::shared_ptr<Stmt>> body = block();
+    
+    // Exit function scope
+    exitFunction();
+    
+    return msptr(FunctionExpr)(parameters, body);
 }
 
 sptr(Stmt) Parser::statement()
@@ -225,6 +355,16 @@ sptr(Stmt) Parser::ifStatement()
 sptr(Stmt) Parser::returnStatement()
 {
     Token keyword = previous();
+    
+    // Check if we're inside a function
+    if (!isInFunction()) {
+        if (errorReporter) {
+            errorReporter->reportError(keyword.line, 0, "Parse Error", 
+                "Cannot return from outside a function", "");
+        }
+        throw std::runtime_error("Cannot return from outside a function");
+    }
+    
     sptr(Expr) value = msptr(LiteralExpr)("none", false, true, false);
     
     if (!check(SEMICOLON)) {
@@ -310,6 +450,24 @@ Token Parser::previous() {
 Token Parser::consume(TokenType type, const std::string& message) {
     if(check(type)) return advance();
 
+    if (errorReporter) {
+        // Use the precise column information from the token
+        int errorColumn = peek().column;
+        
+        // For missing closing parenthesis, point to where it should be
+        if (type == CLOSE_PAREN) {
+            // The closing parenthesis should be right after the previous token
+            errorColumn = previous().column + previous().lexeme.length();
+            
+            // For string tokens, add 2 to account for the opening and closing quotes
+            if (previous().type == STRING) {
+                errorColumn += 2;
+            }
+        }
+        
+        errorReporter->reportError(peek().line, errorColumn, "Parse Error", 
+            "Unexpected symbol '" + peek().lexeme + "': " + message, "");
+    }
     throw std::runtime_error("Unexpected symbol '" + peek().lexeme +"': "+ message);
 }
 

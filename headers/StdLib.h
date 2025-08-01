@@ -5,8 +5,9 @@
 #include <memory>
 
 class Interpreter;
+class ErrorReporter;
 
 class StdLib {
 public:
-    static void addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter);
+    static void addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter = nullptr);
 }; 

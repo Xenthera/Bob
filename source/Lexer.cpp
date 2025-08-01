@@ -1,4 +1,5 @@
 #include "../headers/Lexer.h"
+#include "../headers/ErrorReporter.h"
 #include "../headers/helperFunctions/HelperFunctions.h"
 #include <cctype>
 #include <stdexcept>
@@ -8,69 +9,94 @@ using namespace std;
 std::vector<Token> Lexer::Tokenize(std::string source){
     std::vector<Token> tokens;
     src = std::vector<char>{source.begin(), source.end()};
-    line = 0;
+    line = 1;
+    column = 1;
 
     while(!src.empty())
     {
         char t = src[0];
         if(t == '(')
         {
-            tokens.push_back(Token{OPEN_PAREN, std::string(1, t), line}); //brace initialization in case you forget
+            tokens.push_back(Token{OPEN_PAREN, std::string(1, t), line, column}); //brace initialization in case you forget
             advance();
         }
         else if(t == ')')
         {
-            tokens.push_back(Token{CLOSE_PAREN, std::string(1, t), line});
+            tokens.push_back(Token{CLOSE_PAREN, std::string(1, t), line, column});
             advance();
         }
         else if(t == '{')
         {
-            tokens.push_back(Token{OPEN_BRACE, std::string(1, t), line});
+            tokens.push_back(Token{OPEN_BRACE, std::string(1, t), line, column});
             advance();
         }
         else if(t == '}')
         {
-            tokens.push_back(Token{CLOSE_BRACE, std::string(1, t), line});
+            tokens.push_back(Token{CLOSE_BRACE, std::string(1, t), line, column});
             advance();
         }
         else if(t == ',')
         {
-            tokens.push_back(Token{COMMA, std::string(1, t), line});
+            tokens.push_back(Token{COMMA, std::string(1, t), line, column});
             advance();
         }
         else if(t == '.')
         {
-            tokens.push_back(Token{DOT, std::string(1, t), line});
+            tokens.push_back(Token{DOT, std::string(1, t), line, column});
             advance();
         }
         else if(t == ';')
         {
-            tokens.push_back(Token{SEMICOLON, std::string(1, t), line});
+            tokens.push_back(Token{SEMICOLON, std::string(1, t), line, column});
             advance();
         }
         else if(t == '+')
         {
-            tokens.push_back(Token{PLUS, std::string(1, t), line});
+            std::string token = std::string(1, t);
             advance();
+            bool match = matchOn('=');
+            if(match) {
+                tokens.push_back(Token{PLUS_EQUAL, "+=", line, column - 1});
+            } else {
+                tokens.push_back(Token{PLUS, token, line, column - 1});
+            }
         }
         else if(t == '-')
         {
-            tokens.push_back(Token{MINUS, std::string(1, t), line});
+            std::string token = std::string(1, t);
             advance();
+            bool match = matchOn('=');
+            if(match) {
+                tokens.push_back(Token{MINUS_EQUAL, "-=", line, column - 1});
+            } else {
+                tokens.push_back(Token{MINUS, token, line, column - 1});
+            }
         }
         else if(t == '*')
         {
-            tokens.push_back(Token{STAR, std::string(1, t), line});
+            std::string token = std::string(1, t);
             advance();
+            bool match = matchOn('=');
+            if(match) {
+                tokens.push_back(Token{STAR_EQUAL, "*=", line, column - 1});
+            } else {
+                tokens.push_back(Token{STAR, token, line, column - 1});
+            }
         }
         else if(t == '%')
         {
-            tokens.push_back(Token{PERCENT, std::string(1, t), line});
+            std::string token = std::string(1, t);
             advance();
+            bool match = matchOn('=');
+            if(match) {
+                tokens.push_back(Token{PERCENT_EQUAL, "%=", line, column - 1});
+            } else {
+                tokens.push_back(Token{PERCENT, token, line, column - 1});
+            }
         }
         else if(t == '~')
         {
-            tokens.push_back(Token{BIN_NOT, std::string(1, t), line});
+            tokens.push_back(Token{BIN_NOT, std::string(1, t), line, column - 1});
             advance();
         }
         else if(t == '=')
@@ -79,7 +105,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('=');
             token += match ? "=" : "";
-            tokens.push_back(Token{match ? DOUBLE_EQUAL : EQUAL, token, line});
+            tokens.push_back(Token{match ? DOUBLE_EQUAL : EQUAL, token, line, column - static_cast<int>(token.length())});
         }
         else if(t == '!')
         {
@@ -87,7 +113,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('=');
             token += match ? "=" : "";
-            tokens.push_back(Token{match ? BANG_EQUAL : BANG, token, line});
+            tokens.push_back(Token{match ? BANG_EQUAL : BANG, token, line, column - static_cast<int>(token.length())});
         }
         else if(t == '<')
         {
@@ -95,15 +121,20 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             if(matchOn('='))
             {
-                tokens.push_back(Token{LESS_EQUAL, "<=", line});
+                tokens.push_back(Token{LESS_EQUAL, "<=", line, column - 1});
             }
             else if(matchOn('<'))
             {
-                tokens.push_back(Token{BIN_SLEFT, "<<", line});
+                bool equalMatch = matchOn('=');
+                if(equalMatch) {
+                    tokens.push_back(Token{BIN_SLEFT_EQUAL, "<<=", line, column - 1});
+                } else {
+                    tokens.push_back(Token{BIN_SLEFT, "<<", line, column - 1});
+                }
             }
             else
             {
-                tokens.push_back(Token{LESS, token, line});
+                tokens.push_back(Token{LESS, token, line, column - static_cast<int>(token.length())});
             }
 
         }
@@ -111,17 +142,66 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         {
             std::string token = std::string(1, t);
             advance();
-            bool match = matchOn('=');
-            token += match ? "=" : "";
-            tokens.push_back(Token{match ? GREATER_EQUAL : GREATER, token, line});
+            if(matchOn('='))
+            {
+                tokens.push_back(Token{GREATER_EQUAL, ">=", line, column - 1});
+            }
+            else if(matchOn('>'))
+            {
+                bool equalMatch = matchOn('=');
+                if(equalMatch) {
+                    tokens.push_back(Token{BIN_SRIGHT_EQUAL, ">>=", line, column - 1});
+                } else {
+                    tokens.push_back(Token{BIN_SRIGHT, ">>", line, column - 1});
+                }
+            }
+            else
+            {
+                tokens.push_back(Token{GREATER, token, line, column - static_cast<int>(token.length())});
+            }
         }
         else if(t == '&')
         {
             std::string token = std::string(1, t);
             advance();
             bool match = matchOn('&');
-            token += match ? "&" : "";
-            if(match) tokens.push_back(Token{AND, token, line});
+            if(match) {
+                tokens.push_back(Token{AND, "&&", line, column - 1});
+            } else {
+                bool equalMatch = matchOn('=');
+                if(equalMatch) {
+                    tokens.push_back(Token{BIN_AND_EQUAL, "&=", line, column - 1});
+                } else {
+                    tokens.push_back(Token{BIN_AND, "&", line, column - 1});
+                }
+            }
+        }
+        else if(t == '|')
+        {
+            std::string token = std::string(1, t);
+            advance();
+            bool match = matchOn('|');
+            if(match) {
+                tokens.push_back(Token{OR, "||", line, column - 1});
+            } else {
+                bool equalMatch = matchOn('=');
+                if(equalMatch) {
+                    tokens.push_back(Token{BIN_OR_EQUAL, "|=", line, column - 1});
+                } else {
+                    tokens.push_back(Token{BIN_OR, "|", line, column - 1});
+                }
+            }
+        }
+        else if(t == '^')
+        {
+            std::string token = std::string(1, t);
+            advance();
+            bool match = matchOn('=');
+            if(match) {
+                tokens.push_back(Token{BIN_XOR_EQUAL, "^=", line, column - 1});
+            } else {
+                tokens.push_back(Token{BIN_XOR, "^", line, column - 1});
+            }
         }
         else if(t == '/')
         {
@@ -137,13 +217,19 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             else
             {
-                tokens.push_back(Token{SLASH, std::string(1, t), line});
+                bool equalMatch = matchOn('=');
+                if(equalMatch) {
+                    tokens.push_back(Token{SLASH_EQUAL, "/=", line, column - 1});
+                } else {
+                    tokens.push_back(Token{SLASH, "/", line, column - 1});
+                }
             }
         }
         else if(t == '"')
         {
             bool last_was_escape = false;
             std::string str;
+            int startColumn = column;
             advance();
 
             while(!src.empty())
@@ -156,7 +242,6 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                     next_c = "\\" + std::string(1, src[0]);
                 }
 
-                if(next_c == "\n") line++;
                 str += next_c;
                 advance();
             }
@@ -172,14 +257,13 @@ std::vector<Token> Lexer::Tokenize(std::string source){
 
 
                 std::string escaped_str = parseEscapeCharacters(str);
-                tokens.push_back(Token{STRING, escaped_str, line});
+                tokens.push_back(Token{STRING, escaped_str, line, startColumn});
             }
             
 
         }
         else if(t == '\n')
         {
-            line++;
             advance();
         }
         else
@@ -191,6 +275,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             if(std::isdigit(t))
             {
                 std::string num;
+                int startColumn = column;
 
                 if(src[0] != '0') notationInvalidated = true;
 
@@ -260,11 +345,12 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                     }
                 }
 
-                tokens.push_back(Token{NUMBER, num, line});
+                tokens.push_back(Token{NUMBER, num, line, startColumn});
             }
             else if(std::isalpha(t))
             {
                 std::string ident;
+                int startColumn = column;
                 while(!src.empty() && (std::isalpha(src[0]) || std::isdigit(src[0]) || src[0] == '_'))
                 {
                     ident += src[0];
@@ -273,11 +359,11 @@ std::vector<Token> Lexer::Tokenize(std::string source){
 
                 if(KEYWORDS.find(ident) != KEYWORDS.end()) //identifier is a keyword
                 {
-                    tokens.push_back(Token{KEYWORDS.at(ident), ident, line});
+                    tokens.push_back(Token{KEYWORDS.at(ident), ident, line, startColumn});
                 }
                 else
                 {
-                    tokens.push_back(Token{IDENTIFIER, ident, line});
+                    tokens.push_back(Token{IDENTIFIER, ident, line, startColumn});
                 }
 
             }
@@ -287,7 +373,10 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             else
             {
-
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "Lexer Error",
+                        "Unknown token '" + std::string(1, t) + "'", "");
+                }
                 throw std::runtime_error("LEXER: Unknown Token: '" + std::string(1, t) + "'");
             }
 
@@ -310,7 +399,27 @@ bool Lexer::matchOn(char expected)
 void Lexer::advance(int by)
 {
     for (int i = 0; i < by; ++i) {
-        src.erase(src.begin());
+        if (!src.empty()) {
+            char c = src[0];
+            src.erase(src.begin());
+            
+            // Update column and line counters
+            if (c == '\n') {
+                line++;
+                column = 1;
+            } else if (c == '\r') {
+                // Handle \r\n sequence
+                if (!src.empty() && src[0] == '\n') {
+                    src.erase(src.begin());
+                    line++;
+                    column = 1;
+                } else {
+                    column++;
+                }
+            } else {
+                column++;
+            }
+        }
     }
 }
 

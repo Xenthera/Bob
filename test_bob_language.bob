@@ -756,7 +756,7 @@ assert(hex3 == 4294967295, "Hex FFFFFFFF should be 4294967295");
 var add_num = 5 + 3;
 var sub_num = 10 - 4;
 var mul_num = 6 * 7;
-var div_num = 15 / 3;
+var div_num = 15 /* 3;
 assert(add_num == 8, "5 + 3 should be 8");
 assert(sub_num == 6, "10 - 4 should be 6");
 assert(mul_num == 42, "6 * 7 should be 42");
@@ -1125,6 +1125,416 @@ assert(deepFactorial(10) == 3628800, "deepFactorial(10) should be 3628800");
 print("✓ Recursion working");
 
 // ========================================
+// TEST 39: LOGICAL OPERATORS (&&, ||, !)
+// ========================================
+print("\n--- Test 39: Logical Operators ---");
+
+// Test logical AND (&&)
+assert(5 && 3 == 3, "5 && 3 should return 3 (truthy && truthy = second value)");
+assert(0 && 5 == 0, "0 && 5 should return 0 (falsy && truthy = first value)");
+assert(5 && 0 == 0, "5 && 0 should return 0 (truthy && falsy = second value)");
+assert(0 && 0 == 0, "0 && 0 should return 0 (falsy && falsy = first value)");
+
+// Test logical OR (||)
+assert(5 || 3 == 5, "5 || 3 should return 5 (truthy || truthy = first value)");
+assert(0 || 5 == 5, "0 || 5 should return 5 (falsy || truthy = second value)");
+assert(5 || 0 == 5, "5 || 0 should return 5 (truthy || falsy = first value)");
+assert(0 || 0 == 0, "0 || 0 should return 0 (falsy || falsy = second value)");
+
+// Test logical NOT (!)
+assert(!0 == true, "!0 should be true");
+assert(!1 == false, "!1 should be false");
+assert(!5 == false, "!5 should be false");
+assert(!true == false, "!true should be false");
+assert(!false == true, "!false should be true");
+
+// Test short-circuit evaluation
+var short_circuit_test = 0;
+func sideEffect() {
+    short_circuit_test = 1;
+    return 5;
+}
+
+// Test that short-circuit evaluation works correctly
+// Note: We can't easily test side effects in Bob, so we test the return values instead
+var result_short1 = 0 && 5;
+assert(result_short1 == 0, "0 && 5 should return 0 (short-circuit)");
+
+var result_short2 = 1 && 5;
+assert(result_short2 == 5, "1 && 5 should return 5 (no short-circuit)");
+
+var result_short3 = 1 || 5;
+assert(result_short3 == 1, "1 || 5 should return 1 (short-circuit)");
+
+var result_short4 = 0 || 5;
+assert(result_short4 == 5, "0 || 5 should return 5 (no short-circuit)");
+
+// Test complex logical expressions
+assert((5 > 3) && (10 < 20) == true, "Complex AND with comparisons");
+assert((5 < 3) || (10 < 20) == true, "Complex OR with comparisons");
+assert(!(5 < 3) == true, "Complex NOT with comparison");
+
+// Test truthiness rules
+assert("hello" && "world" == "world", "String && string should return second string");
+assert("" && "world" == "", "Empty string && string should return empty string");
+assert("hello" || "world" == "hello", "String || string should return first string");
+assert("" || "world" == "world", "Empty string || string should return second string");
+
+print("✓ Logical operators working");
+
+// ========================================
+// TEST 40: BITWISE OPERATORS (&, |, ^, <<, >>, ~)
+// ========================================
+print("\n--- Test 40: Bitwise Operators ---");
+
+// Test bitwise AND (&)
+assert(10 & 3 == 2, "10 & 3 should be 2 (1010 & 0011 = 0010)");
+assert(15 & 7 == 7, "15 & 7 should be 7 (1111 & 0111 = 0111)");
+assert(255 & 128 == 128, "255 & 128 should be 128");
+
+// Test bitwise OR (|)
+assert(10 | 3 == 11, "10 | 3 should be 11 (1010 | 0011 = 1011)");
+assert(5 | 10 == 15, "5 | 10 should be 15 (0101 | 1010 = 1111)");
+assert(128 | 64 == 192, "128 | 64 should be 192");
+
+// Test bitwise XOR (^)
+assert(10 ^ 3 == 9, "10 ^ 3 should be 9 (1010 ^ 0011 = 1001)");
+assert(15 ^ 7 == 8, "15 ^ 7 should be 8 (1111 ^ 0111 = 1000)");
+assert(255 ^ 128 == 127, "255 ^ 128 should be 127");
+
+// Test left shift (<<)
+assert(5 << 1 == 10, "5 << 1 should be 10 (0101 << 1 = 1010)");
+assert(3 << 2 == 12, "3 << 2 should be 12 (0011 << 2 = 1100)");
+assert(1 << 8 == 256, "1 << 8 should be 256");
+
+// Test right shift (>>)
+assert(10 >> 1 == 5, "10 >> 1 should be 5 (1010 >> 1 = 0101)");
+assert(20 >> 2 == 5, "20 >> 2 should be 5 (10100 >> 2 = 00101)");
+assert(256 >> 8 == 1, "256 >> 8 should be 1");
+
+// Test bitwise NOT (~)
+assert(~10 == -11, "~10 should be -11");
+assert(~0 == -1, "~0 should be -1");
+assert(~(-1) == 0, "~(-1) should be 0");
+
+// Test complex bitwise expressions
+assert((10 & 3) | (5 & 2) == 2, "Complex bitwise expression 1");
+assert((15 << 1) >> 1 == 15, "Complex bitwise expression 2");
+assert(~(10 & 5) == -1, "Complex bitwise expression 3");
+
+// Test edge cases
+assert(0 & 0 == 0, "0 & 0 should be 0");
+assert(0 | 0 == 0, "0 | 0 should be 0");
+assert(0 ^ 0 == 0, "0 ^ 0 should be 0");
+assert(0 << 5 == 0, "0 << 5 should be 0");
+assert(0 >> 5 == 0, "0 >> 5 should be 0");
+assert(~0 == -1, "~0 should be -1");
+
+print("✓ Bitwise operators working");
+
+// ========================================
+// TEST 41: COMPOUND ASSIGNMENT OPERATORS
+// ========================================
+print("\n--- Test 41: Compound Assignment Operators ---");
+
+// Test arithmetic compound assignment
+var comp_x = 10;
+comp_x += 5;
+assert(comp_x == 15, "comp_x += 5 should make comp_x = 15");
+
+comp_x -= 3;
+assert(comp_x == 12, "comp_x -= 3 should make comp_x = 12");
+
+comp_x *= 2;
+assert(comp_x == 24, "comp_x *= 2 should make comp_x = 24");
+
+comp_x /= 4;
+assert(comp_x == 6, "comp_x /= 4 should make comp_x = 6");
+
+comp_x %= 4;
+assert(comp_x == 2, "comp_x %= 4 should make comp_x = 2");
+
+// Test bitwise compound assignment
+var comp_y = 15;
+comp_y &= 7;
+assert(comp_y == 7, "comp_y &= 7 should make comp_y = 7");
+
+comp_y |= 8;
+assert(comp_y == 15, "comp_y |= 8 should make comp_y = 15");
+
+comp_y ^= 4;
+assert(comp_y == 11, "comp_y ^= 4 should make comp_y = 11");
+
+comp_y <<= 1;
+assert(comp_y == 22, "comp_y <<= 1 should make comp_y = 22");
+
+comp_y >>= 2;
+assert(comp_y == 5, "comp_y >>= 2 should make comp_y = 5");
+
+// Test compound assignment with expressions
+var comp_z = 10;
+comp_z += 2 + 3;
+assert(comp_z == 15, "comp_z += 2 + 3 should make comp_z = 15");
+
+comp_z *= 2 + 1;
+assert(comp_z == 45, "comp_z *= 2 + 1 should make comp_z = 45");
+
+// Test compound assignment with variables
+var comp_a = 5;
+var comp_b = 3;
+comp_a += comp_b;
+assert(comp_a == 8, "comp_a += comp_b should make comp_a = 8");
+
+comp_a *= comp_b;
+assert(comp_a == 24, "comp_a *= comp_b should make comp_a = 24");
+
+print("✓ Compound assignment operators working");
+
+// ========================================
+// TEST 42: ANONYMOUS FUNCTIONS
+// ========================================
+print("\n--- Test 42: Anonymous Functions ---");
+
+// Test basic anonymous function
+var anonymous1 = func() {
+    return 42;
+};
+assert(anonymous1() == 42, "Basic anonymous function should return 42");
+
+// Test anonymous function with parameters
+var anonymous2 = func(x, y) {
+    return x + y;
+};
+assert(anonymous2(5, 3) == 8, "Anonymous function with parameters should work");
+
+// Test anonymous function with string operations
+var anonymous3 = func(name) {
+    return "Hello, " + name + "!";
+};
+assert(anonymous3("Bob") == "Hello, Bob!", "Anonymous function with strings should work");
+
+// Test anonymous function with conditionals
+var anonymous4 = func(x) {
+    if (x > 0) {
+        return "positive";
+    } else {
+        return "non-positive";
+    }
+};
+assert(anonymous4(5) == "positive", "Anonymous function with conditionals should work");
+assert(anonymous4(-3) == "non-positive", "Anonymous function with conditionals should work");
+
+// Test anonymous function composition
+var compose = func(f, g, x) {
+    return f(g(x));
+};
+
+var double = func(x) {
+    return x * 2;
+};
+
+var addOne = func(x) {
+    return x + 1;
+};
+
+var result_comp = compose(double, addOne, 5);
+assert(result_comp == 12, "Anonymous function composition should work");
+
+// Test anonymous function as return value
+func createMultiplier(factor) {
+    return func(x) {
+        return x * factor;
+    };
+}
+
+var multiplyBy3 = createMultiplier(3);
+assert(multiplyBy3(4) == 12, "Anonymous function as return value should work");
+
+// Test anonymous function with closure
+func createCounter() {
+    var count = 0;
+    return func() {
+        count = count + 1;
+        return count;
+    };
+}
+
+var counter1 = createCounter();
+var counter2 = createCounter();
+
+assert(counter1() == 1, "Anonymous function closure should work");
+assert(counter1() == 2, "Anonymous function closure should maintain state");
+assert(counter2() == 1, "Different anonymous function instances should have separate state");
+
+print("✓ Anonymous functions working");
+
+// ========================================
+// TEST 43: FUNCTIONS RETURNING FUNCTIONS
+// ========================================
+print("\n--- Test 43: Functions Returning Functions ---");
+
+// Test basic function returning function
+func createAdder(x) {
+    return func(y) {
+        return x + y;
+    };
+}
+
+var add5 = createAdder(5);
+assert(add5(3) == 8, "Function returning function should work");
+
+// Test function returning multiple functions
+func createMathOps() {
+    return func(x, y) {
+        return x + y;
+    };
+}
+
+var mathFunc = createMathOps();
+assert(mathFunc(10, 20) == 30, "Function returning math function should work");
+
+// Test function returning function with closure
+func createGreeter(greeting) {
+    return func(name) {
+        return greeting + ", " + name + "!";
+    };
+}
+
+var helloGreeter = createGreeter("Hello");
+var hiGreeter = createGreeter("Hi");
+
+assert(helloGreeter("Alice") == "Hello, Alice!", "Greeter function should work");
+assert(hiGreeter("Bob") == "Hi, Bob!", "Different greeter should work");
+
+// Test nested function returning functions
+func createCalculator() {
+    return func(operation) {
+        if (operation == "add") {
+            return func(x, y) {
+                return x + y;
+            };
+        } else if (operation == "multiply") {
+            return func(x, y) {
+                return x * y;
+            };
+        } else {
+            return func(x, y) {
+                return x - y;
+            };
+        }
+    };
+}
+
+var calculator = createCalculator();
+var addFunc = calculator("add");
+var multiplyFunc = calculator("multiply");
+
+assert(addFunc(5, 3) == 8, "Calculator add function should work");
+assert(multiplyFunc(4, 6) == 24, "Calculator multiply function should work");
+
+// Test function returning function with complex logic
+func createValidator(rule) {
+    return func(value) {
+        if (rule == "positive") {
+            return value > 0;
+        } else if (rule == "even") {
+            return value % 2 == 0;
+        } else if (rule == "string") {
+            return type(value) == "string";
+        } else {
+            return false;
+        }
+    };
+}
+
+var positiveValidator = createValidator("positive");
+var evenValidator = createValidator("even");
+var stringValidator = createValidator("string");
+
+assert(positiveValidator(5) == true, "Positive validator should work");
+assert(positiveValidator(-3) == false, "Positive validator should work");
+assert(evenValidator(4) == true, "Even validator should work");
+assert(evenValidator(7) == false, "Even validator should work");
+assert(stringValidator("hello") == true, "String validator should work");
+assert(stringValidator(42) == false, "String validator should work");
+
+print("✓ Functions returning functions working");
+
+// ========================================
+// TEST 44: COMPREHENSIVE OPERATOR PRECEDENCE
+// ========================================
+print("\n--- Test 44: Operator Precedence ---");
+
+// Test logical operator precedence
+assert(5 && 3 || 0 == 3, "&& should have higher precedence than ||");
+assert(0 || 5 && 3 == 3, "&& should have higher precedence than ||");
+
+// Test bitwise operator precedence
+assert(10 & 3 | 5 == 7, "& should have higher precedence than |");
+assert(10 | 3 & 5 == 11, "& should have higher precedence than |");
+
+// Test shift operator precedence
+assert(10 << 1 + 2 == 80, "Shift should have higher precedence than addition");
+assert(10 + 1 << 2 == 44, "Addition should have higher precedence than shift");
+
+// Test arithmetic operator precedence
+assert(2 + 3 * 4 == 14, "Multiplication should have higher precedence than addition");
+assert(10 - 4 / 2 == 8, "Division should have higher precedence than subtraction");
+
+// Test complex precedence
+assert(5 && 3 | 2 << 1 == 7, "Complex precedence test 1");
+assert((5 && 3) | (2 << 1) == 7, "Complex precedence test 2");
+
+print("✓ Operator precedence working");
+
+// ========================================
+// TEST 45: EDGE CASES FOR NEW OPERATORS
+// ========================================
+print("\n--- Test 45: Edge Cases for New Operators ---");
+
+// Test logical operators with edge cases
+assert(0 && 0 == 0, "0 && 0 should be 0");
+assert(0 || 0 == 0, "0 || 0 should be 0");
+assert(!0 == true, "!0 should be true");
+assert(!1 == false, "!1 should be false");
+
+// Test bitwise operators with edge cases
+assert(0 & 0 == 0, "0 & 0 should be 0");
+assert(0 | 0 == 0, "0 | 0 should be 0");
+assert(0 ^ 0 == 0, "0 ^ 0 should be 0");
+assert(0 << 5 == 0, "0 << 5 should be 0");
+assert(0 >> 5 == 0, "0 >> 5 should be 0");
+assert(~0 == -1, "~0 should be -1");
+
+// Test compound assignment with edge cases
+var edge_x = 0;
+edge_x += 5;
+assert(edge_x == 5, "0 += 5 should be 5");
+
+edge_x -= 10;
+assert(edge_x == -5, "5 -= 10 should be -5");
+
+edge_x *= 0;
+assert(edge_x == 0, "-5 *= 0 should be 0");
+
+// Test anonymous functions with edge cases
+var edge_func = func() {
+    return none;
+};
+assert(type(edge_func()) == "none", "Anonymous function returning none should work");
+
+var edge_func2 = func(x) {
+    if (x == 0) {
+        return 0;
+    } else {
+        return edge_func2(x - 1) + 1;
+    }
+};
+assert(edge_func2(3) == 3, "Recursive anonymous function should work");
+
+print("✓ Edge cases for new operators working");
+
+// ========================================
 // FINAL SUMMARY
 // ========================================
 print("\n=== COMPREHENSIVE TEST SUMMARY ===");
@@ -1176,7 +1586,14 @@ print("- toString function (universal string conversion)");
 print("- Enhanced print function (works with all object types)");
 print("- Redefinable functions (including built-in function override)");
 print("- Recursion (factorial, fibonacci, mutual recursion, deep recursion)");
+print("- NEW: Logical operators (&&, ||, !) with short-circuit evaluation");
+print("- NEW: Bitwise operators (&, |, ^, <<, >>, ~)");
+print("- NEW: Compound assignment operators (+=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=)");
+print("- NEW: Anonymous functions (func(...) { ... })");
+print("- NEW: Functions returning functions");
+print("- NEW: Operator precedence for all new operators");
+print("- NEW: Edge cases for all new operators");
 
 print("\n🎉 ALL TESTS PASSED! 🎉");
 print("Bob language is working correctly!");
-print("Ready for next phase: Control Flow (if statements, while loops)"); 
+print("Ready for next phase: Control Flow (while loops, data structures)"); 

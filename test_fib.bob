@@ -10,3 +10,6 @@ print("Fibonacci test:");
 var fib_result = fib(30);
 
 print("Result: " + fib_result);
+
+
+print(10 / 0);

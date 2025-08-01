@@ -1,0 +1,51 @@
+#include "../headers/Environment.h"
+#include "../headers/ErrorReporter.h"
+
+void Environment::assign(const Token& name, const Value& value) {
+    auto it = variables.find(name.lexeme);
+    if (it != variables.end()) {
+        it->second = value;
+        return;
+    }
+    
+    if (parent != nullptr) {
+        parent->assign(name, value);
+        return;
+    }
+    
+    if (errorReporter) {
+        errorReporter->reportError(name.line, name.column, "Runtime Error", 
+            "Undefined variable '" + name.lexeme + "'", "");
+    }
+    throw std::runtime_error("Undefined variable '" + name.lexeme + "'");
+}
+
+Value Environment::get(const Token& name) {
+    auto it = variables.find(name.lexeme);
+    if (it != variables.end()) {
+        return it->second;
+    }
+    
+    if (parent != nullptr) {
+        return parent->get(name);
+    }
+    
+    if (errorReporter) {
+        errorReporter->reportError(name.line, name.column, "Runtime Error", 
+            "Undefined variable '" + name.lexeme + "'", "");
+    }
+    throw std::runtime_error("Undefined variable '" + name.lexeme + "'");
+}
+
+Value Environment::get(const std::string& name) {
+    auto it = variables.find(name);
+    if (it != variables.end()) {
+        return it->second;
+    }
+    
+    if (parent != nullptr) {
+        return parent->get(name);
+    }
+    
+    throw std::runtime_error("Undefined variable '" + name + "'");
+} 

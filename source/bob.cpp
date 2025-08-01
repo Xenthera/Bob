@@ -20,6 +20,12 @@ void Bob::runFile(const string& path)
         return;
     }
 
+    // Load source code into error reporter for context
+    errorReporter.loadSource(source, path);
+    
+    // Connect error reporter to interpreter
+    interpreter->setErrorReporter(&errorReporter);
+    
     this->run(source);
 }
 
@@ -39,42 +45,49 @@ void Bob::runPrompt()
             break;
         }
 
+        // Load source code into error reporter for context
+        errorReporter.loadSource(line, "REPL");
+        
+        // Connect error reporter to interpreter
+        interpreter->setErrorReporter(&errorReporter);
+        
         this->run(line);
-        hadError = false;
     }
-}
-
-void Bob::error(int line, const string& message)
-{
-
 }
 
 void Bob::run(string source)
 {
     try {
+        // Connect error reporter to lexer
+        lexer.setErrorReporter(&errorReporter);
+        
         vector<Token> tokens = lexer.Tokenize(std::move(source));
         Parser p(tokens);
+        
+        // Connect error reporter to parser
+        p.setErrorReporter(&errorReporter);
+        
         vector<sptr(Stmt)> statements = p.parse();
         interpreter->interpret(statements);
     }
     catch(std::exception &e)
     {
-        cout << "ERROR OCCURRED: " << e.what() << endl;
+        // Only suppress errors that have already been reported by the error reporter
+        if (errorReporter.hasReportedError()) {
+            return;
+        }
+        
+        // For errors that weren't reported (like parser errors, undefined variables, etc.)
+        // print them normally
+        std::cout << "Error: " << e.what() << std::endl;
         return;
     }
     catch(...)
     {
-        cout << "UNKNOWN ERROR OCCURRED" << endl;
+        // Unknown error - report it since it wasn't handled by the interpreter
+        errorReporter.reportError(0, 0, "Unknown Error", "An unknown error occurred");
         return;
     }
-
-
-
-}
-
-void Bob::report(int line, string where, string message)
-{
-    hadError = true;
 }
 
 

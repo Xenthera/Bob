@@ -57,9 +57,9 @@ struct Function : public Object
 struct BuiltinFunction : public Object
 {
     const std::string name;
-    const std::function<Value(std::vector<Value>)> func;
+    const std::function<Value(std::vector<Value>, int, int)> func;
     
-    BuiltinFunction(std::string name, std::function<Value(std::vector<Value>)> func)
+    BuiltinFunction(std::string name, std::function<Value(std::vector<Value>, int, int)> func)
         : name(name), func(func) {}
 };
 
