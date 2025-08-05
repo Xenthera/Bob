@@ -24,6 +24,10 @@ struct ReturnContext {
     ReturnContext() : returnValue(NONE_VALUE), hasReturn(false) {}
 };
 
+// Trampoline-based tail call optimization - no exceptions needed
+
+
+
 
 Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
     if(expr->isNull) return NONE_VALUE;
@@ -596,27 +600,65 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
                                    " arguments but got " + std::to_string(arguments.size()) + ".");
         }
         
-        auto previousEnv = environment;
-        environment = std::make_shared<Environment>(function->closure);
-        environment->setErrorReporter(errorReporter);
-        
-        for (size_t i = 0; i < function->params.size(); i++) {
-            environment->define(function->params[i], arguments[i]);
-        }
-        
-        ExecutionContext context;
-        context.isFunctionBody = true;
-        
-        for (const auto& stmt : function->body) {
-            execute(stmt, &context);
-            if (context.hasReturn) {
+        // Check if this is a tail call
+        if (expression->isTailCall) {
+            // Create a thunk for tail call optimization
+            auto thunk = new Thunk([this, function, arguments]() -> Value {
+                // Set up the environment for the tail call
+                auto previousEnv = environment;
+                environment = std::make_shared<Environment>(function->closure);
+                environment->setErrorReporter(errorReporter);
+                
+                for (size_t i = 0; i < function->params.size(); i++) {
+                    environment->define(function->params[i], arguments[i]);
+                }
+                
+                ExecutionContext context;
+                context.isFunctionBody = true;
+                
+                // Use RAII to manage thunk execution flag
+                ScopedThunkFlag _inThunk(inThunkExecution);
+                
+                // Execute function body
+                for (const auto& stmt : function->body) {
+                    execute(stmt, &context);
+                    if (context.hasReturn) {
+                        environment = previousEnv;
+                        return context.returnValue;
+                    }
+                }
+                
                 environment = previousEnv;
                 return context.returnValue;
+            });
+            
+            // Return the thunk as a Value
+            return Value(thunk);
+        } else {
+            // Normal function call - create new environment
+            auto previousEnv = environment;
+            environment = std::make_shared<Environment>(function->closure);
+            environment->setErrorReporter(errorReporter);
+            
+            for (size_t i = 0; i < function->params.size(); i++) {
+                environment->define(function->params[i], arguments[i]);
             }
+            
+            ExecutionContext context;
+            context.isFunctionBody = true;
+            
+            // Execute function body
+            for (const auto& stmt : function->body) {
+                execute(stmt, &context);
+                if (context.hasReturn) {
+                    environment = previousEnv;
+                    return context.returnValue;
+                }
+            }
+            
+            environment = previousEnv;
+            return context.returnValue;
         }
-        
-        environment = previousEnv;
-        return context.returnValue;
     }
     
     throw std::runtime_error("Can only call functions and classes.");
@@ -682,6 +724,8 @@ void Interpreter::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, 
 {
     Value value = NONE_VALUE;
     if (statement->value != nullptr) {
+        // For tail calls, the trampoline handling is done in visitCallExpr
+        // We just need to evaluate normally
         value = evaluate(statement->value);
     }
     
@@ -731,7 +775,26 @@ void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt> > statements, s
 }
 
 Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
+    Value result = expr->accept(this);
+    if (inThunkExecution) {
+        return result; // Don't use trampoline when inside a thunk
+    }
+    return runTrampoline(result);
+}
+
+Value Interpreter::evaluateWithoutTrampoline(const std::shared_ptr<Expr>& expr) {
     return expr->accept(this);
+}
+
+Value Interpreter::runTrampoline(Value initialResult) {
+    Value current = initialResult;
+    
+    while (current.isThunk()) {
+        // Execute the thunk to get the next result
+        current = current.asThunk()->execute();
+    }
+    
+    return current;
 }
 
 bool Interpreter::isTruthy(Value object) {

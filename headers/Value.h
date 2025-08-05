@@ -11,6 +11,7 @@
 class Environment;
 class Function;
 class BuiltinFunction;
+class Thunk;
 
 // Type tags for the Value union
 enum ValueType {
@@ -19,7 +20,8 @@ enum ValueType {
     VAL_BOOLEAN,
     VAL_STRING,
     VAL_FUNCTION,
-    VAL_BUILTIN_FUNCTION
+    VAL_BUILTIN_FUNCTION,
+    VAL_THUNK
 };
 
 // Tagged value system (like Lua) - no heap allocation for simple values
@@ -29,6 +31,7 @@ struct Value {
         bool boolean;
         Function* function;
         BuiltinFunction* builtin_function;
+        Thunk* thunk;
     };
     ValueType type;
     std::string string_value; // Store strings outside the union for safety
@@ -42,6 +45,7 @@ struct Value {
     Value(std::string&& s) : type(ValueType::VAL_STRING), string_value(std::move(s)) {}
     Value(Function* f) : function(f), type(ValueType::VAL_FUNCTION) {}
     Value(BuiltinFunction* bf) : builtin_function(bf), type(ValueType::VAL_BUILTIN_FUNCTION) {}
+    Value(Thunk* t) : thunk(t), type(ValueType::VAL_THUNK) {}
 
     // Move constructor
     Value(Value&& other) noexcept 
@@ -94,6 +98,7 @@ struct Value {
     inline bool isString() const { return type == ValueType::VAL_STRING; }
     inline bool isFunction() const { return type == ValueType::VAL_FUNCTION; }
     inline bool isBuiltinFunction() const { return type == ValueType::VAL_BUILTIN_FUNCTION; }
+    inline bool isThunk() const { return type == ValueType::VAL_THUNK; }
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
 
     // Value extraction (safe, with type checking) - inline for performance
@@ -102,6 +107,7 @@ struct Value {
     inline const std::string& asString() const { return string_value; }
     inline Function* asFunction() const { return isFunction() ? function : nullptr; }
     inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function : nullptr; }
+    inline Thunk* asThunk() const { return isThunk() ? thunk : nullptr; }
 
     // Truthiness check - inline for performance
     inline bool isTruthy() const {
@@ -112,6 +118,7 @@ struct Value {
             case ValueType::VAL_STRING: return !string_value.empty();
             case ValueType::VAL_FUNCTION: return function != nullptr;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function != nullptr;
+            case ValueType::VAL_THUNK: return thunk != nullptr;
             default: return false;
         }
     }
@@ -127,6 +134,7 @@ struct Value {
             case ValueType::VAL_STRING: return string_value == other.string_value;
             case ValueType::VAL_FUNCTION: return function == other.function;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function == other.builtin_function;
+            case ValueType::VAL_THUNK: return thunk == other.thunk;
             default: return false;
         }
     }
@@ -151,6 +159,7 @@ struct Value {
             case ValueType::VAL_STRING: return string_value;
             case ValueType::VAL_FUNCTION: return "<function>";
             case ValueType::VAL_BUILTIN_FUNCTION: return "<builtin_function>";
+            case ValueType::VAL_THUNK: return "<thunk>";
             default: return "unknown";
         }
     }

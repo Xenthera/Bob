@@ -12,6 +12,38 @@
 #include <memory>
 #include <unordered_map>
 #include <stack>
+#include <optional>
+#include <functional>
+
+// Forward declaration
+class Interpreter;
+
+// RAII helper for thunk execution flag
+struct ScopedThunkFlag {
+    bool& flag;
+    bool prev;
+    ScopedThunkFlag(bool& f) : flag(f), prev(f) { flag = true; }
+    ~ScopedThunkFlag() { flag = prev; }
+};
+
+// Thunk class for trampoline-based tail call optimization
+class Thunk {
+public:
+    using ThunkFunction = std::function<Value()>;
+    
+    explicit Thunk(ThunkFunction func) : func(std::move(func)) {}
+    
+    Value execute() const {
+        return func();
+    }
+    
+    bool isThunk() const { return true; }
+    
+private:
+    ThunkFunction func;
+};
+
+
 
 class Interpreter : public ExprVisitor, public StmtVisitor {
 
@@ -46,13 +78,20 @@ private:
     std::vector<std::shared_ptr<BuiltinFunction> > builtinFunctions;
     std::vector<std::shared_ptr<Function> > functions;
     ErrorReporter* errorReporter;
+    bool inThunkExecution = false;
+    
+
     
     Value evaluate(const std::shared_ptr<Expr>& expr);
+    Value evaluateWithoutTrampoline(const std::shared_ptr<Expr>& expr);
     bool isEqual(Value a, Value b);
     bool isWholeNumer(double num);
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context = nullptr);
     void executeBlock(std::vector<std::shared_ptr<Stmt> > statements, std::shared_ptr<Environment> env, ExecutionContext* context = nullptr);
     void addStdLibFunctions();
+    
+    // Trampoline execution
+    Value runTrampoline(Value initialResult);
     
 public:
     bool isTruthy(Value object);
