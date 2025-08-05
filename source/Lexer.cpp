@@ -421,7 +421,7 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         }
         
     }
-    tokens.push_back({END_OF_FILE, "eof", line});
+    tokens.push_back({END_OF_FILE, "eof", line, column});
     return tokens;
 }
 

@@ -13,7 +13,7 @@ class Function;
 class BuiltinFunction;
 
 // Type tags for the Value union
-enum ValueType : uint8_t {
+enum ValueType {
     VAL_NONE,
     VAL_NUMBER,
     VAL_BOOLEAN,

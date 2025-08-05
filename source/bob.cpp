@@ -33,7 +33,7 @@ void Bob::runPrompt()
 {
     this->interpreter = msptr(Interpreter)(true);
 
-    cout << "Bob v" << VERSION << ", 2023" << endl;
+    cout << "Bob v" << VERSION << ", 2025" << endl;
     for(;;)
     {
         string line;
