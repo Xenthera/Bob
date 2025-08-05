@@ -24,9 +24,6 @@ struct ReturnContext {
     ReturnContext() : returnValue(NONE_VALUE), hasReturn(false) {}
 };
 
-static ReturnContext g_returnContext;
-
-
 
 Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
     if(expr->isNull) return NONE_VALUE;
@@ -191,7 +188,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
         double right_num = right.asNumber();
         
         switch (expression->oper.type) {
-            case PLUS: return Value(left_string + stringify(right));
+            case PLUS: return left + right;
             case STAR: {
                 if (!isWholeNumer(right_num)) {
                     if (errorReporter) {
@@ -214,7 +211,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
         std::string right_string = right.asString();
         
         switch (expression->oper.type) {
-            case PLUS: return Value(stringify(left) + right_string);
+            case PLUS: return left + right;
             case STAR: {
                 if (!isWholeNumer(left_num)) {
                     if (errorReporter) {
@@ -251,7 +248,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
         std::string right_string = right.asString();
         
         switch (expression->oper.type) {
-            case PLUS: return Value(stringify(left) + right_string);
+            case PLUS: return left + right;
         }
     }
 
@@ -260,7 +257,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
         bool right_bool = right.asBoolean();
         
         switch (expression->oper.type) {
-            case PLUS: return Value(left_string + stringify(right));
+            case PLUS: return left + right;
         }
     }
 
@@ -327,7 +324,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
                     return right; // Return the second value
                 }
             }
-            case PLUS: return Value(left.asString() + stringify(right));
+            case PLUS: return left + right;
         }
     }
 
@@ -349,7 +346,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
                     return right; // Return the second value
                 }
             }
-            case PLUS: return Value(stringify(left) + right.asString());
+            case PLUS: return left + right;
         }
     }
 
@@ -371,7 +368,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
                     return right; // Return the second value
                 }
             }
-            case PLUS: return Value(left.asString() + stringify(right));
+            case PLUS: return left + right;
             case STAR: {
                 if (!isWholeNumer(right_num)) {
                     if (errorReporter) {
@@ -407,7 +404,7 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
                     return right; // Return the second value
                 }
             }
-            case PLUS: return Value(stringify(left) + right.asString());
+            case PLUS: return left + right;
             case STAR: {
                 if (!isWholeNumer(left_num)) {
                     if (errorReporter) {
@@ -429,13 +426,26 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
         std::string right_string = right.asString();
         
         switch (expression->oper.type) {
-            case PLUS: return Value("none" + right_string);
+            case PLUS: return left + right;
         }
         if (errorReporter) {
             errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
                 "Cannot use '" + expression->oper.lexeme + "' on none and a string", expression->oper.lexeme);
         }
         throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on none and a string");
+    }
+    
+    if (left.isString() && right.isNone()) {
+        std::string left_string = left.asString();
+        
+        switch (expression->oper.type) {
+            case PLUS: return left + right;
+        }
+        if (errorReporter) {
+            errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
+                "Cannot use '" + expression->oper.lexeme + "' on a string and none", expression->oper.lexeme);
+        }
+        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and none");
     }
     else
     {
@@ -450,6 +460,53 @@ Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression
 Value Interpreter::visitVarExpr(const std::shared_ptr<VarExpr>& expression)
 {
     return environment->get(expression->name);
+}
+
+Value Interpreter::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expression) {
+    // Get the current value of the operand
+    Value currentValue = evaluate(expression->operand);
+    
+    if (!currentValue.isNumber()) {
+        if (errorReporter) {
+            errorReporter->reportError(expression->oper.line, expression->oper.column, 
+                "Runtime Error", "Increment/decrement can only be applied to numbers.", "");
+        }
+        throw std::runtime_error("Increment/decrement can only be applied to numbers.");
+    }
+    
+    double currentNum = currentValue.asNumber();
+    double newValue;
+    
+    // Determine the operation based on the operator
+    if (expression->oper.type == PLUS_PLUS) {
+        newValue = currentNum + 1.0;
+    } else if (expression->oper.type == MINUS_MINUS) {
+        newValue = currentNum - 1.0;
+    } else {
+        if (errorReporter) {
+            errorReporter->reportError(expression->oper.line, expression->oper.column, 
+                "Runtime Error", "Invalid increment/decrement operator.", "");
+        }
+        throw std::runtime_error("Invalid increment/decrement operator.");
+    }
+    
+    // Update the variable if it's a variable expression
+    if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(expression->operand)) {
+        environment->assign(varExpr->name, Value(newValue));
+    } else {
+        if (errorReporter) {
+            errorReporter->reportError(expression->oper.line, expression->oper.column, 
+                "Runtime Error", "Increment/decrement can only be applied to variables.", "");
+        }
+        throw std::runtime_error("Increment/decrement can only be applied to variables.");
+    }
+    
+    // Return the appropriate value based on prefix/postfix
+    if (expression->isPrefix) {
+        return Value(newValue);  // Prefix: return new value
+    } else {
+        return currentValue;     // Postfix: return old value
+    }
 }
 
 void Interpreter::addStdLibFunctions() {
@@ -547,22 +604,19 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
             environment->define(function->params[i], arguments[i]);
         }
         
-        Value returnValue = NONE_VALUE;
+        ExecutionContext context;
+        context.isFunctionBody = true;
         
         for (const auto& stmt : function->body) {
-            // Reset return context for each statement
-            g_returnContext.hasReturn = false;
-            g_returnContext.returnValue = NONE_VALUE;
-            
-            execute(stmt);
-            if (g_returnContext.hasReturn) {
-                returnValue = g_returnContext.returnValue;
-                break;
+            execute(stmt, &context);
+            if (context.hasReturn) {
+                environment = previousEnv;
+                return context.returnValue;
             }
         }
         
         environment = previousEnv;
-        return returnValue;
+        return context.returnValue;
     }
     
     throw std::runtime_error("Can only call functions and classes.");
@@ -580,13 +634,13 @@ Value Interpreter::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expres
     return Value(function.get());
 }
 
-void Interpreter::visitBlockStmt(const std::shared_ptr<BlockStmt>& statement) {
+void Interpreter::visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, ExecutionContext* context) {
     auto newEnv = std::make_shared<Environment>(environment);
     newEnv->setErrorReporter(errorReporter);
-    executeBlock(statement->statements, newEnv);
+    executeBlock(statement->statements, newEnv, context);
 }
 
-void Interpreter::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement) {
+void Interpreter::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context) {
     Value value = evaluate(statement->expression);
 
     if(IsInteractive)
@@ -595,7 +649,7 @@ void Interpreter::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& sta
 
 
 
-void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement)
+void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement, ExecutionContext* context)
 {
     Value value = NONE_VALUE;
     if(statement->initializer != nullptr)
@@ -608,7 +662,7 @@ void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement)
     environment->define(statement->name.lexeme, value);
 }
 
-void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement)
+void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement, ExecutionContext* context)
 {
     // Convert Token parameters to string parameters
     std::vector<std::string> paramNames;
@@ -624,46 +678,53 @@ void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& stateme
     environment->define(statement->name.lexeme, Value(function.get()));
 }
 
-void Interpreter::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement)
+void Interpreter::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context)
 {
     Value value = NONE_VALUE;
     if (statement->value != nullptr) {
         value = evaluate(statement->value);
     }
     
-    g_returnContext.hasReturn = true;
-    g_returnContext.returnValue = value;
+    if (context && context->isFunctionBody) {
+        context->hasReturn = true;
+        context->returnValue = value;
+    }
+    // If no context or not in function body, this is a top-level return (ignored)
 }
 
-void Interpreter::visitIfStmt(const std::shared_ptr<IfStmt>& statement)
+void Interpreter::visitIfStmt(const std::shared_ptr<IfStmt>& statement, ExecutionContext* context)
 {
     if (isTruthy(evaluate(statement->condition))) {
-        execute(statement->thenBranch);
+        execute(statement->thenBranch, context);
     } else if (statement->elseBranch != nullptr) {
-        execute(statement->elseBranch);
+        execute(statement->elseBranch, context);
     }
 }
 
-void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> statements) {
+void Interpreter::interpret(std::vector<std::shared_ptr<Stmt> > statements) {
     for(const std::shared_ptr<Stmt>& s : statements)
     {
-        execute(s);
+        execute(s, nullptr); // No context needed for top-level execution
     }
 }
 
-void Interpreter::execute(const std::shared_ptr<Stmt>& statement)
+void Interpreter::execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context)
 {
-    statement->accept(this);
+    statement->accept(this, context);
 }
 
-void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env)
+void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt> > statements, std::shared_ptr<Environment> env, ExecutionContext* context)
 {
     std::shared_ptr<Environment> previous = this->environment;
     this->environment = env;
 
     for(const std::shared_ptr<Stmt>& s : statements)
     {
-        execute(s);
+        execute(s, context);
+        if (context && context->hasReturn) {
+            this->environment = previous;
+            return;
+        }
     }
 
     this->environment = previous;
@@ -800,6 +861,8 @@ bool Interpreter::isWholeNumer(double num) {
         return false;
     }
 }
+
+
 
 
 

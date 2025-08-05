@@ -169,6 +169,19 @@ struct Value {
         if (isNumber() && other.isString()) {
             return Value(toString() + other.string_value);
         }
+        // Handle none values by converting to string
+        if (isString() && other.isNone()) {
+            return Value(string_value + "none");
+        }
+        if (isNone() && other.isString()) {
+            return Value("none" + other.string_value);
+        }
+        if (isString() && !other.isString() && !other.isNumber()) {
+            return Value(string_value + other.toString());
+        }
+        if (!isString() && !isNumber() && other.isString()) {
+            return Value(toString() + other.string_value);
+        }
         throw std::runtime_error("Invalid operands for + operator");
     }
 

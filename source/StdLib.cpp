@@ -238,4 +238,24 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toBooleanFunc);
+
+    // Create a built-in exit function to terminate the program
+    auto exitFunc = std::make_shared<BuiltinFunction>("exit",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            int exitCode = 0;  // Default exit code
+            
+            if (args.size() > 0) {
+                if (args[0].isNumber()) {
+                    exitCode = static_cast<int>(args[0].asNumber());
+                }
+                // If not a number, just use default exit code 0
+            }
+            
+            std::exit(exitCode);
+            return NONE_VALUE;  // This line should never be reached
+        });
+    env->define("exit", Value(exitFunc.get()));
+    
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(exitFunc);
 } 

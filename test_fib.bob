@@ -1,8 +1,10 @@
+var counter = 0;
+
 func fib(n) {
     if (n <= 1) {
         return n;
     }
-    //print("Current operation: " + (n - 1) + ":" + (n-2));
+    counter++;  // Only increment for recursive calls
     return fib(n - 1) + fib(n - 2);
 }
 
@@ -11,5 +13,5 @@ var fib_result = fib(30);
 
 print("Result: " + fib_result);
 
+print("Counter: " + counter);
 
-print(10 / 0);

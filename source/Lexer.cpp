@@ -54,22 +54,36 @@ std::vector<Token> Lexer::Tokenize(std::string source){
         {
             std::string token = std::string(1, t);
             advance();
-            bool match = matchOn('=');
+            bool match = matchOn('+');
             if(match) {
-                tokens.push_back(Token{PLUS_EQUAL, "+=", line, column - 1});
+                token += '+';
+                tokens.push_back(Token{PLUS_PLUS, token, line, column - 1});
             } else {
-                tokens.push_back(Token{PLUS, token, line, column - 1});
+                match = matchOn('=');
+                if(match) {
+                    token += '=';
+                    tokens.push_back(Token{PLUS_EQUAL, token, line, column - 1});
+                } else {
+                    tokens.push_back(Token{PLUS, token, line, column - 1});
+                }
             }
         }
         else if(t == '-')
         {
             std::string token = std::string(1, t);
             advance();
-            bool match = matchOn('=');
+            bool match = matchOn('-');
             if(match) {
-                tokens.push_back(Token{MINUS_EQUAL, "-=", line, column - 1});
+                token += '-';
+                tokens.push_back(Token{MINUS_MINUS, token, line, column - 1});
             } else {
-                tokens.push_back(Token{MINUS, token, line, column - 1});
+                match = matchOn('=');
+                if(match) {
+                    token += '=';
+                    tokens.push_back(Token{MINUS_EQUAL, token, line, column - 1});
+                } else {
+                    tokens.push_back(Token{MINUS, token, line, column - 1});
+                }
             }
         }
         else if(t == '*')
@@ -78,7 +92,8 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('=');
             if(match) {
-                tokens.push_back(Token{STAR_EQUAL, "*=", line, column - 1});
+                token += '=';
+                tokens.push_back(Token{STAR_EQUAL, token, line, column - 1});
             } else {
                 tokens.push_back(Token{STAR, token, line, column - 1});
             }
@@ -89,7 +104,8 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('=');
             if(match) {
-                tokens.push_back(Token{PERCENT_EQUAL, "%=", line, column - 1});
+                token += '=';
+                tokens.push_back(Token{PERCENT_EQUAL, token, line, column - 1});
             } else {
                 tokens.push_back(Token{PERCENT, token, line, column - 1});
             }
@@ -166,13 +182,15 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('&');
             if(match) {
-                tokens.push_back(Token{AND, "&&", line, column - 1});
+                token += '&';
+                tokens.push_back(Token{AND, token, line, column - 1});
             } else {
                 bool equalMatch = matchOn('=');
                 if(equalMatch) {
-                    tokens.push_back(Token{BIN_AND_EQUAL, "&=", line, column - 1});
+                    token += '=';
+                    tokens.push_back(Token{BIN_AND_EQUAL, token, line, column - 1});
                 } else {
-                    tokens.push_back(Token{BIN_AND, "&", line, column - 1});
+                    tokens.push_back(Token{BIN_AND, token, line, column - 1});
                 }
             }
         }
@@ -182,13 +200,15 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             advance();
             bool match = matchOn('|');
             if(match) {
-                tokens.push_back(Token{OR, "||", line, column - 1});
+                token += '|';
+                tokens.push_back(Token{OR, token, line, column - 1});
             } else {
                 bool equalMatch = matchOn('=');
                 if(equalMatch) {
-                    tokens.push_back(Token{BIN_OR_EQUAL, "|=", line, column - 1});
+                    token += '=';
+                    tokens.push_back(Token{BIN_OR_EQUAL, token, line, column - 1});
                 } else {
-                    tokens.push_back(Token{BIN_OR, "|", line, column - 1});
+                    tokens.push_back(Token{BIN_OR, token, line, column - 1});
                 }
             }
         }
@@ -217,11 +237,28 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             }
             else
             {
-                bool equalMatch = matchOn('=');
-                if(equalMatch) {
-                    tokens.push_back(Token{SLASH_EQUAL, "/=", line, column - 1});
-                } else {
-                    tokens.push_back(Token{SLASH, "/", line, column - 1});
+                bool starMatch = matchOn('*');
+                if(starMatch)
+                {
+                    // Multi-line comment /* ... */
+                    while(!src.empty())
+                    {
+                        if(src[0] == '*' && !src.empty() && src.size() > 1 && src[1] == '/')
+                        {
+                            advance(2);  // Skip */
+                            break;
+                        }
+                        advance();
+                    }
+                }
+                else
+                {
+                    bool equalMatch = matchOn('=');
+                    if(equalMatch) {
+                        tokens.push_back(Token{SLASH_EQUAL, "/=", line, column - 1});
+                    } else {
+                        tokens.push_back(Token{SLASH, "/", line, column - 1});
+                    }
                 }
             }
         }

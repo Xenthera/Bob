@@ -14,6 +14,9 @@ enum TokenType{
     EQUAL, DOUBLE_EQUAL,
     GREATER, GREATER_EQUAL,
     LESS, LESS_EQUAL,
+    
+    // Increment/decrement operators
+    PLUS_PLUS, MINUS_MINUS,
 
     IDENTIFIER, STRING, NUMBER, BOOL,
 
@@ -38,6 +41,8 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
                            "EQUAL", "DOUBLE_EQUAL",
                            "GREATER", "GREATER_EQUAL",
                            "LESS", "LESS_EQUAL",
+                           
+                           "PLUS_PLUS", "MINUS_MINUS",
 
                            "IDENTIFIER", "STRING", "NUMBER", "BOOL",
 

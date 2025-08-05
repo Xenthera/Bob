@@ -64,6 +64,8 @@ private:
     std::shared_ptr<Expr> functionExpression();
 
     sptr(Expr) assignment();
+    sptr(Expr) increment();  // Parse increment/decrement expressions
+    sptr(Expr) postfix();    // Parse postfix operators
 
     std::vector<std::shared_ptr<Stmt>> block();
     
@@ -73,4 +75,7 @@ private:
     void enterFunction() { functionDepth++; }
     void exitFunction() { functionDepth--; }
     bool isInFunction() const { return functionDepth > 0; }
+    
+    // Helper method for tail call detection
+    bool isTailCall(const std::shared_ptr<Expr>& expr);
 };

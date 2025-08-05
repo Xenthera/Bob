@@ -35,6 +35,11 @@ public:
     
     std::shared_ptr<Environment> getParent() const { return parent; }
     inline void clear() { variables.clear(); }
+    
+    // Set parent environment for TCO environment reuse
+    inline void setParent(std::shared_ptr<Environment> newParent) {
+        parent = newParent;
+    }
 
 private:
     std::unordered_map<std::string, Value> variables;

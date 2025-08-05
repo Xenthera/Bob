@@ -12,6 +12,7 @@
 
 // Forward declarations
 struct FunctionExpr;
+struct IncrementExpr;
 struct ExprVisitor;
 
 struct AssignExpr;
@@ -30,6 +31,7 @@ struct ExprVisitor
     virtual Value visitCallExpr(const std::shared_ptr<CallExpr>& expr) = 0;
     virtual Value visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expr) = 0;
     virtual Value visitGroupingExpr(const std::shared_ptr<GroupingExpr>& expr) = 0;
+    virtual Value visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expr) = 0;
     virtual Value visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) = 0;
     virtual Value visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expr) = 0;
     virtual Value visitVarExpr(const std::shared_ptr<VarExpr>& expr) = 0;
@@ -126,11 +128,27 @@ struct CallExpr : Expr
     std::shared_ptr<Expr> callee;
     Token paren;
     std::vector<std::shared_ptr<Expr>> arguments;
+    bool isTailCall = false;  // Flag for tail call optimization
+    
     CallExpr(std::shared_ptr<Expr> callee, Token paren, std::vector<std::shared_ptr<Expr>> arguments)
         : callee(callee), paren(paren), arguments(arguments) {}
     Value accept(ExprVisitor* visitor) override
     {
         return visitor->visitCallExpr(std::static_pointer_cast<CallExpr>(shared_from_this()));
+    }
+};
+
+struct IncrementExpr : Expr
+{
+    std::shared_ptr<Expr> operand;
+    Token oper;
+    bool isPrefix;  // true for ++x, false for x++
+    
+    IncrementExpr(std::shared_ptr<Expr> operand, Token oper, bool isPrefix)
+        : operand(operand), oper(oper), isPrefix(isPrefix) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitIncrementExpr(std::static_pointer_cast<IncrementExpr>(shared_from_this()));
     }
 };
 

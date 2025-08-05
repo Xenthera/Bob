@@ -1,11 +1,11 @@
 // ========================================
-// BOB LANGUAGE - COMPREHENSIVE TEST SUITE
+// BOB LANGUAGE TEST SUITE
 // ========================================
-// This file tests all currently implemented features of the Bob language
-// Run with: ./build/bob test_bob_language.bob
+// Tests all implemented language features
+// Usage: ./build/bob test_bob_language.bob
 
-print("=== BOB LANGUAGE COMPREHENSIVE TEST SUITE ===");
-print("Testing all implemented features...");
+print("Bob Language Test Suite");
+print("Running feature tests...");
 
 // ========================================
 // TEST 1: BASIC DATA TYPES
@@ -15,25 +15,25 @@ print("\n--- Test 1: Basic Data Types ---");
 // String literals
 var stringVar = "Hello, Bob!";
 assert(toString(stringVar) == "Hello, Bob!", "String variable assignment");
-print("  ✓ String: " + toString(stringVar));
+print("  String: " + toString(stringVar));
 
 // Numbers (integers and floats)
 var intVar = 42;
 var floatVar = 3.14159;
 assert(toString(intVar) == "42", "Integer variable assignment");
 assert(toString(floatVar) == "3.14159", "Float variable assignment");
-print("  ✓ Integer: " + toString(intVar));
-print("  ✓ Float: " + toString(floatVar));
+print("  Integer: " + toString(intVar));
+print("  Float: " + toString(floatVar));
 
 // Booleans
 var boolTrue = true;
 var boolFalse = false;
 assert(boolTrue == true, "Boolean true assignment");
 assert(boolFalse == false, "Boolean false assignment");
-print("  ✓ Boolean true: " + toString(boolTrue));
-print("  ✓ Boolean false: " + toString(boolFalse));
+print("  Boolean true: " + toString(boolTrue));
+print("  Boolean false: " + toString(boolFalse));
 
-print("✓ Basic data types working");
+print("Basic data types: PASS");
 
 // ========================================
 // TEST 2: ARITHMETIC OPERATIONS
@@ -43,39 +43,39 @@ print("\n--- Test 2: Arithmetic Operations ---");
 // Basic arithmetic
 var addResult = 2 + 3;
 assert(toString(addResult) == "5", "Addition");
-print("  ✓ Addition: 2 + 3 = " + toString(addResult));
+print("  Addition: 2 + 3 = " + toString(addResult));
 
 var subResult = 10 - 4;
 assert(toString(subResult) == "6", "Subtraction");
-print("  ✓ Subtraction: 10 - 4 = " + toString(subResult));
+print("  Subtraction: 10 - 4 = " + toString(subResult));
 
 var mulResult = 6 * 7;
 assert(toString(mulResult) == "42", "Multiplication");
-print("  ✓ Multiplication: 6 * 7 = " + toString(mulResult));
+print("  Multiplication: 6 * 7 = " + toString(mulResult));
 
 var divResult = 20 / 4;
 assert(toString(divResult) == "5", "Division");
-print("  ✓ Division: 20 / 4 = " + toString(divResult));
+print("  Division: 20 / 4 = " + toString(divResult));
 
 // Negative numbers
 var negResult = -42;
 assert(toString(negResult) == "-42", "Negative numbers");
-print("  ✓ Negative: " + toString(negResult));
+print("  Negative: " + toString(negResult));
 
 var negCalc = 5 - 10;
 assert(toString(negCalc) == "-5", "Negative result");
-print("  ✓ Negative calculation: 5 - 10 = " + toString(negCalc));
+print("  Negative calculation: 5 - 10 = " + toString(negCalc));
 
 // Order of operations
 var orderResult1 = 2 + 3 * 4;
 assert(toString(orderResult1) == "14", "Order of operations (multiplication first)");
-print("  ✓ Order of operations: 2 + 3 * 4 = " + toString(orderResult1));
+print("  Order of operations: 2 + 3 * 4 = " + toString(orderResult1));
 
 var orderResult2 = (2 + 3) * 4;
 assert(toString(orderResult2) == "20", "Parentheses override order of operations");
-print("  ✓ Parentheses: (2 + 3) * 4 = " + toString(orderResult2));
+print("  Parentheses: (2 + 3) * 4 = " + toString(orderResult2));
 
-print("✓ Arithmetic operations working");
+print("Arithmetic operations: PASS");
 
 // ========================================
 // TEST 3: STRING OPERATIONS
@@ -85,15 +85,15 @@ print("\n--- Test 3: String Operations ---");
 // String concatenation
 var concatResult = "Hello" + " " + "World";
 assert(toString(concatResult) == "Hello World", "String concatenation");
-print("  ✓ String concatenation: " + toString(concatResult));
+print("  String concatenation: " + toString(concatResult));
 
 var firstName = "Bob";
 var lastName = "Lucero";
 var nameResult = firstName + " " + lastName;
 assert(toString(nameResult) == "Bob Lucero", "Variable string concatenation");
-print("  ✓ Variable concatenation: " + toString(nameResult));
+print("  Variable concatenation: " + toString(nameResult));
 
-print("✓ String operations working");
+print("String operations: PASS");
 
 // ========================================
 // TEST 3.5: STRING + NUMBER CONCATENATION
@@ -103,60 +103,60 @@ print("\n--- Test 3.5: String + Number Concatenation ---");
 // Test string + number (automatic conversion)
 var strNumResult = "String + Number: " + 42;
 assert(toString(strNumResult) == "String + Number: 42", "String + Number");
-print("  ✓ String + Number: " + toString(strNumResult));
+print("  String + Number: " + toString(strNumResult));
 
 var strFloatResult = "String + Float: " + 3.14;
 assert(toString(strFloatResult) == "String + Float: 3.14", "String + Float");
-print("  ✓ String + Float: " + toString(strFloatResult));
+print("  String + Float: " + toString(strFloatResult));
 
 var zeroResult = "Zero: " + 0;
 assert(toString(zeroResult) == "Zero: 0", "Zero formatting");
-print("  ✓ Zero formatting: " + toString(zeroResult));
+print("  Zero formatting: " + toString(zeroResult));
 
 var negResult = "Negative: " + -10;
 assert(toString(negResult) == "Negative: -10", "Negative formatting");
-print("  ✓ Negative formatting: " + toString(negResult));
+print("  Negative formatting: " + toString(negResult));
 
 // Test number + string (automatic conversion)
 var numStrResult = 5 + " times";
 assert(toString(numStrResult) == "5 times", "Number + String");
-print("  ✓ Number + String: " + toString(numStrResult));
+print("  Number + String: " + toString(numStrResult));
 
 var floatStrResult = 3.14 + " is pi";
 assert(toString(floatStrResult) == "3.14 is pi", "Float + String");
-print("  ✓ Float + String: " + toString(floatStrResult));
+print("  Float + String: " + toString(floatStrResult));
 
 var zeroStrResult = 0 + " items";
 assert(toString(zeroStrResult) == "0 items", "Zero + String");
-print("  ✓ Zero + String: " + toString(zeroStrResult));
+print("  Zero + String: " + toString(zeroStrResult));
 
 // Test significant digits formatting (no trailing zeros)
 var trailingResult = "Trailing zeros: " + 2.0;
 assert(toString(trailingResult) == "Trailing zeros: 2", "Trailing zeros removed");
-print("  ✓ Trailing zeros: " + toString(trailingResult));
+print("  Trailing zeros: " + toString(trailingResult));
 
 var piResult = "Pi: " + 3.14;
 assert(toString(piResult) == "Pi: 3.14", "Float formatting");
-print("  ✓ Pi formatting: " + toString(piResult));
+print("  Pi formatting: " + toString(piResult));
 
 var eResult = "E: " + 2.718;
 assert(toString(eResult) == "E: 2.718", "Float formatting");
-print("  ✓ E formatting: " + toString(eResult));
+print("  E formatting: " + toString(eResult));
 
 var simpleResult = "Simple: " + 1.5;
 assert(toString(simpleResult) == "Simple: 1.5", "Float formatting");
-print("  ✓ Simple formatting: " + toString(simpleResult));
+print("  Simple formatting: " + toString(simpleResult));
 
 // Test string multiplication
 var strMulResult = "hello" * 3;
 assert(toString(strMulResult) == "hellohellohello", "String multiplication");
-print("  ✓ String multiplication: " + toString(strMulResult));
+print("  String multiplication: " + toString(strMulResult));
 
 var numStrMulResult = 3 * "hello";
 assert(toString(numStrMulResult) == "hellohellohello", "Number * string multiplication");
-print("  ✓ Number * string: " + toString(numStrMulResult));
+print("  Number * string: " + toString(numStrMulResult));
 
-print("✓ String + Number concatenation working");
+print("String + Number concatenation: PASS");
 
 // ========================================
 // TEST 3.6: ESCAPE SEQUENCES
@@ -187,7 +187,7 @@ assert(mixedTest == "First line\n\tIndented line\n\t\tDouble indented", "Mixed e
 var concatTest = "Hello" + "\n" + "World";
 assert(concatTest == "Hello\nWorld", "Escape sequences in concatenation");
 
-print("✓ Escape sequences working");
+print("Escape sequences: PASS");
 
 // ========================================
 // TEST 4: COMPARISON OPERATORS
@@ -209,7 +209,7 @@ assert(true == true, "Boolean equality");
 assert(false == false, "Boolean equality");
 assert(true != false, "Boolean inequality");
 
-print("✓ Comparison operators working");
+print("Comparison operators: PASS");
 
 // ========================================
 // TEST 5: VARIABLE ASSIGNMENT
@@ -225,7 +225,7 @@ assert(x == 20, "Variable reassignment");
 var y = x;
 assert(y == 20, "Variable to variable assignment");
 
-print("✓ Variable assignment working");
+print("Variable assignment: PASS");
 
 // ========================================
 // TEST 6: FUNCTIONS
@@ -255,7 +255,7 @@ func getAnswer() {
 
 assert(getAnswer() == 42, "Function with no parameters");
 
-print("✓ Functions working");
+print("Functions: PASS");
 
 // ========================================
 // TEST 7: NESTED FUNCTION CALLS
@@ -274,7 +274,7 @@ func subtract(a, b) {
 assert(add(add(1, 2), add(3, 4)) == 10, "Nested addition");
 assert(multiply(add(2, 3), subtract(10, 4)) == 30, "Complex nested calls");
 
-print("✓ Nested function calls working");
+print("Nested function calls: PASS");
 
 // ========================================
 // TEST 8: VARIABLE SCOPING
@@ -292,7 +292,7 @@ func testScope() {
 
 assert(testScope() == 150, "Function accessing both local and global variables");
 
-print("✓ Variable scoping working");
+print("Variable scoping: PASS");
 
 // ========================================
 // TEST 9: CLOSURES
@@ -318,7 +318,7 @@ func makeCounter() {
 
 assert(makeCounter() == 1, "Closure with captured variable");
 
-print("✓ Closures working");
+print("Closures: PASS");
 
 // ========================================
 // TEST 10: COMPLEX EXPRESSIONS
@@ -335,7 +335,7 @@ assert((a + b) * (a - b) == 75, "Complex expression with parentheses");
 var name = "Bob";
 assert("Hello, " + name + "!" == "Hello, Bob!", "String expression with variables");
 
-print("✓ Complex expressions working");
+print("Complex expressions: PASS");
 
 // ========================================
 // TEST 11: EDGE CASES
@@ -352,7 +352,7 @@ assert("" == "", "Empty string comparison");
 // Negative zero
 assert(-0 == 0, "Negative zero equals zero");
 
-print("✓ Edge cases working");
+print("Edge cases: PASS");
 
 // ========================================
 // TEST 12: PRINT FUNCTION
@@ -367,7 +367,7 @@ print(true);
 print(false);
 print(3.14);
 
-print("✓ Print function working");
+print("Print function: PASS");
 
 // ========================================
 // TEST 13: ASSERT FUNCTION
@@ -382,7 +382,7 @@ assert(5 > 3, "Comparison assertion");
 assert(10 == 10, "Custom message assertion");
 assert("hello" == "hello", "String assertion with message");
 
-print("✓ Assert function working");
+print("Assert function: PASS");
 
 // ========================================
 // TEST 14: ERROR HANDLING
@@ -398,7 +398,7 @@ print("\n--- Test 14: Error Handling ---");
 // Undefined variable should error
 // assert(undefinedVar == 0, "This should fail");
 
-print("✓ Error handling framework in place");
+print("Error handling framework in place");
 
 // ========================================
 // TEST 15: FUNCTION PASSING - BASIC
@@ -415,7 +415,7 @@ func testBasic(func1) {
 
 var result1 = testBasic(greet2);
 assert(result1 == "Hello, Alice", "Basic function passing");
-print("✓ Basic function passing works");
+print("Basic function passing works");
 
 // ========================================
 // TEST 16: FUNCTION PASSING - MULTIPLE PARAMETERS
@@ -428,7 +428,7 @@ func applyTwo(func1, func2, x, y) {
 
 var result2 = applyTwo(add, multiply, 3, 4);
 assert(result2 == 19, "Multiple function parameters (3+4 + 3*4 = 19)");
-print("✓ Multiple function parameters work");
+print("Multiple function parameters work");
 
 // ========================================
 // TEST 17: FUNCTION PASSING - NESTED CALLS
@@ -445,7 +445,7 @@ func applyNested(func1, func2, x, y) {
 
 var result3 = applyNested(square, add, 3, 4);
 assert(result3 == 49, "Nested function calls ((3+4)^2 = 49)");
-print("✓ Nested function calls work");
+print("Nested function calls work");
 
 // ========================================
 // TEST 18: FUNCTION PASSING - COMPOSITION
@@ -466,7 +466,7 @@ func compose(func1, func2, x) {
 
 var result4 = compose(double, addOne, 5);
 assert(result4 == 12, "Function composition ((5+1)*2 = 12)");
-print("✓ Function composition works");
+print("Function composition works");
 
 // ========================================
 // TEST 19: FUNCTION PASSING - CALLBACK PATTERNS
@@ -483,7 +483,7 @@ func formatString(str) {
 
 var result5 = processString("test", formatString);
 assert(result5 == "[test processed]", "Callback pattern with string processing");
-print("✓ Callback patterns work");
+print("Callback patterns work");
 
 // ========================================
 // TEST 20: FUNCTION PASSING - DIRECT CALLING
@@ -510,7 +510,7 @@ var result6a = callFirst(positive, negative, 5);
 var result6b = callSecond(positive, negative, 5);
 assert(result6a == "positive: 5", "Direct call - first function");
 assert(result6b == "negative: 5", "Direct call - second function");
-print("✓ Direct function calling works");
+print("Direct function calling works");
 
 // ========================================
 // TEST 21: FUNCTION PASSING - STORAGE AND RETRIEVAL
@@ -525,7 +525,7 @@ var result7a = callStoredFunction(add, 3, 4);
 var result7b = callStoredFunction(multiply, 3, 4);
 assert(result7a == 7, "Stored function call - add");
 assert(result7b == 12, "Stored function call - multiply");
-print("✓ Function storage and retrieval works");
+print("Function storage and retrieval works");
 
 // ========================================
 // TEST 22: FUNCTION PASSING - MULTIPLE APPLICATIONS
@@ -542,7 +542,7 @@ func square2(x) {
 
 var result8 = applyMultiple(square2, 2, 3, 4);
 assert(result8 == 29, "Multiple function applications (4 + 9 + 16 = 29)");
-print("✓ Multiple function applications work");
+print("Multiple function applications work");
 
 // ========================================
 // TEST 23: FUNCTION PASSING - NO PARAMETERS
@@ -555,7 +555,7 @@ func callNoParams(func1) {
 
 var result9 = callNoParams(getAnswer);
 assert(result9 == 42, "Function with no parameters");
-print("✓ Functions with no parameters work");
+print("Functions with no parameters work");
 
 // ========================================
 // TEST 24: FUNCTION PASSING - MANY PARAMETERS
@@ -572,7 +572,7 @@ func callManyParams(func1) {
 
 var result10 = callManyParams(sumMany);
 assert(result10 == 15, "Function with many parameters");
-print("✓ Functions with many parameters work");
+print("Functions with many parameters work");
 
 // ========================================
 // TEST 24.5: FUNCTION WITH 100 PARAMETERS
@@ -589,7 +589,7 @@ func call100Params(func1) {
 
 var result100 = call100Params(sum100);
 assert(result100 == 100, "Function with 100 parameters (all 1s = 100)");
-print("✓ Function with 100 parameters works");
+print("Function with 100 parameters works");
 
 // ========================================
 // TEST 25: FUNCTION PASSING - IDENTITY
@@ -606,7 +606,7 @@ func applyIdentity(func1, x) {
 
 var result11 = applyIdentity(identity, "test");
 assert(result11 == "test", "Function identity");
-print("✓ Function identity works");
+print("Function identity works");
 
 // ========================================
 // TEST 26: FUNCTION PASSING - CONSTANT FUNCTION
@@ -623,7 +623,7 @@ func applyConstant(func1, x) {
 
 var result12 = applyConstant(constant, "anything");
 assert(result12 == 42, "Constant function");
-print("✓ Constant function works");
+print("Constant function works");
 
 // ========================================
 // TEST 27: FUNCTION PASSING - FUNCTION COMPARISON
@@ -643,7 +643,7 @@ func compareFunctions(f1, f2, x) {
 
 var result13 = compareFunctions(func1, func2, 5);
 assert(result13 == true, "Function comparison");
-print("✓ Function comparison works");
+print("Function comparison works");
 
 // ========================================
 // TEST 28: COMPREHENSIVE NUMBER TESTS
@@ -756,7 +756,7 @@ assert(hex3 == 4294967295, "Hex FFFFFFFF should be 4294967295");
 var add_num = 5 + 3;
 var sub_num = 10 - 4;
 var mul_num = 6 * 7;
-var div_num = 15 /* 3;
+var div_num = 15 / 3;
 assert(add_num == 8, "5 + 3 should be 8");
 assert(sub_num == 6, "10 - 4 should be 6");
 assert(mul_num == 42, "6 * 7 should be 42");
@@ -780,7 +780,7 @@ assert(lt2 == false, "5 < 3 should be false");
 assert(gt1 == true, "7 > 4 should be true");
 assert(gt2 == false, "2 > 8 should be false");
 
-print("✓ Comprehensive number tests working");
+print("Comprehensive number tests: PASS");
 
 // ========================================
 // TEST 29: TIME FUNCTION
@@ -794,7 +794,7 @@ assert(start_time > 0, "Start time should be positive");
 assert(end_time >= start_time, "End time should be >= start time");
 assert(duration >= 0, "Duration should be non-negative");
 
-print("✓ Time function working");
+print("Time function: PASS");
 
 // ========================================
 // TEST 30: BOOLEAN + STRING CONCATENATION
@@ -822,7 +822,7 @@ assert(ne_test == true, "5 != 6 should be true");
 assert(lt_test == true, "3 < 5 should be true");
 assert(gt_test == true, "7 > 4 should be true");
 
-print("✓ Boolean + String concatenation working");
+print("Boolean + String concatenation: PASS");
 
 // ========================================
 // TEST 31: IF STATEMENTS
@@ -831,12 +831,12 @@ print("\n--- Test 31: If Statements ---");
 
 // Basic if statement
 if (true) {
-    print("✓ Basic if statement working");
+    print("Basic if statement: PASS");
 }
 
 // If-else statement
 if (true) {
-    print("✓ If branch executed");
+    print("If branch executed");
 } else {
     print("✗ Else branch should not execute");
 }
@@ -844,14 +844,14 @@ if (true) {
 if (false) {
     print("✗ If branch should not execute");
 } else {
-    print("✓ Else branch executed");
+    print("Else branch executed");
 }
 
 // If-else if-else chain
 if (false) {
     print("✗ First if should not execute");
 } else if (true) {
-    print("✓ Else if branch executed");
+    print("Else if branch executed");
 } else {
     print("✗ Final else should not execute");
 }
@@ -859,22 +859,22 @@ if (false) {
 // Nested if statements
 if (true) {
     if (true) {
-        print("✓ Nested if statements working");
+        print("Nested if statements: PASS");
     }
 }
 
 // Single-line if statements
-if (true) print("✓ Single-line if working");
+if (true) print("Single-line if: PASS");
 if (false) print("✗ Single-line if should not execute");
 
 // Complex conditions
 var if_a = 5;
 var if_b = 3;
 if (if_a > if_b) {
-    print("✓ Complex condition working");
+    print("Complex condition: PASS");
 }
 
-print("✓ If statements working");
+print("If statements: PASS");
 
 // ========================================
 // TEST 32: INPUT FUNCTION
@@ -887,7 +887,7 @@ assert(type(input_func) == "builtin_function", "Input function should be a built
 
 // Test input with no arguments (would pause for user input)
 // Note: We can't test actual input without user interaction
-print("✓ Input function available");
+print("Input function available");
 
 // ========================================
 // TEST 33: TYPE FUNCTION
@@ -916,7 +916,7 @@ assert(type(testFunc()) == "number", "Type of function call should be 'number'")
 assert(type(5 + 3) == "number", "Type of arithmetic should be 'number'");
 assert(type("hello" + "world") == "string", "Type of string concat should be 'string'");
 
-print("✓ Type function working");
+print("Type function: PASS");
 
 // ========================================
 // TEST 34: TONUMBER FUNCTION
@@ -943,7 +943,7 @@ assert(toNumber("0.0") == 0, "toNumber should handle 0.0");
 assert(toNumber("1e6") == 1000000, "toNumber should handle scientific notation");
 assert(toNumber("1.23e-4") == 0.000123, "toNumber should handle small scientific notation");
 
-print("✓ toNumber function working");
+print("toNumber function: PASS");
 
 // ========================================
 // TEST 35: TOSTRING FUNCTION
@@ -986,7 +986,7 @@ assert(toString(type(toString(42))) == toString("string"), "toString should hand
 assert(toString(42) == toString(42), "toString should match itself");
 assert(toString(3.14) == toString(3.14), "toString should match itself");
 
-print("✓ toString function working");
+print("toString function: PASS");
 
 // ========================================
 // TEST 36: PRINT FUNCTION ENHANCEMENT
@@ -1006,7 +1006,7 @@ print(type);
 print(toString);
 print(toNumber);
 
-print("✓ Print function works with all object types");
+print("Print function works with all object types");
 
 // ========================================
 // TEST 37: REDEFINABLE FUNCTIONS
@@ -1035,6 +1035,11 @@ func print(value) {
 
 print("This should show override prefix");
 
+// Restore original print function
+func print(value) {
+    original_print(value);
+}
+
 // Test multiple redefinitions
 func counter() {
     return 1;
@@ -1050,7 +1055,7 @@ func counter() {
 
 assert(counter() == 3, "Final redefinition should be used");
 
-print("✓ Redefinable functions working");
+print("Redefinable functions: PASS");
 
 // ========================================
 // TEST 38: RECURSION
@@ -1122,7 +1127,7 @@ func deepFactorial(n) {
 
 assert(deepFactorial(10) == 3628800, "deepFactorial(10) should be 3628800");
 
-print("✓ Recursion working");
+print("Recursion: PASS");
 
 // ========================================
 // TEST 39: LOGICAL OPERATORS (&&, ||, !)
@@ -1180,7 +1185,7 @@ assert("" && "world" == "", "Empty string && string should return empty string")
 assert("hello" || "world" == "hello", "String || string should return first string");
 assert("" || "world" == "world", "Empty string || string should return second string");
 
-print("✓ Logical operators working");
+print("Logical operators: PASS");
 
 // ========================================
 // TEST 40: BITWISE OPERATORS (&, |, ^, <<, >>, ~)
@@ -1230,7 +1235,7 @@ assert(0 << 5 == 0, "0 << 5 should be 0");
 assert(0 >> 5 == 0, "0 >> 5 should be 0");
 assert(~0 == -1, "~0 should be -1");
 
-print("✓ Bitwise operators working");
+print("Bitwise operators: PASS");
 
 // ========================================
 // TEST 41: COMPOUND ASSIGNMENT OPERATORS
@@ -1288,7 +1293,7 @@ assert(comp_a == 8, "comp_a += comp_b should make comp_a = 8");
 comp_a *= comp_b;
 assert(comp_a == 24, "comp_a *= comp_b should make comp_a = 24");
 
-print("✓ Compound assignment operators working");
+print("Compound assignment operators: PASS");
 
 // ========================================
 // TEST 42: ANONYMOUS FUNCTIONS
@@ -1366,7 +1371,7 @@ assert(counter1() == 1, "Anonymous function closure should work");
 assert(counter1() == 2, "Anonymous function closure should maintain state");
 assert(counter2() == 1, "Different anonymous function instances should have separate state");
 
-print("✓ Anonymous functions working");
+print("Anonymous functions: PASS");
 
 // ========================================
 // TEST 43: FUNCTIONS RETURNING FUNCTIONS
@@ -1458,7 +1463,7 @@ assert(evenValidator(7) == false, "Even validator should work");
 assert(stringValidator("hello") == true, "String validator should work");
 assert(stringValidator(42) == false, "String validator should work");
 
-print("✓ Functions returning functions working");
+print("Functions returning functions: PASS");
 
 // ========================================
 // TEST 44: COMPREHENSIVE OPERATOR PRECEDENCE
@@ -1485,7 +1490,7 @@ assert(10 - 4 / 2 == 8, "Division should have higher precedence than subtraction
 assert(5 && 3 | 2 << 1 == 7, "Complex precedence test 1");
 assert((5 && 3) | (2 << 1) == 7, "Complex precedence test 2");
 
-print("✓ Operator precedence working");
+print("Operator precedence: PASS");
 
 // ========================================
 // TEST 45: EDGE CASES FOR NEW OPERATORS
@@ -1532,13 +1537,288 @@ var edge_func2 = func(x) {
 };
 assert(edge_func2(3) == 3, "Recursive anonymous function should work");
 
-print("✓ Edge cases for new operators working");
+print("Edge cases for new operators: PASS");
 
 // ========================================
-// FINAL SUMMARY
+// TEST 46: LEXER CONSISTENCY IMPROVEMENTS
 // ========================================
-print("\n=== COMPREHENSIVE TEST SUMMARY ===");
-print("All core language features tested:");
+print("\n--- Test 46: Lexer Consistency Improvements ---");
+
+// Test 1: Increment/Decrement Operators
+var x = 5;
+assert(x == 5, "Initial value should be 5");
+
+x++;
+assert(x == 6, "Postfix increment should work");
+
+++x;
+assert(x == 7, "Prefix increment should work");
+
+x--;
+assert(x == 6, "Postfix decrement should work");
+
+--x;
+assert(x == 5, "Prefix decrement should work");
+
+// Test 2: Compound Assignment Operators
+var y = 10;
+assert(y == 10, "Initial value should be 10");
+
+y += 5;
+assert(y == 15, "+= should work");
+
+y -= 3;
+assert(y == 12, "-= should work");
+
+y *= 2;
+assert(y == 24, "*= should work");
+
+y /= 4;
+assert(y == 6, "/= should work");
+
+y %= 4;
+assert(y == 2, "%= should work");
+
+// Test 3: Bitwise Assignment Operators
+var z = 15;
+assert(z == 15, "Initial value should be 15");
+
+z &= 3;
+assert(z == 3, "&= should work");
+
+z |= 8;
+assert(z == 11, "|= should work");
+
+z ^= 5;
+assert(z == 14, "^= should work");
+
+z <<= 1;
+assert(z == 28, "<<= should work");
+
+z >>= 2;
+assert(z == 7, ">>= should work");
+
+// Test 4: Logical Operators
+var a = true;
+var b = false;
+assert(a == true, "a should be true");
+assert(b == false, "b should be false");
+
+var result1 = a && b;
+assert(result1 == false, "true && false should be false");
+
+var result2 = a || b;
+assert(result2 == true, "true || false should be true");
+
+var result3 = !a;
+assert(result3 == false, "!true should be false");
+
+var result4 = !b;
+assert(result4 == true, "!false should be true");
+
+// Test 5: Comparison Operators
+var c = 10;
+var d = 20;
+assert(c == 10, "c should be 10");
+assert(d == 20, "d should be 20");
+
+var eq = c == d;
+assert(eq == false, "10 == 20 should be false");
+
+var ne = c != d;
+assert(ne == true, "10 != 20 should be true");
+
+var lt = c < d;
+assert(lt == true, "10 < 20 should be true");
+
+var gt = c > d;
+assert(gt == false, "10 > 20 should be false");
+
+var le = c <= d;
+assert(le == true, "10 <= 20 should be true");
+
+var ge = c >= d;
+assert(ge == false, "10 >= 20 should be false");
+
+// Test 6: Bitwise Operators
+var e = 5;
+var f = 3;
+assert(e == 5, "e should be 5");
+assert(f == 3, "f should be 3");
+
+var bitwise_and = e & f;
+assert(bitwise_and == 1, "5 & 3 should be 1");
+
+var bitwise_or = e | f;
+assert(bitwise_or == 7, "5 | 3 should be 7");
+
+var bitwise_xor = e ^ f;
+assert(bitwise_xor == 6, "5 ^ 3 should be 6");
+
+var bitwise_not = ~e;
+assert(bitwise_not == -6, "~5 should be -6");
+
+var left_shift = e << 1;
+assert(left_shift == 10, "5 << 1 should be 10");
+
+var right_shift = e >> 1;
+assert(right_shift == 2, "5 >> 1 should be 2");
+
+// Test 7: Complex Expressions
+var complex = 1;
+assert(complex == 1, "Initial complex value should be 1");
+
+// Test complex expression with multiple operators
+var result5 = (++complex) * (complex++) + (--complex);
+assert(result5 == 6, "Complex expression should be 6");
+assert(complex == 2, "Variable should be 2");
+
+// Test another complex expression
+var result6 = complex++ + ++complex + complex-- + --complex;
+assert(result6 == 12, "Complex expression should be 12");
+assert(complex == 2, "Variable should be 2");
+
+// Test 8: Edge Cases
+var edge = 0;
+assert(edge == 0, "Initial edge value should be 0");
+
+edge++;
+assert(edge == 1, "0++ should be 1");
+
+edge--;
+assert(edge == 0, "1-- should be 0");
+
+++edge;
+assert(edge == 1, "++0 should be 1");
+
+--edge;
+assert(edge == 0, "--1 should be 0");
+
+edge += 0;
+assert(edge == 0, "0 += 0 should be 0");
+
+edge -= 0;
+assert(edge == 0, "0 -= 0 should be 0");
+
+edge *= 5;
+assert(edge == 0, "0 *= 5 should be 0");
+
+print("Lexer consistency improvements: PASS");
+
+// ========================================
+// TEST 20: NONE VALUE CONCATENATION (CRITICAL FIX TEST)
+// ========================================
+print("\n--- Test 20: None Value Concatenation (Critical Fix Test) ---");
+
+// Test string + none concatenation
+var testString = "Hello";
+var testNone = none;
+var concatResult1 = testString + testNone;
+assert(toString(concatResult1) == "Hellonone", "String + none should concatenate to 'Hellonone'");
+print("  String + none: " + toString(concatResult1));
+
+// Test none + string concatenation
+var concatResult2 = testNone + testString;
+assert(toString(concatResult2) == "noneHello", "None + string should concatenate to 'noneHello'");
+print("  None + string: " + toString(concatResult2));
+
+// Test in print statements
+print("  Print with none: " + testNone);
+
+// Test variable reassignment to none
+var y = "Another string";
+y = none;
+print("  Variable set to none: " + y);
+
+print("None value concatenation: PASS");
+
+// ========================================
+// TEST 21: MEMORY MANAGEMENT
+// ========================================
+print("\n--- Test 21: Memory Management ---");
+
+// Test variable reassignment
+var x = "Hello World";
+x = 42;
+x = "New String";
+assert(toString(x) == "New String", "Variable reassignment should work");
+
+// Test function reassignment
+var func1 = func() { return "Function 1"; };
+var func2 = func() { return "Function 2"; };
+func1 = func2;
+assert(func1() == "Function 2", "Function reassignment should work");
+
+// Test large string allocation and cleanup
+var bigString = "This is a very long string that should use significant memory. " +
+                "It contains many characters and should be properly freed when " +
+                "the variable is reassigned or set to none. " +
+                "Let's make it even longer by repeating some content.";
+bigString = "Small";
+assert(toString(bigString) == "Small", "Large string cleanup should work");
+
+// Test multiple reassignments
+var z = "First";
+z = "Second";
+z = "Third";
+z = "Fourth";
+z = "Fifth";
+assert(toString(z) == "Fifth", "Multiple reassignments should work");
+
+print("Memory management: PASS");
+
+// ========================================
+// TEST 22: MULTI-STATEMENT FUNCTION EXECUTION (CRITICAL BUG TEST)
+// ========================================
+print("\n--- Test 22: Multi-Statement Function Execution (Critical Bug Test) ---");
+
+// Test the bug where functions only executed their first statement
+func createMultiStatementFunction() {
+    return func(x) {
+        print("    Statement 1: Starting with " + toString(x));
+        var result = x * 2;
+        print("    Statement 2: Doubled to " + toString(result));
+        result += 5;
+        print("    Statement 3: Added 5 to get " + toString(result));
+        result *= 3;
+        print("    Statement 4: Multiplied by 3 to get " + toString(result));
+        result -= 10;
+        print("    Statement 5: Subtracted 10 to get " + toString(result));
+        return result;
+    };
+}
+
+var multiFunc = createMultiStatementFunction();
+var result1 = multiFunc(7);
+assert(result1 == 47, "Multi-statement function should execute all statements"); // (7*2+5)*3-10 = 47
+print("  Multi-statement function result: " + toString(result1));
+
+// Test nested multi-statement functions
+func createNestedMultiFunction() {
+    return func(x) {
+        var temp = x + 10;
+        var innerFunc = func(y) {
+            var innerResult = y * 2;
+            innerResult += 3;
+            return innerResult;
+        };
+        var innerResult = innerFunc(temp);
+        return innerResult + 5;
+    };
+}
+
+var nestedFunc = createNestedMultiFunction();
+var result2 = nestedFunc(5);
+assert(result2 == 38, "Nested multi-statement functions should work"); // ((5+10)*2+3)+5 = 38
+print("  Nested multi-statement function result: " + toString(result2));
+
+print("Multi-statement function execution: PASS");
+
+// ========================================
+// TEST SUMMARY
+// ========================================
+print("\nTest Summary:");
+print("Features tested:");
 print("- Basic data types (strings, numbers, booleans)");
 print("- Arithmetic operations");
 print("- String operations");
@@ -1586,14 +1866,18 @@ print("- toString function (universal string conversion)");
 print("- Enhanced print function (works with all object types)");
 print("- Redefinable functions (including built-in function override)");
 print("- Recursion (factorial, fibonacci, mutual recursion, deep recursion)");
-print("- NEW: Logical operators (&&, ||, !) with short-circuit evaluation");
-print("- NEW: Bitwise operators (&, |, ^, <<, >>, ~)");
-print("- NEW: Compound assignment operators (+=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=)");
-print("- NEW: Anonymous functions (func(...) { ... })");
-print("- NEW: Functions returning functions");
-print("- NEW: Operator precedence for all new operators");
-print("- NEW: Edge cases for all new operators");
+print("- Logical operators (&&, ||, !) with short-circuit evaluation");
+print("- Bitwise operators (&, |, ^, <<, >>, ~)");
+print("- Compound assignment operators (+=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=)");
+print("- Anonymous functions (func(...) { ... })");
+print("- Functions returning functions");
+print("- Operator precedence for all operators");
+print("- Edge cases for all operators");
+print("- Lexer consistency improvements");
+print("- None value concatenation (string + none, none + string)");
+print("- Memory management (variable reassignment, function reassignment, large string cleanup)");
+print("- Multi-statement function execution");
 
-print("\n🎉 ALL TESTS PASSED! 🎉");
-print("Bob language is working correctly!");
-print("Ready for next phase: Control Flow (while loops, data structures)"); 
+print("\nAll tests passed.");
+print("Test suite complete.");
+ 

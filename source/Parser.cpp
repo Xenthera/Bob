@@ -101,7 +101,7 @@ sptr(Expr) Parser::shift()
 
 sptr(Expr) Parser::assignment()
 {
-    sptr(Expr) expr = logical_or();
+    sptr(Expr) expr = increment();
 
     if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
               BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL}))
@@ -122,6 +122,11 @@ sptr(Expr) Parser::assignment()
     }
 
     return expr;
+}
+
+sptr(Expr) Parser::increment()
+{
+    return logical_or();
 }
 
 sptr(Expr) Parser::equality()
@@ -182,14 +187,51 @@ sptr(Expr) Parser::factor()
 
 sptr(Expr) Parser::unary()
 {
-    if(match({BANG, MINUS, BIN_NOT}))
+    if(match({BANG, MINUS, BIN_NOT, PLUS_PLUS, MINUS_MINUS}))
     {
         Token op = previous();
         sptr(Expr) right = unary();
+        
+        // Handle prefix increment/decrement
+        if (op.type == PLUS_PLUS || op.type == MINUS_MINUS) {
+            // Ensure the operand is a variable
+            if (!std::dynamic_pointer_cast<VarExpr>(right)) {
+                if (errorReporter) {
+                    errorReporter->reportError(op.line, op.column, "Parse Error", 
+                        "Prefix increment/decrement can only be applied to variables", "");
+                }
+                throw std::runtime_error("Prefix increment/decrement can only be applied to variables.");
+            }
+            return msptr(IncrementExpr)(right, op, true);  // true = prefix
+        }
+        
         return msptr(UnaryExpr)(op, right);
     }
 
-    return primary();
+    return postfix();
+}
+
+sptr(Expr) Parser::postfix()
+{
+    sptr(Expr) expr = primary();
+    
+    // Check for postfix increment/decrement
+    if (match({PLUS_PLUS, MINUS_MINUS})) {
+        Token oper = previous();
+        
+        // Ensure the expression is a variable
+        if (!std::dynamic_pointer_cast<VarExpr>(expr)) {
+            if (errorReporter) {
+                errorReporter->reportError(oper.line, oper.column, "Parse Error", 
+                    "Postfix increment/decrement can only be applied to variables", "");
+            }
+            throw std::runtime_error("Postfix increment/decrement can only be applied to variables.");
+        }
+        
+        return msptr(IncrementExpr)(expr, oper, false);  // false = postfix
+    }
+    
+    return expr;
 }
 
 sptr(Expr) Parser::primary()
@@ -352,6 +394,15 @@ sptr(Stmt) Parser::ifStatement()
     return msptr(IfStmt)(condition, thenBranch, elseBranch);
 }
 
+// Helper function to detect if an expression is a tail call
+bool Parser::isTailCall(const std::shared_ptr<Expr>& expr) {
+    // Check if this is a direct function call (no operations on the result)
+    if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(expr)) {
+        return true;  // Direct function call in return statement
+    }
+    return false;
+}
+
 sptr(Stmt) Parser::returnStatement()
 {
     Token keyword = previous();
@@ -369,6 +420,13 @@ sptr(Stmt) Parser::returnStatement()
     
     if (!check(SEMICOLON)) {
         value = expression();
+        
+        // Check if this is a tail call and mark it
+        if (isTailCall(value)) {
+            if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(value)) {
+                callExpr->isTailCall = true;
+            }
+        }
     }
     
     consume(SEMICOLON, "Expected ';' after return value.");
