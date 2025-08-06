@@ -1,0 +1,103 @@
+# Bob Language Extension for VS Code
+
+This extension provides syntax highlighting and language support for the Bob programming language in Visual Studio Code and Cursor.
+
+## Features
+
+- **Syntax Highlighting**: Full syntax highlighting for Bob language constructs
+- **Code Snippets**: Useful code snippets for common Bob patterns
+- **Auto-closing Brackets**: Automatic bracket and quote pairing
+- **Indentation**: Smart indentation for Bob code blocks
+- **Comments**: Support for line and block comments
+- **Folding**: Code folding support with region markers
+
+## Supported Syntax
+
+### Keywords
+- Control flow: `if`, `else`, `while`, `for`, `break`, `continue`, `return`
+- Variable declaration: `var`
+- Function declaration: `func`
+- Logical operators: `and`, `or`, `not`
+
+### Built-in Functions
+- `print()`, `assert()`, `input()`, `type()`, `toString()`, `toNumber()`, `time()`
+
+### Data Types
+- Numbers (integers and floats)
+- Strings (single and double quoted)
+- Booleans (`true`, `false`)
+- None value (`none`)
+
+### Operators
+- Arithmetic: `+`, `-`, `*`, `/`, `%`
+- Comparison: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- Logical: `&&`, `||`, `!`
+- Bitwise: `&`, `|`, `^`, `<<`, `>>`, `~`
+- Compound assignment: `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
+
+## Installation
+
+### From Source
+1. Clone this repository
+2. Run `npm install` to install dependencies
+3. Run `npm run compile` to build the extension
+4. Press `F5` in VS Code to launch the extension in a new window
+
+### Manual Installation
+1. Copy the extension files to your VS Code extensions directory
+2. Restart VS Code
+3. Open a `.bob` file to see syntax highlighting
+
+## Usage
+
+### Code Snippets
+Type the following prefixes and press `Tab` to insert code snippets:
+
+- `func` - Function definition
+- `if` - If statement
+- `ifelse` - If-else statement
+- `while` - While loop
+- `for` - For loop
+- `var` - Variable declaration
+- `print` - Print statement
+- `assert` - Assert statement
+- `anon` - Anonymous function
+- `return` - Return statement
+- `break` - Break statement
+- `continue` - Continue statement
+- `comment` - Comment block
+- `test` - Test function
+
+### File Association
+Files with the `.bob` extension will automatically be recognized as Bob language files.
+
+## Example
+
+```go
+// This is a comment
+var message = "Hello, Bob!";
+print(message);
+
+func factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+var result = factorial(5);
+assert(result == 120, "Factorial calculation failed");
+```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This extension is licensed under the MIT License.
+
+## Links
+
+- [Bob Language Repository](https://github.com/bob-lang/bob)
+- [VS Code Extension API](https://code.visualstudio.com/api) 

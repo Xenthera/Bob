@@ -1,0 +1,74 @@
+{
+  "name": "bob-language",
+  "displayName": "Bob Language",
+  "description": "Syntax highlighting and language support for the Bob programming language",
+  "version": "0.1.2",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "bob",
+    "programming",
+    "language",
+    "syntax",
+    "highlighting"
+  ],
+  "publisher": "bob-lang",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bob-lang/bob-vscode-extension"
+  },
+  "license": "MIT",
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:bob"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "bob",
+        "aliases": [
+          "Bob",
+          "bob"
+        ],
+        "extensions": [
+          ".bob"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "bob",
+        "scopeName": "source.bob",
+        "path": "./syntaxes/bob.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "bob",
+        "path": "./snippets/bob.json"
+      }
+    ],
+    "themes": [
+      {
+        "label": "Bob Dark",
+        "uiTheme": "vs-dark",
+        "path": "./themes/bob-dark.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "^16.0.0",
+    "typescript": "^4.5.0"
+  }
+} 

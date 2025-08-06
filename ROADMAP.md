@@ -1,103 +1,165 @@
 # Bob Language Development Roadmap
 
 ## Current Status
-- Basic expressions (arithmetic, comparison, logical)
-- Variables and assignment
-- Print statements (converted to standard library function)
-- Block statements
-- Environment/scoping
-- Function implementation (COMPLETED)
-- Return statements (COMPLETED)
-- Closures (COMPLETED)
-- Assert function (COMPLETED)
-- Standard library infrastructure (COMPLETED)
-- First-class functions and higher-order functions (COMPLETED)
-- String + number concatenation with smart formatting (COMPLETED)
-- String multiplication (COMPLETED)
-- Alphanumeric identifiers (COMPLETED)
-- Comprehensive testing framework (COMPLETED)
 
-## Phase 1: Core Language Features (High Priority)
+Bob is a working programming language with a solid foundation. Here's what's currently implemented:
 
-### 1. Control Flow
-```bob
-// If statements
-if (x > 10) {
-    print "big";
-} else {
-    print "small";
-}
+### ✅ **Core Language Features**
 
-// While loops
-var i = 0;
-while (i < 5) {
-    print i;
-    i = i + 1;
-}
+#### **Data Types & Variables**
+- **Numbers**: Integers, floats, automatic conversion
+- **Strings**: Literals, concatenation, multiplication
+- **Booleans**: `true`, `false`
+- **None**: Null value representation
+- **Variables**: Declaration, assignment, scoping
+- **Assignment System**: Dual system (statements + expressions for loops)
+
+#### **Operators**
+- **Arithmetic**: `+`, `-`, `*`, `/`, `%`
+- **Comparison**: `==`, `!=`, `>`, `<`, `>=`, `<=`
+- **Logical**: `&&`, `||`, `!` (with short-circuit evaluation)
+- **Bitwise**: `&`, `|`, `^`, `<<`, `>>`, `~`
+- **Compound Assignment**: `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
+- **Ternary**: `condition ? valueIfTrue : valueIfFalse`
+
+#### **Control Flow**
+- **If Statements**: `if`, `else`, `else if` chains
+- **While Loops**: Basic, nested, complex conditions
+- **For Loops**: All clause variations, nested loops
+- **Do-While Loops**: Basic, nested, break/continue support
+- **Break/Continue**: Full support in all loop types
+
+#### **Functions**
+- **Function Declaration**: `func name(params) { body }`
+- **Parameters**: Any number of parameters
+- **Return Values**: Explicit and implicit returns
+- **Closures**: Lexical scoping with variable capture
+- **First-Class Functions**: Functions as values, parameters, return values
+- **Anonymous Functions**: `func(params) { body }`
+- **Nested Functions**: Functions defined inside other functions
+- **Recursion**: Full support including deep recursion
+
+#### **Standard Library**
+- **`print()`**: Output with automatic type conversion
+- **`assert()`**: Testing with custom error messages
+- **`type()`**: Runtime type checking
+- **`toString()`**: Universal string conversion
+- **`toNumber()`**: String-to-number conversion
+- **`input()`**: User input capability
+- **`time()`**: Microsecond precision timing
+
+#### **Advanced Features**
+- **String Operations**: Bidirectional string + number concatenation
+- **Number Formatting**: Smart significant digits
+- **Memory Management**: Automatic cleanup
+- **Error Handling**: Basic error reporting
+- **Testing Framework**: Built-in assert function
+- **Operator Precedence**: Full precedence hierarchy
+- **Variable Shadowing**: Proper scoping rules
+
+### **Current Limitations**
+
+#### **Data Structures**
+- **No Arrays/Lists**: No built-in collection types
+- **No Maps/Dictionaries**: No key-value data structures
+- **No Sets**: No unique value collections
+
+#### **Advanced Language Features**
+- **No Classes/Objects**: No object-oriented programming
+- **No Modules/Imports**: No code organization system
+- **No Exception Handling**: No try-catch blocks
+- **No Type Annotations**: No static type checking
+- **No Generics**: No parametric polymorphism
+
+#### **Standard Library Gaps**
+- **No File I/O**: No reading/writing files
+- **No Network I/O**: No HTTP or socket operations
+- **No Math Library**: No advanced mathematical functions
+- **No Date/Time**: No date manipulation (except `time()`)
+- **No Random Numbers**: No random number generation
+
+#### **Development Tools**
+- **No REPL**: No interactive mode
+- **No Debugger**: No debugging tools
+- **No Profiler**: No performance analysis
+- **No Package Manager**: No dependency management
+
+## **Future Development Phases**
+
+### **Phase 1: Data Structures (High Priority)**
+
+#### **Arrays/Lists**
+```go
+var numbers = [1, 2, 3, 4, 5];
+print(numbers[0]);           // 1
+numbers[1] = 42;            // Modify element
+var length = len(numbers);  // Get length
 ```
 
-**Implementation:**
-- Add `IfStmt` and `WhileStmt` to Statement.h
-- Update parser to handle `if` and `while` keywords
-- Implement control flow in interpreter
+**Implementation Plan:**
+- Add array literal syntax `[expr, expr, ...]`
+- Implement array indexing `array[index]`
+- Add array assignment `array[index] = value`
+- Create `len()` function for arrays
+- Support nested arrays
 
-### 2. Logical Operators
-```bob
-// Currently missing: and, or, not operators
-if (x > 0 and y < 10) {
-    print "valid range";
-}
-```
-
-**Implementation:**
-- Add `and`, `or`, `not` operator parsing
-- Implement logical operator evaluation in interpreter
-
-### 3. Better Error Handling
-```bob
-// Current: Basic error messages
-// Goal: Line numbers, better context
-Error at line 5: Expected ';' after expression
-    print 42
-         ^
-```
-
-## Phase 2: Data Structures (Medium Priority)
-
-### 4. Arrays/Lists
-```bob
-var numbers = [1, 2, 3, 4];
-print numbers[0];  // 1
-numbers[1] = 42;
-```
-
-### 5. Maps/Dictionaries
-```bob
+#### **Maps/Dictionaries**
+```go
 var person = {"name": "Bob", "age": 25};
-print person["name"];
-person["city"] = "NYC";
+print(person["name"]);      // "Bob"
+person["city"] = "NYC";     // Add/modify entry
+var keys = keys(person);    // Get all keys
 ```
 
-## Phase 3: Standard Library (Medium Priority)
+**Implementation Plan:**
+- Add map literal syntax `{key: value, ...}`
+- Implement map indexing `map[key]`
+- Add map assignment `map[key] = value`
+- Create `keys()`, `values()` functions
+- Support nested maps
 
-### 6. Additional Built-in Functions
-```bob
-len("hello");           // String length
-input("Enter name: ");  // User input
-random(1, 100);        // Random numbers
-type(42);              // Type checking
-```
+### **Phase 2: Standard Library Expansion (Medium Priority)**
 
-### 7. File I/O
-```bob
+#### **File I/O**
+```go
 var content = readFile("data.txt");
 writeFile("output.txt", "Hello World");
+var lines = readLines("config.txt");
 ```
 
-## Phase 4: Advanced Features (Lower Priority)
+#### **Math Library**
+```go
+var result = sqrt(16);      // 4.0
+var random = rand(1, 100);  // Random number
+var max = max(5, 10, 3);    // 10
+```
 
-### 8. Classes & Objects
-```bob
+#### **String Processing**
+```go
+var parts = split("a,b,c", ",");  // ["a", "b", "c"]
+var joined = join(parts, "-");    // "a-b-c"
+var upper = toUpper("hello");     // "HELLO"
+```
+
+### **Phase 3: Advanced Language Features (Lower Priority)**
+
+#### **Exception Handling**
+```go
+try {
+    var result = 10 / 0;
+} catch (error) {
+    print("Error: " + error);
+}
+```
+
+#### **Modules/Imports**
+```go
+import "math.bob";
+import "utils.bob" as utils;
+```
+
+#### **Classes & Objects**
+```go
 class Person {
     init(name, age) {
         this.name = name;
@@ -105,99 +167,104 @@ class Person {
     }
     
     greet() {
-        print "Hello, I'm " + this.name;
+        return "Hello, I'm " + this.name;
     }
 }
-
-var bob = Person("Bob", 25);
-bob.greet();
 ```
 
-### 9. Modules/Imports
-```bob
-import "math.bob";
-import "utils.bob";
+### **Phase 4: Development Tools (Lower Priority)**
+
+#### **Interactive Mode (REPL)**
+```bash
+$ bob
+> var x = 5
+> print(x + 3)
+8
+> func add(a, b) { return a + b; }
+> add(2, 3)
+5
 ```
 
-### 10. Type System
-```bob
-// Optional type annotations
-fun add(a: number, b: number): number {
-    return a + b;
-}
+#### **Debugger**
+```go
+debugger;  // Breakpoint
+var x = 5;
+// Step through code
 ```
 
-## Implementation Tips
+## **Implementation Guidelines**
 
-### For Each Feature:
-1. Lexer: Add new tokens if needed
-2. Parser: Add new expression/statement types
-3. AST: Define new node types
-4. Interpreter: Implement evaluation logic
-5. Test: Create test cases using assert function
+### **For Each New Feature:**
+1. **Lexer**: Add new tokens if needed
+2. **Parser**: Add new expression/statement types
+3. **AST**: Define new node types
+4. **Interpreter**: Implement evaluation logic
+5. **Testing**: Create comprehensive test cases
 
-### Testing Strategy:
-```bob
-// Use the new assert function for comprehensive testing
+### **Testing Strategy:**
+```go
+// Use the built-in assert function for testing
 assert(add(2, 3) == 5, "add(2, 3) should equal 5");
-assert(x > 0, "x should be positive");
+assert(len([1, 2, 3]) == 3, "Array length should be 3");
 ```
 
-## Recommended Next Steps
+### **Code Quality Standards:**
+- **Comprehensive Testing**: Every feature needs test coverage
+- **Error Handling**: Graceful error messages
+- **Documentation**: Update language reference
+- **Performance**: Consider memory and speed implications
 
-1. Add if statements (fundamental control flow)
-2. Add while loops (enables iteration)
-3. Implement logical operators (and, or, not)
-4. Improve error messages (better developer experience)
-5. Add arrays (most useful data structure)
+## **Success Metrics**
 
-## Success Metrics
+### **Completed ✅**
+- [x] Core language syntax and semantics
+- [x] All basic operators and expressions
+- [x] Control flow statements
+- [x] Functions and closures
+- [x] Standard library basics
+- [x] Testing framework
+- [x] Basic error handling
+- [x] Memory management
+- [x] Assignment system design
 
-- [x] Can write simple functions
-- [x] Can use return statements
-- [x] Can use closures
-- [x] Has assert function for testing
-- [x] Has standard library infrastructure
-- [x] Supports first-class functions
-- [x] Has comprehensive testing framework
-- [ ] Can use if/else statements
-- [ ] Can use while loops
-- [ ] Can use logical operators
-- [ ] Can work with arrays
-- [ ] Can read/write files
-- [ ] Has good error messages
+### **In Progress 🔄**
+- [ ] Data structures (arrays, maps)
+- [ ] Extended standard library
+- [ ] Performance optimizations
 
-## Resources
+### **Planned 📋**
+- [ ] Advanced language features
+- [ ] Development tools
+- [ ] Documentation improvements
 
-- [Crafting Interpreters](https://craftinginterpreters.com/) - Excellent resource for language implementation
-- [Bob's current source code](./source/) - Your implementation
-- [Test files](./*.bob) - Examples of current functionality
+## **Resources**
 
-## Recent Achievements
+- **[BOB_LANGUAGE_REFERENCE.md](BOB_LANGUAGE_REFERENCE.md)** - Complete language documentation
+- **[ASSIGNMENT_DESIGN.md](ASSIGNMENT_DESIGN.md)** - Assignment system design rationale
+- **[test_bob_language.bob](test_bob_language.bob)** - Comprehensive test suite
+- **[Crafting Interpreters](https://craftinginterpreters.com/)** - Excellent resource for language implementation
 
-### Function Implementation (COMPLETED)
-- Function declarations with parameters
-- Function calls with arguments
-- Return statements
-- Proper scoping and closures
-- Nested function calls
+## **Recent Major Achievements**
 
-### Standard Library (COMPLETED)
-- `print()` function (converted from statement)
-- `assert()` function with custom messages
-- Extensible architecture for adding more functions
+### **Assignment System Design**
+- Implemented dual assignment system (statements + expressions)
+- Prevents common bugs like `if (x = 10)`
+- Maintains practical for loop syntax
+- Documentation and testing
 
-### Testing Framework (COMPLETED)
-- Comprehensive test suite using assert
-- Tests for all language features
-- Proper error handling and execution stopping
+### **Control Flow Implementation**
+- All loop types: while, for, do-while
+- Break/continue support
+- Nested scenarios
+- Basic edge case handling
 
-### Advanced Language Features (COMPLETED)
-- First-class functions and higher-order functions
-- Function passing as arguments
+### **Function System**
+- First-class functions
+- Closures and lexical scoping
+- Anonymous functions
 - Function composition patterns
-- Callback patterns and function storage
-- String + number concatenation with smart formatting
-- String multiplication (string * number, number * string)
-- Alphanumeric identifiers support
-- Stress testing with 100-parameter functions 
+- Recursion support
+
+---
+
+*Last updated: August 2025* 

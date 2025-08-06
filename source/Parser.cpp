@@ -16,13 +16,27 @@ sptr(Expr) Parser::expression()
 
 sptr(Expr) Parser::logical_or()
 {
-    sptr(Expr) expr = logical_and();
+    sptr(Expr) expr = ternary();
 
     while(match({OR}))
     {
         Token op = previous();
-        sptr(Expr) right = logical_and();
+        sptr(Expr) right = ternary();
         expr = msptr(BinaryExpr)(expr, op, right);
+    }
+
+    return expr;
+}
+
+sptr(Expr) Parser::ternary()
+{
+    sptr(Expr) expr = logical_and();
+
+    if (match({QUESTION})) {
+        sptr(Expr) thenExpr = expression();
+        consume(COLON, "Expected ':' after ternary condition");
+        sptr(Expr) elseExpr = expression();
+        expr = msptr(TernaryExpr)(expr, thenExpr, elseExpr);
     }
 
     return expr;
@@ -101,13 +115,21 @@ sptr(Expr) Parser::shift()
 
 sptr(Expr) Parser::assignment()
 {
+    // Assignments are now statements, not expressions
+    // This function should only handle expressions that are not assignments
+    return increment();
+}
+
+sptr(Expr) Parser::assignmentExpression()
+{
+    // This allows assignments as expressions (for for loop increment clauses)
     sptr(Expr) expr = increment();
 
     if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
               BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL}))
     {
         Token op = previous();
-        sptr(Expr) value = assignment();
+        sptr(Expr) value = assignmentExpression();
         if(std::dynamic_pointer_cast<VarExpr>(expr))
         {
             Token name = std::dynamic_pointer_cast<VarExpr>(expr)->name;
@@ -372,11 +394,48 @@ sptr(Stmt) Parser::statement()
 {
     if(match({RETURN})) return returnStatement();
     if(match({IF})) return ifStatement();
+    if(match({DO})) return doWhileStatement();
+    if(match({WHILE})) return whileStatement();
+    if(match({FOR})) return forStatement();
+    if(match({BREAK})) return breakStatement();
+    if(match({CONTINUE})) return continueStatement();
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
+    
+    // Check for assignment statement
+    if(check({IDENTIFIER})) {
+        // Look ahead to see if this is an assignment
+        int currentPos = current;
+        advance(); // consume identifier
+        if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
+                  BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL})) {
+            // Reset position and parse as assignment statement
+            current = currentPos;
+            return assignmentStatement();
+        }
+        // Reset position and parse as expression statement
+        current = currentPos;
+    }
+    
     return expressionStatement();
 }
 
-
+sptr(Stmt) Parser::assignmentStatement()
+{
+    Token name = consume(IDENTIFIER, "Expected variable name for assignment.");
+    
+    // Consume any assignment operator
+    Token op;
+    if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
+              BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL})) {
+        op = previous();
+    } else {
+        throw std::runtime_error("Expected assignment operator.");
+    }
+    
+    sptr(Expr) value = expression();
+    consume(SEMICOLON, "Expected ';' after assignment.");
+    return msptr(AssignStmt)(name, op, value);
+}
 
 sptr(Stmt) Parser::ifStatement()
 {
@@ -392,6 +451,78 @@ sptr(Stmt) Parser::ifStatement()
     }
     
     return msptr(IfStmt)(condition, thenBranch, elseBranch);
+}
+
+sptr(Stmt) Parser::whileStatement()
+{
+    consume(OPEN_PAREN, "Expected '(' after 'while'.");
+    sptr(Expr) condition = expression();
+    consume(CLOSE_PAREN, "Expected ')' after while condition.");
+    
+    sptr(Stmt) body = statement();
+    
+    return msptr(WhileStmt)(condition, body);
+}
+
+sptr(Stmt) Parser::doWhileStatement()
+{
+    sptr(Stmt) body = statement();
+    
+    consume(WHILE, "Expected 'while' after do-while body.");
+    consume(OPEN_PAREN, "Expected '(' after 'while'.");
+    sptr(Expr) condition = expression();
+    consume(CLOSE_PAREN, "Expected ')' after while condition.");
+    consume(SEMICOLON, "Expected ';' after do-while condition.");
+    
+    return msptr(DoWhileStmt)(body, condition);
+}
+
+sptr(Stmt) Parser::forStatement()
+{
+    consume(OPEN_PAREN, "Expected '(' after 'for'.");
+    
+    sptr(Stmt) initializer;
+    if (match({SEMICOLON})) {
+        initializer = nullptr;
+    } else if (match({VAR})) {
+        initializer = varDeclaration();
+    } else {
+        // Allow assignment expressions in for loop initializer
+        sptr(Expr) expr = assignmentExpression();
+        consume(SEMICOLON, "Expected ';' after for loop initializer.");
+        initializer = msptr(ExpressionStmt)(expr);
+    }
+    
+    sptr(Expr) condition = nullptr;
+    if (!check(SEMICOLON)) {
+        condition = expression();
+    }
+    consume(SEMICOLON, "Expected ';' after for loop condition.");
+    
+    sptr(Expr) increment = nullptr;
+    if (!check(CLOSE_PAREN)) {
+        increment = assignmentExpression();
+    }
+    consume(CLOSE_PAREN, "Expected ')' after for clauses.");
+    
+    sptr(Stmt) body = statement();
+    
+    // Return the for statement directly instead of desugaring
+    return msptr(ForStmt)(initializer, condition, increment, body);
+}
+
+sptr(Stmt) Parser::breakStatement()
+{
+    Token keyword = previous();
+    consume(SEMICOLON, "Expected ';' after 'break'.");
+    return msptr(BreakStmt)(keyword);
+}
+
+sptr(Stmt) Parser::continueStatement()
+{
+    Token keyword = previous();
+    consume(SEMICOLON, "Expected ';' after 'continue'.");
+    return msptr(ContinueStmt)(keyword);
 }
 
 // Helper function to detect if an expression is a tail call

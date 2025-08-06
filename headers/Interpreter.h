@@ -65,6 +65,7 @@ public:
     Value visitVarExpr(const std::shared_ptr<VarExpr>& expression) override;
     Value visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expression) override;
     Value visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) override;
+    Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression) override;
 
     void visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context = nullptr) override;
@@ -72,6 +73,12 @@ public:
     void visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitIfStmt(const std::shared_ptr<IfStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitWhileStmt(const std::shared_ptr<WhileStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitForStmt(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitBreakStmt(const std::shared_ptr<BreakStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context = nullptr) override;
 
     void interpret(std::vector<std::shared_ptr<Stmt> > statements);
 
@@ -85,8 +92,14 @@ private:
     bool IsInteractive;
     std::vector<std::shared_ptr<BuiltinFunction> > builtinFunctions;
     std::vector<std::shared_ptr<Function> > functions;
+    std::vector<std::shared_ptr<Thunk> > thunks;  // Store thunks to prevent memory leaks
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
+    
+    // Automatic cleanup tracking
+    int functionCreationCount = 0;
+    int thunkCreationCount = 0;
+    static const int CLEANUP_THRESHOLD = 1000;  // Cleanup every 1000 creations
     
 
     
@@ -105,6 +118,10 @@ public:
     bool isTruthy(Value object);
     std::string stringify(Value object);
     void addBuiltinFunction(std::shared_ptr<BuiltinFunction> func);
+    
+    // Memory management
+    void cleanupUnusedFunctions();
+    void cleanupUnusedThunks();
 
     // Error reporting
     void setErrorReporter(ErrorReporter* reporter) { 

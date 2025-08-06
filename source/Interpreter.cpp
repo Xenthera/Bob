@@ -580,6 +580,16 @@ Value Interpreter::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression
     return value;
 }
 
+Value Interpreter::visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression) {
+    Value condition = evaluate(expression->condition);
+    
+    if (isTruthy(condition)) {
+        return evaluate(expression->thenExpr);
+    } else {
+        return evaluate(expression->elseExpr);
+    }
+}
+
 Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
     Value callee = evaluate(expression->callee);
     
@@ -602,8 +612,8 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
         
         // Check if this is a tail call
         if (expression->isTailCall) {
-            // Create a thunk for tail call optimization
-            auto thunk = new Thunk([this, function, arguments]() -> Value {
+            // Create a thunk for tail call optimization using smart pointer
+            auto thunk = std::make_shared<Thunk>([this, function, arguments]() -> Value {
                 // Use RAII to manage environment
                 ScopedEnv _env(environment);
                 environment = std::make_shared<Environment>(function->closure);
@@ -630,8 +640,17 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
                 return context.returnValue;
             });
             
-            // Return the thunk as a Value
-            return Value(thunk);
+            // Store the thunk to keep it alive and return as Value
+            thunks.push_back(thunk);
+            
+            // Automatic cleanup check
+            thunkCreationCount++;
+            if (thunkCreationCount >= CLEANUP_THRESHOLD) {
+                cleanupUnusedThunks();
+                thunkCreationCount = 0;
+            }
+            
+            return Value(thunk.get());
         } else {
             // Normal function call - create new environment
             ScopedEnv _env(environment);
@@ -669,6 +688,14 @@ Value Interpreter::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expres
     
     auto function = msptr(Function)("anonymous", paramNames, expression->body, environment);
     functions.push_back(function); // Keep the shared_ptr alive
+    
+    // Automatic cleanup check
+    functionCreationCount++;
+    if (functionCreationCount >= CLEANUP_THRESHOLD) {
+        cleanupUnusedFunctions();
+        functionCreationCount = 0;
+    }
+    
     return Value(function.get());
 }
 
@@ -714,6 +741,13 @@ void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& stateme
                                    environment);
     functions.push_back(function); // Keep the shared_ptr alive
     environment->define(statement->name.lexeme, Value(function.get()));
+    
+    // Automatic cleanup check
+    functionCreationCount++;
+    if (functionCreationCount >= CLEANUP_THRESHOLD) {
+        cleanupUnusedFunctions();
+        functionCreationCount = 0;
+    }
 }
 
 void Interpreter::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context)
@@ -741,6 +775,175 @@ void Interpreter::visitIfStmt(const std::shared_ptr<IfStmt>& statement, Executio
     }
 }
 
+void Interpreter::visitWhileStmt(const std::shared_ptr<WhileStmt>& statement, ExecutionContext* context)
+{
+    ExecutionContext loopContext;
+    if (context) {
+        loopContext.isFunctionBody = context->isFunctionBody;
+    }
+    
+    while (isTruthy(evaluate(statement->condition))) {
+        execute(statement->body, &loopContext);
+        
+        // Check for return from function
+        if (loopContext.hasReturn) {
+            if (context) {
+                context->hasReturn = true;
+                context->returnValue = loopContext.returnValue;
+            }
+            break;
+        }
+        
+        // Check for break
+        if (loopContext.hasBreak) {
+            loopContext.hasBreak = false;
+            break;
+        }
+        
+        // Check for continue (just continue to next iteration)
+        if (loopContext.hasContinue) {
+            loopContext.hasContinue = false;
+            continue;
+        }
+    }
+}
+
+void Interpreter::visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement, ExecutionContext* context)
+{
+    ExecutionContext loopContext;
+    if (context) {
+        loopContext.isFunctionBody = context->isFunctionBody;
+    }
+    
+    do {
+        execute(statement->body, &loopContext);
+        
+        // Check for return from function
+        if (loopContext.hasReturn) {
+            if (context) {
+                context->hasReturn = true;
+                context->returnValue = loopContext.returnValue;
+            }
+            break;
+        }
+        
+        // Check for break
+        if (loopContext.hasBreak) {
+            loopContext.hasBreak = false;
+            break;
+        }
+        
+        // Check for continue (just continue to next iteration)
+        if (loopContext.hasContinue) {
+            loopContext.hasContinue = false;
+            continue;
+        }
+    } while (isTruthy(evaluate(statement->condition)));
+}
+
+void Interpreter::visitForStmt(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context)
+{
+    // For loops are desugared into while loops in the parser
+    // This method should never be called, but we implement it for completeness
+    // The actual execution happens through the desugared while loop
+    if (statement->initializer != nullptr) {
+        execute(statement->initializer, context);
+    }
+    
+    ExecutionContext loopContext;
+    if (context) {
+        loopContext.isFunctionBody = context->isFunctionBody;
+    }
+    
+    while (statement->condition == nullptr || isTruthy(evaluate(statement->condition))) {
+        execute(statement->body, &loopContext);
+        
+        // Check for return from function
+        if (loopContext.hasReturn) {
+            if (context) {
+                context->hasReturn = true;
+                context->returnValue = loopContext.returnValue;
+            }
+            break;
+        }
+        
+        // Check for break
+        if (loopContext.hasBreak) {
+            loopContext.hasBreak = false;
+            break;
+        }
+        
+        // Check for continue (execute increment then continue to next iteration)
+        if (loopContext.hasContinue) {
+            loopContext.hasContinue = false;
+            if (statement->increment != nullptr) {
+                evaluate(statement->increment);
+            }
+            continue;
+        }
+        
+        if (statement->increment != nullptr) {
+            evaluate(statement->increment);
+        }
+    }
+}
+
+void Interpreter::visitBreakStmt(const std::shared_ptr<BreakStmt>& statement, ExecutionContext* context)
+{
+    if (context) {
+        context->hasBreak = true;
+    }
+}
+
+void Interpreter::visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement, ExecutionContext* context)
+{
+    if (context) {
+        context->hasContinue = true;
+    }
+}
+
+void Interpreter::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context)
+{
+    Value value = evaluate(statement->value);
+    
+    // Handle different assignment operators
+    if (statement->op.type == EQUAL) {
+        // Simple assignment
+        environment->assign(statement->name, value);
+    } else {
+        // Compound assignment - get current value first
+        Value currentValue = environment->get(statement->name.lexeme);
+        
+        // Apply the compound operation
+        Value result;
+        if (statement->op.type == PLUS_EQUAL) {
+            result = currentValue + value;
+        } else if (statement->op.type == MINUS_EQUAL) {
+            result = currentValue - value;
+        } else if (statement->op.type == STAR_EQUAL) {
+            result = currentValue * value;
+        } else if (statement->op.type == SLASH_EQUAL) {
+            result = currentValue / value;
+        } else if (statement->op.type == PERCENT_EQUAL) {
+            result = currentValue % value;
+        } else if (statement->op.type == BIN_AND_EQUAL) {
+            result = currentValue & value;
+        } else if (statement->op.type == BIN_OR_EQUAL) {
+            result = currentValue | value;
+        } else if (statement->op.type == BIN_XOR_EQUAL) {
+            result = currentValue ^ value;
+        } else if (statement->op.type == BIN_SLEFT_EQUAL) {
+            result = currentValue << value;
+        } else if (statement->op.type == BIN_SRIGHT_EQUAL) {
+            result = currentValue >> value;
+        } else {
+            throw std::runtime_error("Unknown assignment operator: " + statement->op.lexeme);
+        }
+        
+        environment->assign(statement->name, result);
+    }
+}
+
 void Interpreter::interpret(std::vector<std::shared_ptr<Stmt> > statements) {
     for(const std::shared_ptr<Stmt>& s : statements)
     {
@@ -761,7 +964,7 @@ void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt> > statements, s
     for(const std::shared_ptr<Stmt>& s : statements)
     {
         execute(s, context);
-        if (context && context->hasReturn) {
+        if (context && (context->hasReturn || context->hasBreak || context->hasContinue)) {
             this->environment = previous;
             return;
         }
@@ -919,6 +1122,30 @@ bool Interpreter::isWholeNumer(double num) {
     {
         return false;
     }
+}
+
+void Interpreter::cleanupUnusedFunctions() {
+    // Only remove functions that are definitely not referenced anywhere (use_count == 1)
+    // This is more conservative to prevent dangling pointer issues
+    functions.erase(
+        std::remove_if(functions.begin(), functions.end(),
+            [](const std::shared_ptr<Function>& func) {
+                return func.use_count() == 1;  // Only referenced by this vector, nowhere else
+            }),
+        functions.end()
+    );
+}
+
+void Interpreter::cleanupUnusedThunks() {
+    // Only remove thunks that are definitely not referenced anywhere (use_count == 1)
+    // This is more conservative to prevent dangling pointer issues
+    thunks.erase(
+        std::remove_if(thunks.begin(), thunks.end(),
+            [](const std::shared_ptr<Thunk>& thunk) {
+                return thunk.use_count() == 1;  // Only referenced by this vector, nowhere else
+            }),
+        thunks.end()
+    );
 }
 
 

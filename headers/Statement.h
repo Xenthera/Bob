@@ -11,10 +11,18 @@ struct BlockStmt;
 struct FunctionStmt;
 struct ReturnStmt;
 struct IfStmt;
+struct WhileStmt;
+struct DoWhileStmt;
+struct ForStmt;
+struct BreakStmt;
+struct ContinueStmt;
+struct AssignStmt;
 
 struct ExecutionContext {
     bool isFunctionBody = false;
     bool hasReturn = false;
+    bool hasBreak = false;
+    bool hasContinue = false;
     Value returnValue;
 };
 
@@ -26,6 +34,12 @@ struct StmtVisitor
     virtual void visitFunctionStmt(const std::shared_ptr<FunctionStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitReturnStmt(const std::shared_ptr<ReturnStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitIfStmt(const std::shared_ptr<IfStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitWhileStmt(const std::shared_ptr<WhileStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitForStmt(const std::shared_ptr<ForStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitBreakStmt(const std::shared_ptr<BreakStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitContinueStmt(const std::shared_ptr<ContinueStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitAssignStmt(const std::shared_ptr<AssignStmt>& stmt, ExecutionContext* context = nullptr) = 0;
 };
 
 struct Stmt : public std::enable_shared_from_this<Stmt>
@@ -116,5 +130,89 @@ struct IfStmt : Stmt
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
     {
         visitor->visitIfStmt(std::static_pointer_cast<IfStmt>(shared_from_this()), context);
+    }
+};
+
+struct WhileStmt : Stmt
+{
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Stmt> body;
+
+    WhileStmt(std::shared_ptr<Expr> condition, std::shared_ptr<Stmt> body) 
+        : condition(condition), body(body) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitWhileStmt(std::static_pointer_cast<WhileStmt>(shared_from_this()), context);
+    }
+};
+
+struct DoWhileStmt : Stmt
+{
+    std::shared_ptr<Stmt> body;
+    std::shared_ptr<Expr> condition;
+
+    DoWhileStmt(std::shared_ptr<Stmt> body, std::shared_ptr<Expr> condition) 
+        : body(body), condition(condition) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitDoWhileStmt(std::static_pointer_cast<DoWhileStmt>(shared_from_this()), context);
+    }
+};
+
+struct ForStmt : Stmt
+{
+    std::shared_ptr<Stmt> initializer;
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Expr> increment;
+    std::shared_ptr<Stmt> body;
+
+    ForStmt(std::shared_ptr<Stmt> initializer, std::shared_ptr<Expr> condition, 
+            std::shared_ptr<Expr> increment, std::shared_ptr<Stmt> body) 
+        : initializer(initializer), condition(condition), increment(increment), body(body) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitForStmt(std::static_pointer_cast<ForStmt>(shared_from_this()), context);
+    }
+};
+
+struct BreakStmt : Stmt
+{
+    const Token keyword;
+
+    BreakStmt(Token keyword) : keyword(keyword) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitBreakStmt(std::static_pointer_cast<BreakStmt>(shared_from_this()), context);
+    }
+};
+
+struct ContinueStmt : Stmt
+{
+    const Token keyword;
+
+    ContinueStmt(Token keyword) : keyword(keyword) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitContinueStmt(std::static_pointer_cast<ContinueStmt>(shared_from_this()), context);
+    }
+};
+
+struct AssignStmt : Stmt
+{
+    const Token name;
+    const Token op;
+    std::shared_ptr<Expr> value;
+
+    AssignStmt(Token name, Token op, std::shared_ptr<Expr> value) 
+        : name(name), op(op), value(value) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitAssignStmt(std::static_pointer_cast<AssignStmt>(shared_from_this()), context);
     }
 };

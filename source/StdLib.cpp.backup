@@ -1,0 +1,203 @@
+#include "../headers/StdLib.h"
+#include "../headers/Interpreter.h"
+#include "../headers/ErrorReporter.h"
+#include <chrono>
+#include <iostream>
+#include <string>
+
+void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter) {
+    // toString function
+    auto toStringFunc = std::make_shared<BuiltinFunction>("toString",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("toString() expects exactly 1 argument, got " + std::to_string(args.size()));
+            }
+            return Value(args[0].toString());
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(toStringFunc);
+    env->define("toString", Value(toStringFunc.get()));
+
+    // print function
+    auto printFunc = std::make_shared<BuiltinFunction>("print",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            for (size_t i = 0; i < args.size(); i++) {
+                if (i > 0) std::cout << " ";
+                std::cout << args[i].toString();
+            }
+            std::cout << std::endl;
+            return NONE_VALUE;
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(printFunc);
+    env->define("print", Value(printFunc.get()));
+
+    // assert function
+    auto assertFunc = std::make_shared<BuiltinFunction>("assert",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() < 1 || args.size() > 2) {
+                throw std::runtime_error("assert() expects 1 or 2 arguments, got " + std::to_string(args.size()));
+            }
+            
+            if (!args[0].isTruthy()) {
+                std::string message = args.size() == 2 ? args[1].toString() : "Assertion failed";
+                throw std::runtime_error("Assertion failed: " + message);
+            }
+            return NONE_VALUE;
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(assertFunc);
+    env->define("assert", Value(assertFunc.get()));
+
+    // time function
+    auto timeFunc = std::make_shared<BuiltinFunction>("time",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 0) {
+                throw std::runtime_error("time() expects no arguments, got " + std::to_string(args.size()));
+            }
+            
+            auto now = std::chrono::high_resolution_clock::now();
+            auto duration = now.time_since_epoch();
+            auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration).count();
+            return Value(static_cast<double>(seconds));
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(timeFunc);
+    env->define("time", Value(timeFunc.get()));
+
+    // input function
+    auto inputFunc = std::make_shared<BuiltinFunction>("input",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() > 1) {
+                throw std::runtime_error("input() expects 0 or 1 arguments, got " + std::to_string(args.size()));
+            }
+            
+            if (args.size() == 1) {
+                std::cout << args[0].toString();
+            }
+            
+            std::string line;
+            std::getline(std::cin, line);
+            return Value(line);
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(inputFunc);
+    env->define("input", Value(inputFunc.get()));
+
+    // type function
+    auto typeFunc = std::make_shared<BuiltinFunction>("type",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("type() expects exactly 1 argument, got " + std::to_string(args.size()));
+            }
+            
+            if (args[0].isNumber()) return Value("number");
+            if (args[0].isString()) return Value("string");
+            if (args[0].isBoolean()) return Value("boolean");
+            if (args[0].isFunction()) return Value("function");
+            if (args[0].isBuiltinFunction()) return Value("builtin_function");
+            if (args[0].isThunk()) return Value("thunk");
+            if (args[0].isNone()) return Value("none");
+            
+            return Value("unknown");
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(typeFunc);
+    env->define("type", Value(typeFunc.get()));
+
+    // toNumber function
+    auto toNumberFunc = std::make_shared<BuiltinFunction>("toNumber",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("toNumber() expects exactly 1 argument, got " + std::to_string(args.size()));
+            }
+            
+            if (args[0].isNumber()) return args[0];
+            if (args[0].isString()) {
+                try {
+                    return Value(std::stod(args[0].asString()));
+                } catch (...) {
+                    return Value(0.0);
+                }
+            }
+            if (args[0].isBoolean()) return Value(args[0].asBoolean() ? 1.0 : 0.0);
+            if (args[0].isNone()) return Value(0.0);
+            
+            return Value(0.0);
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(toNumberFunc);
+    env->define("toNumber", Value(toNumberFunc.get()));
+
+    // toBoolean function
+    auto toBooleanFunc = std::make_shared<BuiltinFunction>("toBoolean",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                throw std::runtime_error("toBoolean() expects exactly 1 argument, got " + std::to_string(args.size()));
+            }
+            
+            return Value(args[0].isTruthy());
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(toBooleanFunc);
+    env->define("toBoolean", Value(toBooleanFunc.get()));
+
+    // exit function
+    auto exitFunc = std::make_shared<BuiltinFunction>("exit",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            int code = 0;
+            if (args.size() == 1) {
+                if (args[0].isNumber()) {
+                    code = static_cast<int>(args[0].asNumber());
+                }
+            } else if (args.size() > 1) {
+                throw std::runtime_error("exit() expects 0 or 1 arguments, got " + std::to_string(args.size()));
+            }
+            std::exit(code);
+            return NONE_VALUE;
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(exitFunc);
+    env->define("exit", Value(exitFunc.get()));
+
+    // cleanup functions
+    auto cleanupFunc = std::make_shared<BuiltinFunction>("cleanup",
+        [&interpreter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 0) {
+                throw std::runtime_error("cleanup() expects no arguments, got " + std::to_string(args.size()));
+            }
+            
+            interpreter.cleanupUnusedFunctions();
+            interpreter.cleanupUnusedThunks();
+            return NONE_VALUE;
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(cleanupFunc);
+    env->define("cleanup", Value(cleanupFunc.get()));
+
+    // getFunctionCount function
+    auto getFunctionCountFunc = std::make_shared<BuiltinFunction>("getFunctionCount",
+        [&interpreter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 0) {
+                throw std::runtime_error("getFunctionCount() expects no arguments, got " + std::to_string(args.size()));
+            }
+            
+            // This would need to be exposed through the interpreter
+            // For now, return a placeholder
+            return Value(0.0);
+        });
+
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.addBuiltinFunction(getFunctionCountFunc);
+    env->define("getFunctionCount", Value(getFunctionCountFunc.get()));
+} 

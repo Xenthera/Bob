@@ -15,3 +15,7 @@ print("Result: " + fib_result);
 
 print("Counter: " + counter);
 
+
+func test_fib() {
+
+}

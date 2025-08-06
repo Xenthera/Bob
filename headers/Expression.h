@@ -13,6 +13,7 @@
 // Forward declarations
 struct FunctionExpr;
 struct IncrementExpr;
+struct TernaryExpr;
 struct ExprVisitor;
 
 struct AssignExpr;
@@ -35,6 +36,7 @@ struct ExprVisitor
     virtual Value visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) = 0;
     virtual Value visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expr) = 0;
     virtual Value visitVarExpr(const std::shared_ptr<VarExpr>& expr) = 0;
+    virtual Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expr) = 0;
 };
 
 struct Expr : public std::enable_shared_from_this<Expr> {
@@ -149,6 +151,20 @@ struct IncrementExpr : Expr
     Value accept(ExprVisitor* visitor) override
     {
         return visitor->visitIncrementExpr(std::static_pointer_cast<IncrementExpr>(shared_from_this()));
+    }
+};
+
+struct TernaryExpr : Expr
+{
+    std::shared_ptr<Expr> condition;
+    std::shared_ptr<Expr> thenExpr;
+    std::shared_ptr<Expr> elseExpr;
+    
+    TernaryExpr(std::shared_ptr<Expr> condition, std::shared_ptr<Expr> thenExpr, std::shared_ptr<Expr> elseExpr)
+        : condition(condition), thenExpr(thenExpr), elseExpr(elseExpr) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitTernaryExpr(std::static_pointer_cast<TernaryExpr>(shared_from_this()));
     }
 };
 

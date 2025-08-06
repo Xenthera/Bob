@@ -1,0 +1,58 @@
+// Test file for operator syntax highlighting
+var x = 5;
+var y = 10;
+var z = x + y;
+var w = x - y;
+var a = x * y;
+var b = x / y;
+var c = x % y;
+
+// Comparison operators
+var eq = x == y;
+var ne = x != y;
+var lt = x < y;
+var gt = x > y;
+var le = x <= y;
+var ge = x >= y;
+
+// Increment/decrement
+x++;
+y--;
+
+// Compound assignment
+x += 5;
+y -= 3;
+z *= 2;
+w /= 4;
+a %= 3;
+
+// Logical operators
+var and = true && false;
+var or = true || false;
+var not = !true;
+
+// Bitwise operators
+var bit_and = x & y;
+var bit_or = x | y;
+var bit_xor = x ^ y;
+var left_shift = x << 2;
+var right_shift = x >> 1;
+
+// Compound bitwise assignment
+x &= y;
+y |= z;
+z ^= w;
+w <<= 2;
+a >>= 1;
+
+// Function with operators
+func test_operators() {
+    var result = 0;
+    if (x >= 0 && y <= 100) {
+        result = x + y * 2;
+        if (result != 0) {
+            result++;
+        }
+    }
+    return result;
+} 

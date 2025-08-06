@@ -24,6 +24,7 @@ public:
 private:
     sptr(Expr) expression();
     sptr(Expr) logical_or();
+    sptr(Expr) ternary();
     sptr(Expr) logical_and();
     sptr(Expr) bitwise_or();
     sptr(Expr) bitwise_xor();
@@ -56,6 +57,16 @@ private:
 
     std::shared_ptr<Stmt> ifStatement();
 
+    std::shared_ptr<Stmt> whileStatement();
+
+    std::shared_ptr<Stmt> doWhileStatement();
+
+    std::shared_ptr<Stmt> forStatement();
+
+    std::shared_ptr<Stmt> breakStatement();
+
+    std::shared_ptr<Stmt> continueStatement();
+
     std::shared_ptr<Stmt> declaration();
 
     std::shared_ptr<Stmt> varDeclaration();
@@ -63,7 +74,9 @@ private:
     std::shared_ptr<Stmt> functionDeclaration();
     std::shared_ptr<Expr> functionExpression();
 
+    std::shared_ptr<Stmt> assignmentStatement();
     sptr(Expr) assignment();
+    sptr(Expr) assignmentExpression();  // For for loop increment clauses
     sptr(Expr) increment();  // Parse increment/decrement expressions
     sptr(Expr) postfix();    // Parse postfix operators
 

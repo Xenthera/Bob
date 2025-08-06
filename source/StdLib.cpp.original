@@ -258,6 +258,4 @@ void StdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& int
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(exitFunc);
-
-
 } 

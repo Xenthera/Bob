@@ -115,6 +115,16 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             tokens.push_back(Token{BIN_NOT, std::string(1, t), line, column - 1});
             advance();
         }
+        else if(t == '?')
+        {
+            tokens.push_back(Token{QUESTION, std::string(1, t), line, column});
+            advance();
+        }
+        else if(t == ':')
+        {
+            tokens.push_back(Token{COLON, std::string(1, t), line, column});
+            advance();
+        }
         else if(t == '=')
         {
             std::string token = std::string(1, t);

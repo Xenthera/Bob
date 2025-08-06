@@ -15,13 +15,16 @@ enum TokenType{
     GREATER, GREATER_EQUAL,
     LESS, LESS_EQUAL,
     
+    // Ternary operator
+    QUESTION, COLON,
+    
     // Increment/decrement operators
     PLUS_PLUS, MINUS_MINUS,
 
     IDENTIFIER, STRING, NUMBER, BOOL,
 
     AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
-    WHILE, VAR, CLASS, SUPER, THIS, NONE, RETURN,
+    WHILE, DO, VAR, CLASS, SUPER, THIS, NONE, RETURN, BREAK, CONTINUE,
 
     // Compound assignment operators
     PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
@@ -42,12 +45,14 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
                            "GREATER", "GREATER_EQUAL",
                            "LESS", "LESS_EQUAL",
                            
+                           "QUESTION", "COLON",
+                           
                            "PLUS_PLUS", "MINUS_MINUS",
 
                            "IDENTIFIER", "STRING", "NUMBER", "BOOL",
 
                            "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
-                           "WHILE", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN",
+                           "WHILE", "DO", "VAR", "CLASS", "SUPER", "THIS", "NONE", "RETURN", "BREAK", "CONTINUE",
 
                            // Compound assignment operators
                            "PLUS_EQUAL", "MINUS_EQUAL", "STAR_EQUAL", "SLASH_EQUAL", "PERCENT_EQUAL",
@@ -67,12 +72,15 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"func", FUNCTION},
         {"for", FOR},
         {"while", WHILE},
+        {"do", DO},
         {"var", VAR},
         {"class", CLASS},
         {"super", SUPER},
         {"this", THIS},
         {"none", NONE},
         {"return", RETURN},
+        {"break", BREAK},
+        {"continue", CONTINUE},
 };
 
 struct Token

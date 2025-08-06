@@ -1815,6 +1815,510 @@ print("  Nested multi-statement function result: " + toString(result2));
 print("Multi-statement function execution: PASS");
 
 // ========================================
+// TEST 46: WHILE LOOPS
+// ========================================
+print("\n--- Test 46: While Loops ---");
+
+// Basic while loop
+var counter = 0;
+while (counter < 5) {
+    counter = counter + 1;
+}
+assert(counter == 5, "Basic while loop should increment counter to 5");
+print("  Basic while loop: PASS");
+
+// While loop with break (using return)
+func countToThree() {
+    var i = 0;
+    while (true) {
+        i = i + 1;
+        if (i > 3) {
+            return i;
+        }
+    }
+}
+assert(countToThree() == 4, "While loop with return should work");
+print("  While loop with return: PASS");
+
+// While loop with condition
+var sum = 0;
+var num = 1;
+while (num <= 10) {
+    sum = sum + num;
+    num = num + 1;
+}
+assert(sum == 55, "While loop should sum numbers 1 to 10");
+print("  While loop summation: PASS");
+
+// Nested while loops
+var outer = 0;
+var inner = 0;
+while (outer < 3) {
+    inner = 0;
+    while (inner < 2) {
+        inner = inner + 1;
+    }
+    outer = outer + 1;
+}
+assert(outer == 3, "Nested while loops should work");
+assert(inner == 2, "Inner loop should complete");
+print("  Nested while loops: PASS");
+
+// While loop with false condition (should not execute)
+var neverExecuted = 0;
+while (false) {
+    neverExecuted = neverExecuted + 1;
+}
+assert(neverExecuted == 0, "While loop with false condition should not execute");
+print("  While loop with false condition: PASS");
+
+// While loop with complex condition
+var x = 10;
+var y = 0;
+while (x > 0 && y < 5) {
+    x = x - 1;
+    y = y + 1;
+}
+assert(x == 5, "Complex condition while loop should work");
+assert(y == 5, "Complex condition while loop should work");
+print("  While loop with complex condition: PASS");
+
+print("While loops: PASS");
+
+// ========================================
+// TEST 47: FOR LOOPS
+// ========================================
+print("\n--- Test 47: For Loops ---");
+
+// Basic for loop
+var forSum = 0;
+for (var i = 1; i <= 5; i = i + 1) {
+    forSum = forSum + i;
+}
+assert(forSum == 15, "Basic for loop should sum 1 to 5");
+print("  Basic for loop: PASS");
+
+// For loop with no initializer
+var j = 0;
+for (; j < 3; j = j + 1) {
+    // Empty body
+}
+assert(j == 3, "For loop with no initializer should work");
+print("  For loop with no initializer: PASS");
+
+// For loop with no condition (infinite loop with break)
+func countToTwo() {
+    var k = 0;
+    for (; ; k = k + 1) {
+        if (k >= 2) {
+            return k;
+        }
+    }
+}
+assert(countToTwo() == 2, "For loop with no condition should work");
+print("  For loop with no condition: PASS");
+
+// For loop with no increment
+var m = 0;
+var n = 0;
+for (n = 0; n < 3; ) {
+    m = m + 1;
+    n = n + 1;
+}
+assert(m == 3, "For loop with no increment should work");
+assert(n == 3, "For loop with no increment should work");
+print("  For loop with no increment: PASS");
+
+// Nested for loops
+var total = 0;
+for (var a = 0; a < 2; a = a + 1) {
+    for (var b = 0; b < 3; b = b + 1) {
+        total = total + 1;
+    }
+}
+assert(total == 6, "Nested for loops should work");
+print("  Nested for loops: PASS");
+
+// For loop with expression initializer
+var result = 0;
+for (var temp = 2 * 3; temp > 0; temp = temp - 1) {
+    result = result + temp;
+}
+assert(result == 21, "For loop with expression initializer should work"); // 6 + 5 + 4 + 3 + 2 + 1 = 21
+print("  For loop with expression initializer: PASS");
+
+// For loop with complex increment
+var complexSum = 0;
+for (var i = 0; i < 10; i = i + 2) {
+    complexSum = complexSum + i;
+}
+assert(complexSum == 20, "For loop with complex increment should work"); // 0 + 2 + 4 + 6 + 8 = 20
+print("  For loop with complex increment: PASS");
+
+// For loop with function calls
+func getNext(i) {
+    return i + 1;
+}
+
+var funcSum = 0;
+for (var i = 0; i < 4; i = getNext(i)) {
+    funcSum = funcSum + i;
+}
+assert(funcSum == 6, "For loop with function calls should work"); // 0 + 1 + 2 + 3 = 6
+print("  For loop with function calls: PASS");
+
+print("For loops: PASS");
+
+// ========================================
+// TEST 48: CRITICAL LOOP EDGE CASES
+// ========================================
+print("\n--- Test 48: Critical Loop Edge Cases ---");
+
+// Edge case 1: Empty loop bodies
+var emptyWhileCounter = 0;
+while (emptyWhileCounter < 3) {
+    emptyWhileCounter = emptyWhileCounter + 1;
+}
+assert(emptyWhileCounter == 3, "Empty while loop body should still increment counter");
+
+var emptyForCounter = 0;
+for (var i = 0; i < 3; i = i + 1) {
+    // Empty body
+}
+assert(i == 3, "Empty for loop body should still increment counter");
+
+// Edge case 2: Loops with only break/continue
+var breakOnlyCounter = 0;
+while (true) {
+    breakOnlyCounter = breakOnlyCounter + 1;
+    if (breakOnlyCounter == 5) {
+        break;
+    }
+}
+assert(breakOnlyCounter == 5, "Loop with only break should work");
+
+var continueOnlyCounter = 0;
+var continueOnlySum = 0;
+for (var j = 0; j < 10; j = j + 1) {
+    if (j < 5) {
+        continue;
+    }
+    continueOnlySum = continueOnlySum + j;
+}
+assert(continueOnlySum == 35, "Loop with only continue should sum 5+6+7+8+9=35");
+
+// Edge case 3: Nested break/continue with multiple levels
+var nestedBreakLevel1 = 0;
+var nestedBreakLevel2 = 0;
+for (var a = 0; a < 3; a = a + 1) {
+    nestedBreakLevel1 = nestedBreakLevel1 + 1;
+    for (var b = 0; b < 3; b = b + 1) {
+        nestedBreakLevel2 = nestedBreakLevel2 + 1;
+        if (a == 1 && b == 1) {
+            break;
+        }
+    }
+}
+assert(nestedBreakLevel1 == 3, "Nested break should not affect outer loop");
+assert(nestedBreakLevel2 == 8, "Nested break should only break inner loop (3+3+2=8)");
+
+// Edge case 4: Loops with function calls that return early
+func earlyReturnFunc(x) {
+    if (x == 3) {
+        return "early";
+    }
+    return "normal";
+}
+
+var earlyReturnCounter = 0;
+var earlyReturnResults = "";
+for (var k = 0; k < 5; k = k + 1) {
+    earlyReturnCounter = earlyReturnCounter + 1;
+    earlyReturnResults = earlyReturnResults + earlyReturnFunc(k);
+}
+assert(earlyReturnCounter == 5, "Loop should continue even with early returns in function calls");
+assert(earlyReturnResults == "normalnormalnormalearlynormal", "Function calls with early returns should work in loops");
+
+// Edge case 5: Loops with variable shadowing
+var shadowVar = 10;
+for (var shadowVar = 0; shadowVar < 3; shadowVar = shadowVar + 1) {
+    // Inner shadowVar shadows outer shadowVar
+}
+assert(shadowVar == 3, "Variable shadowing in for loop should work");
+
+var shadowWhileVar = 20;
+var shadowCounter = 0;
+while (shadowCounter < 2) {
+    var shadowWhileVar = shadowCounter * 10;
+    shadowCounter = shadowCounter + 1;
+}
+assert(shadowWhileVar == 20, "Variable shadowing in while loop should not affect outer scope");
+
+// Edge case 6: Loops with return statements in different contexts
+func loopWithReturn() {
+    var returnCounter = 0;
+    for (var q = 0; q < 10; q = q + 1) {
+        returnCounter = returnCounter + 1;
+        if (q == 4) {
+            return returnCounter;
+        }
+    }
+    return returnCounter;
+}
+assert(loopWithReturn() == 5, "Loop with return should exit function early");
+
+// Edge case 7: Loops with nested function definitions
+var nestedFuncCounter = 0;
+for (var r = 0; r < 3; r = r + 1) {
+    nestedFuncCounter = nestedFuncCounter + 1;
+    func nestedInLoop() {
+        return r * 2;
+    }
+    if (nestedInLoop() == 4) {
+        break;
+    }
+}
+assert(nestedFuncCounter == 3, "Loop with nested function definitions should work");
+
+// Edge case 8: Loops with closures capturing loop variables
+var closureResults = "";
+for (var s = 0; s < 3; s = s + 1) {
+    var capturedVar = s;
+    func closure() {
+        return capturedVar;
+    }
+    closureResults = closureResults + toString(closure());
+}
+assert(closureResults == "012", "Loops with closures should capture variables correctly");
+
+// Edge case 9: Loops with multiple continue statements
+var multiContinueSum = 0;
+for (var t = 0; t < 6; t = t + 1) {
+    if (t == 1) {
+        continue;
+    }
+    if (t == 3) {
+        continue;
+    }
+    if (t == 5) {
+        continue;
+    }
+    multiContinueSum = multiContinueSum + t;
+}
+assert(multiContinueSum == 6, "Loop with multiple continue statements should sum 0+2+4=6");
+
+// Edge case 10: Loops with break/continue in conditional blocks
+var conditionalBreakCounter = 0;
+for (var p = 0; p < 10; p = p + 1) {
+    conditionalBreakCounter = conditionalBreakCounter + 1;
+    if (p % 2 == 0) {
+        if (p == 6) {
+            break;
+        }
+    } else {
+        if (p == 7) {
+            continue;
+        }
+    }
+}
+assert(conditionalBreakCounter == 7, "Loop with conditional break/continue should work");
+
+print("Critical loop edge cases: PASS");
+
+// ========================================
+// TEST 49: DO-WHILE LOOPS
+// ========================================
+
+// Basic do-while loop
+var i = 0;
+do {
+    i = i + 1;
+} while (i < 5);
+assert(i == 5, "Basic do-while loop should increment to 5");
+
+// Do-while with break
+var j = 0;
+do {
+    j = j + 1;
+    if (j == 3) {
+        break;
+    }
+} while (j < 10);
+assert(j == 3, "Do-while with break should stop at 3");
+
+// Do-while with continue
+var k = 0;
+var sum = 0;
+do {
+    k = k + 1;
+    if (k == 2) {
+        continue;
+    }
+    sum = sum + k;
+} while (k < 5);
+assert(sum == 13, "Do-while with continue should sum 1+3+4+5=13");
+
+// Do-while with return in function
+func doWhileReturn() {
+    var x = 0;
+    do {
+        x = x + 1;
+        if (x == 3) {
+            return x;
+        }
+    } while (x < 10);
+    return 0;
+}
+assert(doWhileReturn() == 3, "Do-while with return should return 3");
+
+// Nested do-while loops
+var outer = 0;
+var inner = 0;
+do {
+    outer = outer + 1;
+    inner = 0;
+    do {
+        inner = inner + 1;
+    } while (inner < 3);
+} while (outer < 2);
+assert(outer == 2, "Nested do-while outer should be 2");
+assert(inner == 3, "Nested do-while inner should be 3");
+
+// Do-while with complex condition
+var a = 0;
+var b = 5;
+do {
+    a = a + 1;
+    b = b - 1;
+} while (a < b);
+assert(a == 3, "Do-while with complex condition a should be 3");
+assert(b == 2, "Do-while with complex condition b should be 2");
+
+// Do-while with function call in condition
+func getValue() {
+    return 3;
+}
+
+var counter = 0;
+do {
+    counter = counter + 1;
+} while (counter < getValue());
+assert(counter == 3, "Do-while with function call should count to 3");
+
+// Do-while with empty body (should still execute once)
+var empty = 0;
+do {
+    empty = empty + 1;
+} while (false);
+assert(empty == 1, "Do-while with false condition should execute once");
+
+// Do-while with break and continue
+var complex = 0;
+var result = 0;
+do {
+    complex = complex + 1;
+    if (complex == 1) {
+        continue;
+    }
+    if (complex == 4) {
+        break;
+    }
+    result = result + complex;
+} while (complex < 10);
+assert(result == 5, "Do-while with break and continue should sum 2+3=5");
+
+print("Do-while loops: PASS");
+
+// ========================================
+// TEST 50: TERNARY OPERATOR
+// ========================================
+
+// Basic ternary operator
+var result1 = true ? 42 : 10;
+assert(result1 == 42, "Basic ternary with true condition");
+
+var result2 = false ? 42 : 10;
+assert(result2 == 10, "Basic ternary with false condition");
+
+// Ternary with expressions
+var x = 5;
+var y = 10;
+var result3 = x > y ? "x is greater" : "y is greater";
+assert(result3 == "y is greater", "Ternary with comparison expression");
+
+// Ternary with function calls
+func getValue() {
+    return 100;
+}
+
+func getOtherValue() {
+    return 200;
+}
+
+var result4 = x < y ? getValue() : getOtherValue();
+assert(result4 == 100, "Ternary with function calls");
+
+// Ternary with nested expressions
+var result5 = x == 5 ? (y == 10 ? "both true" : "x true, y false") : "x false";
+assert(result5 == "both true", "Nested ternary expressions");
+
+// Ternary with different types
+var result6 = true ? "string" : 42;
+assert(result6 == "string", "Ternary with different types (string)");
+
+var result7 = false ? "string" : 42;
+assert(result7 == 42, "Ternary with different types (number)");
+
+// Ternary with boolean expressions
+var result8 = x > 0 && y > 0 ? "both positive" : "not both positive";
+assert(result8 == "both positive", "Ternary with boolean expression");
+
+// Ternary with arithmetic expressions
+var result9 = x + y > 10 ? x * y : x + y;
+assert(result9 == 50, "Ternary with arithmetic expressions");
+
+// Ternary with variables
+var a = 1;
+var b = 2;
+var c = 3;
+var result10 = a < b ? c : a;
+assert(result10 == 3, "Ternary with variables");
+
+// Ternary with zero and negative values
+var result11 = 0 ? "truthy" : "falsy";
+assert(result11 == "falsy", "Ternary with zero (falsy)");
+
+var result12 = -1 ? "truthy" : "falsy";
+assert(result12 == "truthy", "Ternary with negative number (truthy)");
+
+// Ternary with empty string
+var result13 = "" ? "truthy" : "falsy";
+assert(result13 == "falsy", "Ternary with empty string (falsy)");
+
+// Ternary with none
+var result14 = none ? "truthy" : "falsy";
+assert(result14 == "falsy", "Ternary with none (falsy)");
+
+// Ternary in assignment
+var maxValue = x > y ? x : y;
+assert(maxValue == 10, "Ternary in assignment");
+
+// Ternary with complex conditions
+var age = 25;
+var status = age >= 18 ? "adult" : "minor";
+assert(status == "adult", "Ternary with complex condition");
+
+// Ternary with string concatenation
+var message = x > 3 ? "x is " + toString(x) : "x is small";
+assert(message == "x is 5", "Ternary with string concatenation");
+
+// Ternary with multiple operators
+var result15 = x > 0 && y > 0 && x < y ? "valid range" : "invalid range";
+assert(result15 == "valid range", "Ternary with multiple operators");
+
+print("Ternary operator: PASS");
+
+// ========================================
 // TEST SUMMARY
 // ========================================
 print("\nTest Summary:");
@@ -1877,7 +2381,11 @@ print("- Lexer consistency improvements");
 print("- None value concatenation (string + none, none + string)");
 print("- Memory management (variable reassignment, function reassignment, large string cleanup)");
 print("- Multi-statement function execution");
+print("- While loops (basic, nested, complex conditions, return breaks)");
+print("- For loops (basic, nested, missing clauses, complex expressions)");
+print("- Do-while loops (basic, nested, break, continue, return, complex conditions)");
+print("- Critical loop edge cases (10 comprehensive scenarios)");
+print("- Ternary operator (conditional expressions with ? and :)");
 
 print("\nAll tests passed.");
 print("Test suite complete.");
- 

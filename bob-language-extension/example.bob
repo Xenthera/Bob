@@ -1,0 +1,75 @@
+// Bob Language Example - Demonstrates syntax highlighting
+
+// Variable declarations
+var message = "Hello, Bob!";
+var number = 42;
+var pi = 3.14159;
+var isActive = true;
+var empty = none;
+
+// Print statements
+print(message);
+print("Number: " + toString(number));
+print("Pi: " + toString(pi));
+
+// Function definition
+func factorial(n) {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+// While loop with break
+var counter = 0;
+while (counter < 10) {
+    if (counter == 5) {
+        break;
+    }
+    counter = counter + 1;
+}
+
+// For loop with continue
+var sum = 0;
+for (var i = 0; i < 10; i = i + 1) {
+    if (i % 2 == 0) {
+        continue;
+    }
+    sum = sum + i;
+}
+
+// Anonymous function
+var double = func(x) {
+    return x * 2;
+};
+
+// Logical operators
+var a = true && false;
+var b = true || false;
+var c = !false;
+
+// Bitwise operators
+var d = 5 & 3;
+var e = 5 | 3;
+var f = 5 ^ 3;
+var g = 5 << 1;
+var h = 5 >> 1;
+
+// Compound assignment
+var value = 10;
+value += 5;
+value *= 2;
+value -= 3;
+
+// Assertions
+assert(factorial(5) == 120, "Factorial calculation failed");
+assert(sum == 25, "Sum calculation failed");
+
+// Type checking
+var typeOfMessage = type(message);
+var typeOfNumber = type(number);
+
+// Time function
+var currentTime = time();
+
+print("All tests passed!"); 
