@@ -604,8 +604,8 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
         if (expression->isTailCall) {
             // Create a thunk for tail call optimization
             auto thunk = new Thunk([this, function, arguments]() -> Value {
-                // Set up the environment for the tail call
-                auto previousEnv = environment;
+                // Use RAII to manage environment
+                ScopedEnv _env(environment);
                 environment = std::make_shared<Environment>(function->closure);
                 environment->setErrorReporter(errorReporter);
                 
@@ -623,12 +623,10 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
                 for (const auto& stmt : function->body) {
                     execute(stmt, &context);
                     if (context.hasReturn) {
-                        environment = previousEnv;
                         return context.returnValue;
                     }
                 }
                 
-                environment = previousEnv;
                 return context.returnValue;
             });
             
@@ -636,7 +634,7 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
             return Value(thunk);
         } else {
             // Normal function call - create new environment
-            auto previousEnv = environment;
+            ScopedEnv _env(environment);
             environment = std::make_shared<Environment>(function->closure);
             environment->setErrorReporter(errorReporter);
             
@@ -651,12 +649,10 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
             for (const auto& stmt : function->body) {
                 execute(stmt, &context);
                 if (context.hasReturn) {
-                    environment = previousEnv;
                     return context.returnValue;
                 }
             }
             
-            environment = previousEnv;
             return context.returnValue;
         }
     }

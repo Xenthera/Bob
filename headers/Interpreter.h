@@ -26,6 +26,14 @@ struct ScopedThunkFlag {
     ~ScopedThunkFlag() { flag = prev; }
 };
 
+// RAII helper for environment management
+struct ScopedEnv {
+    std::shared_ptr<Environment>& target;
+    std::shared_ptr<Environment> prev;
+    ScopedEnv(std::shared_ptr<Environment>& e) : target(e), prev(e) {}
+    ~ScopedEnv() { target = prev; }
+};
+
 // Thunk class for trampoline-based tail call optimization
 class Thunk {
 public:
