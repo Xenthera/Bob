@@ -2,176 +2,176 @@
 
 ## Current Status
 
-Bob is a working programming language with a solid foundation. Here's what's currently implemented:
+Bob is a mature, working programming language with a modern architecture and comprehensive feature set.
 
-### ✅ **Core Language Features**
+### ✅ **Core Language Features (Complete)**
 
 #### **Data Types & Variables**
 - **Numbers**: Integers, floats, automatic conversion
-- **Strings**: Literals, concatenation, multiplication
+- **Strings**: Literals, concatenation, multiplication, escape sequences
 - **Booleans**: `true`, `false`
 - **None**: Null value representation
+- **Arrays**: Dynamic arrays with indexing, assignment, and built-in functions
+- **Dictionaries**: Hash maps with string keys and mixed-type values
+- **Functions**: First-class functions as values
 - **Variables**: Declaration, assignment, scoping
-- **Assignment System**: Dual system (statements + expressions for loops)
+- **Assignment System**: Dual system (statements + expressions for loops only)
 
-#### **Operators**
-- **Arithmetic**: `+`, `-`, `*`, `/`, `%`
+#### **Operators (Complete)**
+- **Arithmetic**: `+`, `-`, `*`, `/`, `%`, unary `-`
 - **Comparison**: `==`, `!=`, `>`, `<`, `>=`, `<=`
 - **Logical**: `&&`, `||`, `!` (with short-circuit evaluation)
 - **Bitwise**: `&`, `|`, `^`, `<<`, `>>`, `~`
 - **Compound Assignment**: `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
 - **Ternary**: `condition ? valueIfTrue : valueIfFalse`
+- **Increment/Decrement**: `++`, `--` (for array elements)
 
-#### **Control Flow**
+#### **Control Flow (Complete)**
 - **If Statements**: `if`, `else`, `else if` chains
 - **While Loops**: Basic, nested, complex conditions
-- **For Loops**: All clause variations, nested loops
 - **Do-While Loops**: Basic, nested, break/continue support
+- **For Loops**: All clause variations, nested loops
 - **Break/Continue**: Full support in all loop types
 
-#### **Functions**
+#### **Functions (Complete)**
 - **Function Declaration**: `func name(params) { body }`
-- **Parameters**: Any number of parameters
+- **Parameters**: Any number of parameters (tested up to 100)
 - **Return Values**: Explicit and implicit returns
 - **Closures**: Lexical scoping with variable capture
 - **First-Class Functions**: Functions as values, parameters, return values
 - **Anonymous Functions**: `func(params) { body }`
 - **Nested Functions**: Functions defined inside other functions
 - **Recursion**: Full support including deep recursion
-- **Tail Call Optimization**: Trampoline-based optimization to prevent stack overflow
+- **Tail Call Optimization**: Trampoline-based optimization preventing stack overflow
 
-#### **Data Structures**
-- **Arrays/Lists**: Full support with indexing, assignment, and built-in functions
-- **Maps/Dictionaries**: Full support with key-value pairs and built-in functions
-- **Array Operations**: `len()`, indexing, assignment, nested arrays
+#### **Data Structures (Complete)**
+- **Arrays**: Full support with indexing, assignment, nested arrays
+- **Dictionaries**: Full support with key-value pairs, nested dictionaries
+- **Array Operations**: `len()`, `push()`, `pop()`, indexing, assignment
 - **Dictionary Operations**: `keys()`, `values()`, `has()`, indexing, assignment
+- **Mixed Types**: Arrays and dictionaries can hold any value types
 
-#### **Standard Library**
-- **`print()`**: Output with automatic type conversion
-- **`assert()`**: Testing with custom error messages
-- **`type()`**: Runtime type checking
-- **`toString()`**: Universal string conversion
-- **`toNumber()`**: String-to-number conversion
-- **`input()`**: User input capability
-- **`time()`**: Microsecond precision timing
-- **`random()`**: Random number generation (properly seeded)
-- **`len()`**: Get length of arrays and strings
-- **`keys()`**: Get all keys from dictionaries
-- **`values()`**: Get all values from dictionaries
-- **`has()`**: Check if key exists in dictionary
-- **`eval()`**: Evaluate strings as Bob code
-- **`sleep()`**: Pause execution for specified seconds
-- **`exit()`**: Terminate program with exit code
+#### **Standard Library (Complete)**
+- **I/O Functions**: `print()`, `printRaw()`, `input()`
+- **Type System**: `type()`, `toString()`, `toNumber()`, `toInt()`, `toBoolean()`
+- **Testing**: `assert()` with custom error messages
+- **Timing**: `time()` (microsecond precision), `sleep()`
+- **Utility**: `random()` (properly seeded), `eval()`, `exit()`
+- **Data Structure**: `len()`, `push()`, `pop()`, `keys()`, `values()`, `has()`
+- **File I/O**: `readFile()`, `writeFile()`, `readLines()`, `fileExists()`
 
-#### **Advanced Features**
+#### **Advanced Features (Complete)**
 - **String Operations**: Bidirectional string + number concatenation
-- **Number Formatting**: Smart significant digits
-- **Memory Management**: Automatic cleanup with shared pointers
+- **Number Formatting**: Smart significant digits handling
+- **Memory Management**: Automatic cleanup with reference counting
 - **Error Handling**: Comprehensive error reporting with context
-- **Testing Framework**: Built-in assert function
-- **Operator Precedence**: Full precedence hierarchy
-- **Variable Shadowing**: Proper scoping rules
+- **Testing Framework**: Built-in assert function with 70+ comprehensive tests
+- **Operator Precedence**: Full precedence hierarchy implementation
+- **Variable Shadowing**: Proper lexical scoping rules
 - **Interactive Mode**: Full REPL with error handling
+- **Cross-Type Comparisons**: Smart equality for all types
+- **Copy Semantics**: Value vs reference copying for different types
 
-### **Current Limitations**
+### ✅ **Architecture & Infrastructure (Complete)**
 
-#### **Advanced Language Features**
-- **No Classes/Objects**: No object-oriented programming
-- **No Modules/Imports**: No code organization system
-- **No Exception Handling**: No try-catch blocks
-- **No Type Annotations**: No static type checking
-- **No Generics**: No parametric polymorphism
+#### **Modern Build System**
+- **CMake**: Cross-platform build configuration
+- **Ninja**: High-speed build system (3.1x faster than Make)
+- **CTest**: Integrated testing framework
+- **Cross-Platform**: Windows, macOS, Linux support
+- **Performance**: Optimized build times and incremental compilation
 
-#### **Standard Library Gaps**
-- **No File I/O**: No reading/writing files
-- **No Network I/O**: No HTTP or socket operations
-- **No Math Library**: No advanced mathematical functions (sqrt, max, min, etc.)
-- **No Date/Time**: No date manipulation (except `time()`)
-- **No String Processing**: No split, join, toUpper, toLower functions
+#### **Clean Architecture**
+- **Modular Design**: Separated parsing, runtime, stdlib, and CLI
+- **Tier Separation**: Clear boundaries between language components
+- **Header Organization**: Organized by functional area
+- **Source Structure**: `src/headers/` and `src/sources/` organization
 
-#### **Development Tools**
-- **No Debugger**: No debugging tools
-- **No Profiler**: No performance analysis
-- **No Package Manager**: No dependency management
+#### **Refactored Interpreter**
+- **Evaluator**: Expression evaluation (visitor pattern)
+- **Executor**: Statement execution and control flow
+- **RuntimeDiagnostics**: Utility functions and type checking
+- **Memory Management**: Smart pointer usage throughout
+- **Error System**: Centralized error reporting
+
+### **Current Architecture Status**
+
+```
+Bob Language
+├── Parsing Layer
+│   ├── Lexer (tokenization)
+│   ├── Parser (AST generation)
+│   └── ErrorReporter (syntax errors)
+├── Runtime Layer
+│   ├── Evaluator (expression visitor)
+│   ├── Executor (statement visitor)
+│   ├── Interpreter (orchestration)
+│   ├── Environment (variable scoping)
+│   ├── Value (type system)
+│   └── RuntimeDiagnostics (utilities)
+├── Standard Library
+│   └── BobStdLib (built-in functions)
+└── CLI Interface
+    └── Bob (command-line interface)
+```
 
 ## **Future Development Phases**
 
-### **Phase 1: Standard Library Expansion (High Priority)**
+### **Phase 1: Advanced Language Features (Medium Priority)**
 
-#### **File I/O**
-```bob
-var content = readFile("data.txt");
-writeFile("output.txt", "Hello World");
-var lines = readLines("config.txt");
-```
-
-**Implementation Plan:**
-- Add `readFile()` function for reading entire files
-- Add `writeFile()` function for writing files
-- Add `readLines()` function for reading files line by line
-- Add error handling for file operations
-
-#### **Math Library**
-```bob
-var result = sqrt(16);      // 4.0
-var max = max(5, 10, 3);    // 10
-var min = min(5, 10, 3);    // 3
-var abs = abs(-42);         // 42
-```
-
-**Implementation Plan:**
-- Add `sqrt()` for square root
-- Add `max()` and `min()` for multiple arguments
-- Add `abs()` for absolute value
-- Add `pow()` for exponentiation
-- Add `floor()`, `ceil()`, `round()` for rounding
-
-#### **String Processing**
-```bob
-var parts = split("a,b,c", ",");  // ["a", "b", "c"]
-var joined = join(parts, "-");    // "a-b-c"
-var upper = toUpper("hello");     // "HELLO"
-var lower = toLower("WORLD");     // "world"
-```
-
-**Implementation Plan:**
-- Add `split()` for string splitting
-- Add `join()` for array joining
-- Add `toUpper()` and `toLower()` for case conversion
-- Add `trim()` for whitespace removal
-- Add `replace()` for string replacement
-
-### **Phase 2: Advanced Language Features (Medium Priority)**
-
-#### **Exception Handling**
+#### **Exception Handling System**
 ```bob
 try {
     var result = 10 / 0;
 } catch (error) {
-    print("Error: " + error);
+    print("Error: " + error.message);
+} finally {
+    print("Cleanup");
 }
 ```
 
 **Implementation Plan:**
-- Add `try`/`catch` syntax
-- Implement exception objects
-- Add `throw` statement
+- Add `try`/`catch`/`finally` syntax to parser
+- Implement exception objects with stack traces
+- Add `throw` statement for custom exceptions
 - Integrate with existing error system
 
-#### **Object System Foundation**
+#### **Pattern Matching**
 ```bob
-// Convert everything to inherit from Object base class
-// Enable method calls on all types
-// Prepare foundation for classes and modules
+match value {
+    case 0: "zero"
+    case 1 | 2: "small"
+    case x if x > 10: "large"
+    default: "other"
+}
 ```
 
 **Implementation Plan:**
-- Unify type system under Object base class
-- Convert functions to proper objects
-- Enable method calls on all data types
-- Update Value union to work with object system
+- Add `match`/`case` syntax
+- Implement pattern matching logic
+- Support guards with `if` conditions
+- Add destructuring for arrays/dictionaries
 
-#### **Classes & Objects**
+### **Phase 2: Object System (Lower Priority)**
+
+#### **Simple Objects**
+```bob
+var person = {
+    name: "Alice",
+    age: 30,
+    greet: func() {
+        return "Hello, I'm " + this.name;
+    }
+};
+```
+
+**Implementation Plan:**
+- Add object literal syntax
+- Implement `this` binding
+- Support method calls
+- Add property access/assignment
+
+#### **Classes (Optional)**
 ```bob
 class Person {
     init(name, age) {
@@ -188,140 +188,125 @@ class Person {
 **Implementation Plan:**
 - Add `class` keyword and syntax
 - Implement constructors with `init()`
+- Support inheritance with `extends`
 - Add method definitions
-- Support inheritance
 
 ### **Phase 3: Module System (Lower Priority)**
 
-#### **Modules/Imports**
+#### **Simple Modules**
 ```bob
-import "math.bob";
-import "utils.bob" as utils;
+// math.bob
+func sqrt(x) { return x ** 0.5; }
+func max(a, b) { return a > b ? a : b; }
 
+// main.bob
+import "math.bob" as math;
 var result = math.sqrt(16);
-var helper = utils.format("Hello");
 ```
 
 **Implementation Plan:**
 - Add `import` statement syntax
 - Implement module loading from files
 - Support namespace aliases
-- Create built-in modules (math, utils, etc.)
+- Create standard library modules
 
-### **Phase 4: Development Tools (Lower Priority)**
+### **Phase 4: Language Enhancements (Optional)**
 
-#### **Debugger**
+#### **Enhanced Standard Library**
 ```bob
-debugger;  // Breakpoint
-var x = 5;
-// Step through code
+// Additional string functions
+var parts = "a,b,c".split(",");
+var joined = ["a", "b", "c"].join("-");
+var upper = "hello".toUpper();
+
+// Math library
+var result = Math.sqrt(16);
+var max = Math.max(5, 10, 3);
 ```
 
-**Implementation Plan:**
-- Add `debugger` statement
-- Implement breakpoint functionality
-- Add step-through debugging
-- Create debug console interface
-
-#### **Profiler**
+#### **Async/Await (Advanced)**
 ```bob
-// Built-in performance analysis
-// Function call timing
-// Memory usage tracking
+async func fetchData() {
+    var response = await http.get("api.com/data");
+    return response.json();
+}
 ```
-
-**Implementation Plan:**
-- Add performance measurement functions
-- Track function call times
-- Monitor memory usage
-- Generate performance reports
 
 ## **Implementation Guidelines**
 
 ### **For Each New Feature:**
-1. **Lexer**: Add new tokens if needed
-2. **Parser**: Add new expression/statement types
-3. **AST**: Define new node types
-4. **Interpreter**: Implement evaluation logic
-5. **Testing**: Create comprehensive test cases
+1. **Design**: Plan syntax and semantics carefully
+2. **Lexer**: Add new tokens if needed
+3. **Parser**: Add new expression/statement types
+4. **AST**: Define new node types in Expression.h/Statement.h
+5. **Evaluator/Executor**: Implement evaluation logic
+6. **Testing**: Write tests for the new feature
+7. **Documentation**: Update language reference
 
-### **Testing Strategy:**
-```bob
-// Use the built-in assert function for testing
-assert(add(2, 3) == 5, "add(2, 3) should equal 5");
-assert(len([1, 2, 3]) == 3, "Array length should be 3");
-assert(has({"a": 1}, "a"), "Dictionary should have key 'a'");
-```
-
-### **Code Quality Standards:**
-- **Comprehensive Testing**: Every feature needs test coverage
-- **Error Handling**: Graceful error messages with context
-- **Documentation**: Update language reference
-- **Performance**: Consider memory and speed implications
-- **Professional Code**: Clean, maintainable, production-ready
+### **Development Approach:**
+- **Testing**: Write tests for new features
+- **Error Messages**: Make errors helpful and clear
+- **Memory**: Use smart pointers to avoid leaks
+- **Performance**: Don't make things unnecessarily slow
+- **Code Style**: Keep it readable and maintainable
+- **Portability**: Make sure it works on different platforms
 
 ## **Success Metrics**
 
-### **Completed ✅**
+### **What's Done ✅**
 - [x] Core language syntax and semantics
-- [x] All basic operators and expressions
-- [x] Control flow statements
-- [x] Functions and closures
-- [x] Tail call optimization
+- [x] All operators and expressions
+- [x] Control flow (if, while, for, do-while)
+- [x] Functions, closures, and tail call optimization
 - [x] Arrays and dictionaries
-- [x] Standard library basics
-- [x] Random number generation
+- [x] Standard library (25+ built-in functions)
+- [x] File I/O operations
 - [x] Interactive REPL
-- [x] Testing framework
-- [x] Comprehensive error handling
+- [x] Test suite with 70+ tests
+- [x] Error handling and reporting
 - [x] Memory management
-- [x] Assignment system design
-- [x] Code quality improvements
+- [x] CMake + Ninja build system
+- [x] Modular architecture
+- [x] Cross-platform support
+- [x] Various optimizations
 
-### **In Progress 🔄**
-- [ ] File I/O implementation
-- [ ] Math library functions
-- [ ] String processing functions
-
-### **Planned 📋**
-- [ ] Exception handling system
-- [ ] Object system foundation
-- [ ] Classes and objects
-- [ ] Module system
-- [ ] Development tools
+### **Might Add Later 📋**
+- [ ] Exception handling (try/catch)
+- [ ] Pattern matching
+- [ ] Simple objects
+- [ ] Module/import system
+- [ ] More built-in functions
+- [ ] Debugging tools
 
 ## **Resources**
 
-- **[BOB_LANGUAGE_REFERENCE.md](BOB_LANGUAGE_REFERENCE.md)** - Complete language documentation
-- **[test_bob_language.bob](test_bob_language.bob)** - Comprehensive test suite
-- **[Crafting Interpreters](https://craftinginterpreters.com/)** - Excellent resource for language implementation
+- **[Language Reference](BOB_LANGUAGE_REFERENCE.md)** - Language documentation
+- **[Build Guide](BUILD.md)** - How to build Bob
+- **[Test Suite](../test_bob_language.bob)** - 70+ tests
+- **[Crafting Interpreters](https://craftinginterpreters.com/)** - Helpful book for language implementation
 
-## **Recent Major Achievements**
+## **Recent Work**
 
-### **Data Structures Implementation**
-- Full array support with indexing and assignment
-- Complete dictionary system with key-value operations
-- Built-in functions: `len()`, `keys()`, `values()`, `has()`
-- Nested data structures support
+### **Architecture Cleanup (2025)**
+- Split the interpreter into separate components (Evaluator/Executor/RuntimeDiagnostics)
+- Switched to CMake + Ninja build system (3x faster builds)
+- Reorganized code into cleaner modules
+- Added Windows/macOS/Linux build support
 
-### **Standard Library Expansion**
-- `random()` function with proper seeding
-- `eval()` for dynamic code execution
-- `sleep()` for timing control
-- `exit()` for program termination
+### **Feature Completion**
+- Added file I/O and type conversion functions
+- Implemented all the operators I wanted (bitwise, compound assignment, etc.)
+- Got arrays and dictionaries working properly
+- Added tail call optimization and closures
 
-### **Code Quality Improvements**
-- Professional code cleanup
-- Performance optimizations
-- Consistent error handling
-- Memory leak prevention
-
-### **Advanced Language Features**
-- Tail call optimization with trampoline system
-- Comprehensive error reporting with context
-- Interactive REPL with full language support
-- Memory management with automatic cleanup
+### **Testing & Polish**
+- Wrote 70+ tests covering pretty much everything
+- Improved error messages to be more helpful
+- Fixed memory leaks using smart pointers
+- Various performance improvements
 
 ---
 
-*Last updated: January 2025* 
+Bob works well for what I wanted - a programming language with the features and syntax I prefer.
+
+*Last updated: January 2025*
