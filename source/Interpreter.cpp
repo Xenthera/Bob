@@ -529,6 +529,28 @@ Value Interpreter::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& ex
         }
         
         return arr[idx];
+    } else if (container.isString()) {
+        // String indexing
+        if (!index.isNumber()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "String index must be a number", "");
+            }
+            throw std::runtime_error("String index must be a number");
+        }
+        
+        int idx = static_cast<int>(index.asNumber());
+        const std::string& str = container.asString();
+        
+        if (idx < 0 || static_cast<size_t>(idx) >= str.length()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "String index out of bounds", "");
+            }
+            throw std::runtime_error("String index out of bounds");
+        }
+        
+        return Value(std::string(1, str[idx]));
     } else if (container.isDict()) {
         // Dictionary indexing
         if (!index.isString()) {
@@ -550,9 +572,9 @@ Value Interpreter::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& ex
     } else {
         if (errorReporter) {
             errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Can only index arrays and dictionaries", "");
+                "Can only index arrays, strings, and dictionaries", "");
         }
-        throw std::runtime_error("Can only index arrays and dictionaries");
+        throw std::runtime_error("Can only index arrays, strings, and dictionaries");
     }
 }
 
@@ -584,6 +606,13 @@ Value Interpreter::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& 
         
         arr[idx] = value;
         return value;
+    } else if (container.isString()) {
+        // String assignment - strings are immutable
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Cannot assign to string indices - strings are immutable", "");
+        }
+        throw std::runtime_error("Cannot assign to string indices - strings are immutable");
     } else if (container.isDict()) {
         // Dictionary assignment
         if (!index.isString()) {

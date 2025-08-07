@@ -1,0 +1,22 @@
+print("=== DEBUG GENERATION ===");
+print("Let's see exactly what code is being generated...");
+
+// Create a simple test program
+var testCode = "print(\"Hello World\");\n";
+testCode = testCode + "var x = 5;\n";
+testCode = testCode + "print(\"x = \" + toString(x));\n";
+
+// Write it to a file
+writeFile("debug_test.bob", testCode);
+print("✅ Test code written to file");
+
+// Read it back and show what we actually wrote
+var readCode = readFile("debug_test.bob");
+print("✅ Code read back from file");
+print("Generated code:");
+print(readCode);
+
+// Now let's try to eval it
+print("\nTrying to eval the generated code...");
+var evalResult = eval(readCode);
+print("✅ Eval successful!"); 

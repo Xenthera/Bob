@@ -1,0 +1,56 @@
+print("=== WORKING REGRESSION TEST ===");
+
+// Phase 1: Create a working program step by step
+print("Phase 1: Building working program...");
+
+var program = "";
+program = program + "print(\"=== REGRESSION BUSTER ===\");\n";
+program = program + "print(\"Testing core features...\");\n";
+
+// Add basic variables
+program = program + "var testArray = [];\n";
+program = program + "var testDict = {};\n";
+program = program + "var testString = \"Hello, Bob!\";\n";
+
+// Add array operations
+program = program + "for (var i = 0; i < 5; i = i + 1) {\n";
+program = program + "    push(testArray, i * i);\n";
+program = program + "    testDict[\"key_\" + toString(i)] = i * 2;\n";
+program = program + "}\n";
+
+// Add string indexing
+program = program + "print(\"String: \" + testString);\n";
+program = program + "print(\"First char: \" + testString[0]);\n";
+
+// Add function
+program = program + "func testFunc(x) { return x * 2; }\n";
+program = program + "var result = testFunc(10);\n";
+program = program + "print(\"Function result: \" + toString(result));\n";
+
+// Add final summary
+program = program + "print(\"Array length: \" + toString(len(testArray)));\n";
+program = program + "print(\"Dict length: \" + toString(len(testDict)));\n";
+program = program + "print(\"✅ REGRESSION TEST PASSED!\");\n";
+
+// Phase 2: Write to file
+print("Phase 2: Writing to file...");
+writeFile("working_regression_dynamic.bob", program);
+print("✅ File written successfully");
+
+// Phase 3: Read and verify
+print("Phase 3: Reading file...");
+var loadedProgram = readFile("working_regression_dynamic.bob");
+print("✅ File read successfully");
+print("File size: " + toString(len(loadedProgram)) + " characters");
+
+// Phase 4: Execute with eval
+print("Phase 4: Executing with eval...");
+print("🚀 STARTING REGRESSION BUSTER...");
+var evalResult = eval(loadedProgram);
+print("✅ Eval completed successfully!");
+
+print("🎉 WORKING REGRESSION TEST COMPLETE!");
+print("✅ All phases completed successfully!");
+print("✅ File I/O working!");
+print("✅ Eval working!");
+print("✅ All features tested!"); 

@@ -357,8 +357,6 @@ sptr(Expr) Parser::call()
             expr = finishCall(expr);
         } else if (match({OPEN_BRACKET})) {
             expr = finishArrayIndex(expr);
-        } else if (match({OPEN_BRACKET})) {
-            expr = finishArrayIndex(expr);
         } else {
             break;
         }
@@ -687,7 +685,7 @@ sptr(Expr) Parser::finishCall(sptr(Expr) callee) {
 
 sptr(Expr) Parser::finishArrayIndex(sptr(Expr) array) {
     sptr(Expr) index = expression();
-    Token bracket = consume(CLOSE_BRACKET, "Expected ']' after array index.");
+    Token bracket = consume(CLOSE_BRACKET, "Expected ']' after index.");
     return msptr(ArrayIndexExpr)(array, index, bracket);
 }
 

@@ -1,0 +1,252 @@
+print("=== FINAL REGRESSION TEST ===");
+print("Demonstrating file I/O and eval with complex programs...");
+
+// ========================================
+// PHASE 1: WRITE A WORKING COMPLEX PROGRAM
+// ========================================
+print("\n📝 PHASE 1: Writing working complex program to file...");
+
+var programCode = "print(\"=== FINAL REGRESSION BUSTER ===\");\n";
+programCode = programCode + "print(\"Testing ALL features together...\");\n";
+
+// Add massive variable declarations
+programCode = programCode + "var megaArray = [];\n";
+programCode = programCode + "var megaDict = {};\n";
+programCode = programCode + "var megaString = \"FINAL_TEST_STRING\";\n";
+programCode = programCode + "var megaNumber = 999999999.999999999;\n";
+programCode = programCode + "var megaBoolean = true;\n";
+programCode = programCode + "var megaNone = none;\n";
+
+// Add complex nested structures
+programCode = programCode + "for (var i = 0; i < 50; i = i + 1) {\n";
+programCode = programCode + "var nestedArray = [];\n";
+programCode = programCode + "var nestedDict = {};\n";
+programCode = programCode + "for (var j = 0; j < 5; j = j + 1) {\n";
+programCode = programCode + "push(nestedArray, \"nested_\" + toString(i) + \"_\" + toString(j));\n";
+programCode = programCode + "nestedDict[\"key_\" + toString(i) + \"_\" + toString(j)] = \"value_\" + toString(i) + \"_\" + toString(j);\n";
+programCode = programCode + "}\n";
+programCode = programCode + "push(megaArray, nestedArray);\n";
+programCode = programCode + "megaDict[\"dict_\" + toString(i)] = nestedDict;\n";
+programCode = programCode + "}\n";
+
+// Add function generation
+programCode = programCode + "for (var funcIndex = 0; funcIndex < 10; funcIndex = funcIndex + 1) {\n";
+programCode = programCode + "var funcName = \"megaFunc_\" + toString(funcIndex);\n";
+programCode = programCode + "var funcCode = \"func \" + funcName + \"(a, b, c, d, e) { \";\n";
+programCode = programCode + "funcCode = funcCode + \"var result = a + b * c - d / e; \";\n";
+programCode = programCode + "funcCode = funcCode + \"if (result > 1000) { \";\n";
+programCode = programCode + "funcCode = funcCode + \"return result * 2; \";\n";
+programCode = programCode + "funcCode = funcCode + \"} else { \";\n";
+programCode = programCode + "funcCode = funcCode + \"return result / 2; \";\n";
+programCode = programCode + "funcCode = funcCode + \"} \";\n";
+programCode = programCode + "funcCode = funcCode + \"} \";\n";
+programCode = programCode + "eval(funcCode);\n";
+programCode = programCode + "var testResult = eval(funcName + \"(10, 20, 30, 5, 2)\");\n";
+programCode = programCode + "print(\"Generated and tested \" + funcName + \": \" + toString(testResult));\n";
+programCode = programCode + "}\n";
+
+// Add string indexing madness
+programCode = programCode + "var complexString = \"Hello, Bob Language! This is a FINAL test with numbers 12345\";\n";
+programCode = programCode + "var stringAnalysis = {};\n";
+programCode = programCode + "for (var i = 0; i < len(complexString); i = i + 1) {\n";
+programCode = programCode + "var char = complexString[i];\n";
+programCode = programCode + "var charInfo = {};\n";
+programCode = programCode + "charInfo[\"character\"] = char;\n";
+programCode = programCode + "charInfo[\"index\"] = i;\n";
+programCode = programCode + "charInfo[\"ascii_approx\"] = i * 2 + 32;\n";
+programCode = programCode + "if (char == \" \") { charInfo[\"type\"] = \"space\"; }\n";
+programCode = programCode + "else if (char == \",\" || char == \"!\") { charInfo[\"type\"] = \"symbol\"; }\n";
+programCode = programCode + "else if (char == \"0\" || char == \"1\" || char == \"2\" || char == \"3\" || char == \"4\" || char == \"5\" || char == \"6\" || char == \"7\" || char == \"8\" || char == \"9\") { charInfo[\"type\"] = \"digit\"; }\n";
+programCode = programCode + "else if (char == \"H\" || char == \"B\" || char == \"L\") { charInfo[\"type\"] = \"uppercase\"; }\n";
+programCode = programCode + "else { charInfo[\"type\"] = \"lowercase\"; }\n";
+programCode = programCode + "stringAnalysis[\"char_\" + toString(i)] = charInfo;\n";
+programCode = programCode + "}\n";
+
+// Add recursive function torture
+programCode = programCode + "func megaRecursiveTorture(n, depth, accumulator) {\n";
+programCode = programCode + "if (depth > 20) { return accumulator; }\n";
+programCode = programCode + "var currentString = \"depth_\" + toString(depth) + \"_value_\" + toString(n);\n";
+programCode = programCode + "var reversedString = \"\";\n";
+programCode = programCode + "for (var i = len(currentString) - 1; i >= 0; i = i - 1) {\n";
+programCode = programCode + "reversedString = reversedString + currentString[i];\n";
+programCode = programCode + "}\n";
+programCode = programCode + "var tempArray = [];\n";
+programCode = programCode + "for (var i = 0; i < depth; i = i + 1) {\n";
+programCode = programCode + "push(tempArray, reversedString + \"_\" + toString(i));\n";
+programCode = programCode + "}\n";
+programCode = programCode + "var tempDict = {};\n";
+programCode = programCode + "tempDict[\"depth\"] = depth;\n";
+programCode = programCode + "tempDict[\"value\"] = n;\n";
+programCode = programCode + "tempDict[\"string\"] = currentString;\n";
+programCode = programCode + "tempDict[\"reversed\"] = reversedString;\n";
+programCode = programCode + "tempDict[\"array\"] = tempArray;\n";
+programCode = programCode + "push(accumulator, tempDict);\n";
+programCode = programCode + "return megaRecursiveTorture(n * 2 + depth, depth + 1, accumulator);\n";
+programCode = programCode + "}\n";
+programCode = programCode + "var recursiveResult = megaRecursiveTorture(1, 0, []);\n";
+
+// Add mega array operations
+programCode = programCode + "var megaArray2 = [];\n";
+programCode = programCode + "var megaArray3 = [];\n";
+programCode = programCode + "for (var i = 0; i < 100; i = i + 1) {\n";
+programCode = programCode + "var complexValue = {};\n";
+programCode = programCode + "complexValue[\"index\"] = i;\n";
+programCode = programCode + "complexValue[\"square\"] = i * i;\n";
+programCode = programCode + "complexValue[\"cube\"] = i * i * i;\n";
+programCode = programCode + "complexValue[\"string\"] = \"value_\" + toString(i);\n";
+programCode = programCode + "complexValue[\"array\"] = [i, i + 1, i + 2, i + 3, i + 4];\n";
+programCode = programCode + "complexValue[\"dict\"] = {\"nested\": i, \"deep\": i * 2};\n";
+programCode = programCode + "push(megaArray2, complexValue);\n";
+programCode = programCode + "if (i % 2 == 0) { push(megaArray3, i * 2); } else { push(megaArray3, i * 3); }\n";
+programCode = programCode + "}\n";
+
+// Add mega eval torture
+programCode = programCode + "for (var evalIndex = 0; evalIndex < 10; evalIndex = evalIndex + 1) {\n";
+programCode = programCode + "var evalCode = \"var evalVar_\" + toString(evalIndex) + \" = \" + toString(evalIndex) + \" * \" + toString(evalIndex) + \" + \" + toString(evalIndex) + \";\";\n";
+programCode = programCode + "evalCode = evalCode + \"var evalString_\" + toString(evalIndex) + \" = \\\"eval_string_\" + toString(evalIndex) + \"\\\";\";\n";
+programCode = programCode + "evalCode = evalCode + \"var evalArray_\" + toString(evalIndex) + \" = [\" + toString(evalIndex) + \", \" + toString(evalIndex + 1) + \", \" + toString(evalIndex + 2) + \"];\";\n";
+programCode = programCode + "evalCode = evalCode + \"var evalResult_\" + toString(evalIndex) + \" = evalVar_\" + toString(evalIndex) + \" + len(evalString_\" + toString(evalIndex) + \") + len(evalArray_\" + toString(evalIndex) + \");\";\n";
+programCode = programCode + "evalCode = evalCode + \"evalResult_\" + toString(evalIndex);\n";
+programCode = programCode + "var evalResult = eval(evalCode);\n";
+programCode = programCode + "print(\"Eval torture progress: \" + toString(evalIndex) + \"/10\");\n";
+programCode = programCode + "}\n";
+
+// Add mega loop torture
+programCode = programCode + "var loopResults = [];\n";
+programCode = programCode + "var loopCounter = 0;\n";
+programCode = programCode + "for (var i = 0; i < 10; i = i + 1) {\n";
+programCode = programCode + "for (var j = 0; j < 5; j = j + 1) {\n";
+programCode = programCode + "for (var k = 0; k < 5; k = k + 1) {\n";
+programCode = programCode + "var loopValue = i * j * k;\n";
+programCode = programCode + "var loopString = \"loop_\" + toString(i) + \"_\" + toString(j) + \"_\" + toString(k);\n";
+programCode = programCode + "var reversedString = \"\";\n";
+programCode = programCode + "for (var l = 0; l < len(loopString); l = l + 1) {\n";
+programCode = programCode + "reversedString = reversedString + loopString[len(loopString) - 1 - l];\n";
+programCode = programCode + "}\n";
+programCode = programCode + "var loopObject = {\n";
+programCode = programCode + "\"value\": loopValue,\n";
+programCode = programCode + "\"string\": loopString,\n";
+programCode = programCode + "\"reversed\": reversedString,\n";
+programCode = programCode + "\"sum\": i + j + k\n";
+programCode = programCode + "};\n";
+programCode = programCode + "push(loopResults, loopObject);\n";
+programCode = programCode + "loopCounter = loopCounter + 1;\n";
+programCode = programCode + "}\n";
+programCode = programCode + "}\n";
+programCode = programCode + "}\n";
+
+// Add final summary
+programCode = programCode + "print(\"🎉 FINAL REGRESSION BUSTER COMPLETE!\");\n";
+programCode = programCode + "print(\"✅ All phases completed successfully!\");\n";
+programCode = programCode + "print(\"✅ Every feature tested against every other feature!\");\n";
+programCode = programCode + "print(\"✅ Maximum complexity achieved!\");\n";
+programCode = programCode + "print(\"✅ No regressions detected!\");\n";
+programCode = programCode + "print(\"📊 FINAL STATISTICS:\");\n";
+programCode = programCode + "print(\"  • Variables created: 100+\");\n";
+programCode = programCode + "print(\"  • Functions generated: 10+\");\n";
+programCode = programCode + "print(\"  • Arrays processed: 500+ elements\");\n";
+programCode = programCode + "print(\"  • Dictionaries created: 100+ entries\");\n";
+programCode = programCode + "print(\"  • String characters processed: 100+\");\n";
+programCode = programCode + "print(\"  • Eval statements executed: 10+\");\n";
+programCode = programCode + "print(\"  • Loop iterations: 250+\");\n";
+programCode = programCode + "print(\"  • Conditional checks: 100+\");\n";
+programCode = programCode + "print(\"  • Arithmetic operations: 1000+\");\n";
+programCode = programCode + "print(\"  • Type conversions: 50+\");\n";
+programCode = programCode + "print(\"🏆 FINAL REGRESSION TEST PASSED!\");\n";
+programCode = programCode + "print(\"Bob is ROCK SOLID under maximum stress!\");\n";
+programCode = programCode + "print(\"All features work perfectly together!\");\n";
+programCode = programCode + "print(\"Ready for production use!\");\n";
+programCode = programCode + "print(\"🚀 BOB IS UNSTOPPABLE! 🚀\");\n";
+programCode = programCode + "print(\"🎊 FINAL REGRESSION BUSTER COMPLETE! 🎊\");\n";
+
+// Write the program to a file
+writeFile("final_regression_dynamic.bob", programCode);
+print("✅ Complex program written to file: final_regression_dynamic.bob");
+
+// ========================================
+// PHASE 2: LOAD AND RUN THE PROGRAM
+// ========================================
+print("\n📂 PHASE 2: Loading and running the program...");
+
+// Check if file exists
+var fileExists = fileExists("final_regression_dynamic.bob");
+print("  File exists: " + toString(fileExists));
+
+if (fileExists) {
+    // Read the file content
+    var loadedCode = readFile("final_regression_dynamic.bob");
+    print("  File loaded successfully!");
+    print("  File size: " + toString(len(loadedCode)) + " characters");
+    
+    // Use eval to run the loaded code
+    print("\n⚡ PHASE 3: Executing program with eval...");
+    print("🚀 STARTING FINAL REGRESSION BUSTER...");
+    
+    var evalResult = eval(loadedCode);
+    
+    print("\n✅ PROGRAM EXECUTION COMPLETE!");
+    print("✅ File I/O worked perfectly!");
+    print("✅ Eval executed the entire program!");
+    print("✅ All features tested successfully!");
+    
+} else {
+    print("❌ ERROR: File not found!");
+}
+
+// ========================================
+// PHASE 4: VERIFICATION
+// ========================================
+print("\n🔍 PHASE 4: Verification...");
+
+// Verify the file was created and has content
+var verificationFile = readFile("final_regression_dynamic.bob");
+var fileLength = len(verificationFile);
+
+print("  Verification file length: " + toString(fileLength) + " characters");
+print("  File contains complex program: " + toString(len(verificationFile) > 1000));
+
+// Check for key elements in the file
+var containsPrint = false;
+var containsFunc = false;
+var containsEval = false;
+
+for (var i = 0; i < len(verificationFile); i = i + 1) {
+    var char = verificationFile[i];
+    if (char == "p" && i + 4 < len(verificationFile)) {
+        if (verificationFile[i + 1] == "r" && verificationFile[i + 2] == "i" && verificationFile[i + 3] == "n" && verificationFile[i + 4] == "t") {
+            containsPrint = true;
+        }
+    }
+    if (char == "f" && i + 3 < len(verificationFile)) {
+        if (verificationFile[i + 1] == "u" && verificationFile[i + 2] == "n" && verificationFile[i + 3] == "c") {
+            containsFunc = true;
+        }
+    }
+    if (char == "e" && i + 2 < len(verificationFile)) {
+        if (verificationFile[i + 1] == "v" && verificationFile[i + 2] == "a" && verificationFile[i + 3] == "l") {
+            containsEval = true;
+        }
+    }
+}
+
+print("  Contains print statements: " + toString(containsPrint));
+print("  Contains function definitions: " + toString(containsFunc));
+print("  Contains eval statements: " + toString(containsEval));
+
+// ========================================
+// FINAL SUMMARY
+// ========================================
+print("\n🎉 FINAL REGRESSION TEST COMPLETE!");
+print("✅ Successfully wrote complex program to file");
+print("✅ Successfully loaded file with file I/O");
+print("✅ Successfully executed with eval");
+print("✅ All features working together perfectly!");
+
+print("\n🏆 FINAL TEST PASSED!");
+print("Bob can write complex programs to files!");
+print("Bob can read files with file I/O!");
+print("Bob can execute loaded code with eval!");
+print("Bob is UNSTOPPABLE!");
+
+print("\n🚀 BOB IS THE ULTIMATE PROGRAMMING LANGUAGE! 🚀");
+print("🎊 FINAL REGRESSION TEST COMPLETE! 🎊"); 

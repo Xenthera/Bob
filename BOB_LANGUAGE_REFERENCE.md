@@ -62,7 +62,9 @@ make
 ### Strings
 - **Literal strings**: `"Hello, World!"`
 - **Empty strings**: `""`
-- **Escape sequences**: Not currently supported
+- **Escape sequences**: `\n` (newline), `\t` (tab), `\"` (quote), `\\` (backslash)
+- **String indexing**: Access individual characters with `str[index]`
+- **Immutable**: Strings cannot be modified after creation
 
 ### Booleans
 - **True**: `true`
@@ -76,6 +78,87 @@ make
 - **Empty arrays**: `[]`
 - **Mixed types**: `[1, "hello", true, 3.14]`
 - **Nested arrays**: `[[1, 2], [3, 4]]`
+
+#### String Indexing
+```go
+var str = "Hello, Bob!";
+
+// Basic character access
+print(str[0]);   // H
+print(str[1]);   // e
+print(str[7]);   // B
+print(str[10]);  // !
+
+// Get string length
+var length = len(str);
+print(length);   // 11
+
+// Access last character
+var last = str[len(str) - 1];
+print(last);     // !
+
+// String reversal
+var reversed = "";
+for (var i = len(str) - 1; i >= 0; i = i - 1) {
+    reversed = reversed + str[i];
+}
+print(reversed); // !boB ,olleH
+
+// Character counting
+var text = "hello world";
+var count = 0;
+for (var i = 0; i < len(text); i = i + 1) {
+    if (text[i] == "l") {
+        count = count + 1;
+    }
+}
+print(count);    // 3
+
+// String search
+var haystack = "Hello, Bob!";
+var needle = "Bob";
+var found = false;
+for (var i = 0; i <= len(haystack) - len(needle); i = i + 1) {
+    var match = true;
+    for (var j = 0; j < len(needle); j = j + 1) {
+        if (haystack[i + j] != needle[j]) {
+            match = false;
+            break;
+        }
+    }
+    if (match) {
+        found = true;
+        break;
+    }
+}
+print(found);    // true
+
+// String parsing (CSV-like)
+var csvLine = "Alice,30,Engineer";
+var fields = [];
+var currentField = "";
+for (var i = 0; i < len(csvLine); i = i + 1) {
+    var char = csvLine[i];
+    if (char == ",") {
+        push(fields, currentField);
+        currentField = "";
+    } else {
+        currentField = currentField + char;
+    }
+}
+push(fields, currentField);
+print(fields[0]); // Alice
+print(fields[1]); // 30
+print(fields[2]); // Engineer
+```
+
+**String Indexing Rules:**
+- **Zero-based indexing**: First character is at index 0
+- **Bounds checking**: Index must be >= 0 and < string length
+- **Number indices only**: Index must be a number (float indices auto-truncate)
+- **Returns single character**: `str[index]` returns a single-character string
+- **Immutable**: Cannot assign to string indices (strings are immutable)
+- **Error handling**: Out-of-bounds access throws runtime error
 
 ### Dictionaries
 - **Dictionary literals**: `{"key": "value", "number": 42}`

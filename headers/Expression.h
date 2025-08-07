@@ -14,6 +14,7 @@ struct IncrementExpr;
 struct TernaryExpr;
 struct ArrayLiteralExpr;
 struct ArrayIndexExpr;
+
 struct ArrayAssignExpr;
 struct DictLiteralExpr;
 struct DictIndexExpr;
@@ -43,6 +44,7 @@ struct ExprVisitor
     virtual Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expr) = 0;
     virtual Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) = 0;
     virtual Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) = 0;
+
     virtual Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) = 0;
     virtual Value visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expr) = 0;
 
@@ -202,6 +204,8 @@ struct ArrayIndexExpr : Expr
         return visitor->visitArrayIndexExpr(std::static_pointer_cast<ArrayIndexExpr>(shared_from_this()));
     }
 };
+
+
 
 struct ArrayAssignExpr : Expr
 {

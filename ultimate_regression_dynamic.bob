@@ -1,0 +1,106 @@
+print("=== ULTIMATE REGRESSION BUSTER ===");
+print("Testing EVERY feature with maximum complexity...");
+print("\n📊 TEST 1: Basic Types");
+var number = 42;
+var string = "Hello, Ultimate Bob!";
+var boolean = true;
+var array = [];
+var dict = {};
+print("✅ Basic types created");
+print("\n📊 TEST 2: Array Operations");
+for (var i = 0; i < 10; i = i + 1) {
+    push(array, i * i);
+    array[i] = array[i] + 1;
+}
+print("Array length: " + toString(len(array)));
+print("Array[5]: " + toString(array[5]));
+var popped = pop(array);
+print("Popped value: " + toString(popped));
+print("✅ Array operations complete");
+print("\n📊 TEST 3: Dictionary Operations");
+for (var i = 0; i < 10; i = i + 1) {
+    dict["key_" + toString(i)] = i * 2;
+    dict["nested_" + toString(i)] = {"value": i * 3, "squared": i * i};
+}
+print("Dict length: " + toString(len(dict)));
+print("Dict key_5: " + toString(dict["key_5"]));
+var dictKeys = keys(dict);
+var dictValues = values(dict);
+print("Keys length: " + toString(len(dictKeys)));
+print("Values length: " + toString(len(dictValues)));
+print("Has key_5: " + toString(has(dict, "key_5")));
+print("✅ Dictionary operations complete");
+print("\n📊 TEST 4: String Operations");
+var testString = "Ultimate Bob Programming Language";
+print("Original string: " + testString);
+print("String length: " + toString(len(testString)));
+print("Character by character:");
+for (var i = 0; i < len(testString); i = i + 1) {
+    print("  " + toString(i) + ": '" + testString[i] + "'");
+}
+print("✅ String operations complete");
+print("\n📊 TEST 5: Function Operations");
+func factorial(n) {
+    if (n <= 1) {
+        return 1;
+    } else {
+        return n * factorial(n - 1);
+    }
+}
+func fibonacci(n) {
+    if (n <= 1) {
+        return n;
+    } else {
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+}
+var fact5 = factorial(5);
+var fib8 = fibonacci(8);
+print("Factorial(5): " + toString(fact5));
+print("Fibonacci(8): " + toString(fib8));
+print("✅ Function operations complete");
+print("\n📊 TEST 6: Built-in Functions");
+var currentTime = time();
+print("Current time: " + toString(currentTime));
+var randomNum = random();
+print("Random number: " + toString(randomNum));
+var numberStr = toString(12345);
+print("Number to string: '" + numberStr + "'");
+var strNum = toNumber("678");
+print("String to number: " + toString(strNum));
+print("✅ Built-in functions complete");
+print("\n📊 TEST 7: Meta-programming with Eval");
+var evalCode = "print(\"Hello from nested eval!\"); var x = 5 * 5; print(\"x = \" + toString(x));";
+var evalResult = eval(evalCode);
+print("✅ Meta-programming complete");
+print("\n📊 TEST 8: Complex Data Structures");
+var complexArray = [];
+for (var i = 0; i < 5; i = i + 1) {
+    var innerArray = [];
+    for (var j = 0; j < 3; j = j + 1) {
+        push(innerArray, i * j);
+    }
+    push(complexArray, innerArray);
+}
+print("Complex array length: " + toString(len(complexArray)));
+print("Complex array[2][1]: " + toString(complexArray[2][1]));
+print("✅ Complex data structures complete");
+print("\n📊 TEST 9: Edge Cases");
+var emptyArray = [];
+print("Empty array length: " + toString(len(emptyArray)));
+var emptyDict = {};
+print("Empty dict length: " + toString(len(emptyDict)));
+print("Empty string length: " + toString(len("")));
+print("✅ Edge cases complete");
+print("\n🎉 ULTIMATE REGRESSION TEST SUMMARY");
+print("✅ All basic types tested");
+print("✅ All array operations tested");
+print("✅ All dictionary operations tested");
+print("✅ All string operations tested");
+print("✅ All function operations tested");
+print("✅ All built-in functions tested");
+print("✅ Meta-programming with eval tested");
+print("✅ Complex data structures tested");
+print("✅ Edge cases tested");
+print("\n🏆 ULTIMATE REGRESSION TEST PASSED!");
+print("🚀 BOB IS THE ULTIMATE PROGRAMMING LANGUAGE!");

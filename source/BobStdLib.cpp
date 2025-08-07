@@ -6,6 +6,8 @@
 #include <chrono>
 #include <thread>
 #include <ctime>
+#include <fstream>
+#include <sstream>
 
 void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter) {
     // Create a built-in toString function
@@ -625,5 +627,163 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
         });
     env->define("has", Value(hasFunc.get()));
     interpreter.addBuiltinFunction(hasFunc);
+
+    // Create a built-in readFile function
+    auto readFileFunc = std::make_shared<BuiltinFunction>("readFile",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "readFile() argument must be a string", "", true);
+                }
+                throw std::runtime_error("readFile() argument must be a string");
+            }
+            
+            std::string filename = args[0].asString();
+            std::ifstream file(filename);
+            
+            if (!file.is_open()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Could not open file: " + filename, "", true);
+                }
+                throw std::runtime_error("Could not open file: " + filename);
+            }
+            
+            std::stringstream buffer;
+            buffer << file.rdbuf();
+            file.close();
+            
+            return Value(buffer.str());
+        });
+    env->define("readFile", Value(readFileFunc.get()));
+    interpreter.addBuiltinFunction(readFileFunc);
+
+    // Create a built-in writeFile function
+    auto writeFileFunc = std::make_shared<BuiltinFunction>("writeFile",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 2) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 2 arguments but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "First argument to writeFile() must be a string", "", true);
+                }
+                throw std::runtime_error("First argument to writeFile() must be a string");
+            }
+            
+            if (!args[1].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Second argument to writeFile() must be a string", "", true);
+                }
+                throw std::runtime_error("Second argument to writeFile() must be a string");
+            }
+            
+            std::string filename = args[0].asString();
+            std::string content = args[1].asString();
+            
+            std::ofstream file(filename);
+            if (!file.is_open()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Could not create file: " + filename, "", true);
+                }
+                throw std::runtime_error("Could not create file: " + filename);
+            }
+            
+            file << content;
+            file.close();
+            
+            return NONE_VALUE;
+        });
+    env->define("writeFile", Value(writeFileFunc.get()));
+    interpreter.addBuiltinFunction(writeFileFunc);
+
+    // Create a built-in readLines function
+    auto readLinesFunc = std::make_shared<BuiltinFunction>("readLines",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "readLines() argument must be a string", "", true);
+                }
+                throw std::runtime_error("readLines() argument must be a string");
+            }
+            
+            std::string filename = args[0].asString();
+            std::ifstream file(filename);
+            
+            if (!file.is_open()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Could not open file: " + filename, "", true);
+                }
+                throw std::runtime_error("Could not open file: " + filename);
+            }
+            
+            std::vector<Value> lines;
+            std::string line_content;
+            
+            while (std::getline(file, line_content)) {
+                lines.push_back(Value(line_content));
+            }
+            
+            file.close();
+            return Value(lines);
+        });
+    env->define("readLines", Value(readLinesFunc.get()));
+    interpreter.addBuiltinFunction(readLinesFunc);
+
+    // Create a built-in fileExists function
+    auto fileExistsFunc = std::make_shared<BuiltinFunction>("fileExists",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "fileExists() argument must be a string", "", true);
+                }
+                throw std::runtime_error("fileExists() argument must be a string");
+            }
+            
+            std::string filename = args[0].asString();
+            std::ifstream file(filename);
+            bool exists = file.good();
+            file.close();
+            
+            return Value(exists);
+        });
+    env->define("fileExists", Value(fileExistsFunc.get()));
+    interpreter.addBuiltinFunction(fileExistsFunc);
 
 } 

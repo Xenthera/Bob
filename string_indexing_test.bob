@@ -1,0 +1,373 @@
+print("=== STRING INDEXING TEST SUITE ===");
+print("Testing string indexing functionality...");
+
+// ========================================
+// TEST 1: BASIC STRING INDEXING
+// ========================================
+print("\n📝 TEST 1: Basic String Indexing");
+
+var str = "Hello, Bob!";
+print("  String: " + str);
+
+// Test basic indexing
+var first = str[0];
+var second = str[1];
+var last = str[10];
+
+print("  First character: " + first);
+print("  Second character: " + second);
+print("  Last character: " + last);
+
+assert(first == "H", "First character should be 'H'");
+assert(second == "e", "Second character should be 'e'");
+assert(last == "!", "Last character should be '!'");
+
+print("✅ Basic string indexing: PASS");
+
+// ========================================
+// TEST 2: STRING LENGTH AND BOUNDS
+// ========================================
+print("\n📏 TEST 2: String Length and Bounds");
+
+var testStr = "Bob";
+var length = len(testStr);
+
+print("  String: " + testStr);
+print("  Length: " + toString(length));
+
+// Test all valid indices
+var char0 = testStr[0];
+var char1 = testStr[1];
+var char2 = testStr[2];
+
+print("  Characters: " + char0 + ", " + char1 + ", " + char2);
+
+assert(length == 3, "String length should be 3");
+assert(char0 == "B", "Character 0 should be 'B'");
+assert(char1 == "o", "Character 1 should be 'o'");
+assert(char2 == "b", "Character 2 should be 'b'");
+
+print("✅ String length and bounds: PASS");
+
+// ========================================
+// TEST 3: EMPTY STRING HANDLING
+// ========================================
+print("\n🈳 TEST 3: Empty String Handling");
+
+var empty = "";
+var emptyLength = len(empty);
+
+print("  Empty string length: " + toString(emptyLength));
+
+assert(emptyLength == 0, "Empty string length should be 0");
+
+print("✅ Empty string handling: PASS");
+
+// ========================================
+// TEST 4: SINGLE CHARACTER STRINGS
+// ========================================
+print("\n🔤 TEST 4: Single Character Strings");
+
+var single = "X";
+var singleLength = len(single);
+var singleChar = single[0];
+
+print("  Single character: " + singleChar);
+print("  Length: " + toString(singleLength));
+
+assert(singleLength == 1, "Single character string length should be 1");
+assert(singleChar == "X", "Single character should be 'X'");
+
+print("✅ Single character strings: PASS");
+
+// ========================================
+// TEST 5: SPECIAL CHARACTERS
+// ========================================
+print("\n🎯 TEST 5: Special Characters");
+
+var special = "Hello\nWorld\tTest";
+var newline = special[5];
+var tab = special[11];
+
+print("  String with special chars: " + special);
+print("  Newline character: " + newline);
+print("  Tab character: " + tab);
+
+assert(newline == "\n", "Newline character should be preserved");
+assert(tab == "\t", "Tab character should be preserved");
+
+print("✅ Special characters: PASS");
+
+// ========================================
+// TEST 6: NUMBERS AND SYMBOLS
+// ========================================
+print("\n🔢 TEST 6: Numbers and Symbols");
+
+var mixed = "Hello123!@#";
+var digit = mixed[5];
+var symbol = mixed[8];
+
+print("  Mixed string: " + mixed);
+print("  Digit: " + digit);
+print("  Symbol: " + symbol);
+
+assert(digit == "1", "Digit should be '1'");
+assert(symbol == "!", "Symbol should be '!'");
+
+print("✅ Numbers and symbols: PASS");
+
+// ========================================
+// TEST 7: VARIABLE STRING INDEXING
+// ========================================
+print("\n🔄 TEST 7: Variable String Indexing");
+
+var message = "Programming";
+var indices = [0, 1, 2, 3, 4];
+
+for (var i = 0; i < len(indices); i = i + 1) {
+    var idx = indices[i];
+    var char = message[idx];
+    print("  Index " + toString(idx) + ": " + char);
+}
+
+var expected = ["P", "r", "o", "g", "r"];
+for (var i = 0; i < len(indices); i = i + 1) {
+    var idx = indices[i];
+    var char = message[idx];
+    assert(char == expected[i], "Character at index " + toString(idx) + " should be " + expected[i]);
+}
+
+print("✅ Variable string indexing: PASS");
+
+// ========================================
+// TEST 8: STRING CONCATENATION WITH INDEXING
+// ========================================
+print("\n🔗 TEST 8: String Concatenation with Indexing");
+
+var str1 = "Hello";
+var str2 = "World";
+var combined = str1 + " " + str2;
+
+var firstWord = "";
+for (var i = 0; i < len(str1); i = i + 1) {
+    firstWord = firstWord + str1[i];
+}
+
+var secondWord = "";
+for (var i = 0; i < len(str2); i = i + 1) {
+    secondWord = secondWord + str2[i];
+}
+
+print("  Combined: " + combined);
+print("  First word: " + firstWord);
+print("  Second word: " + secondWord);
+
+assert(firstWord == "Hello", "First word should be 'Hello'");
+assert(secondWord == "World", "Second word should be 'World'");
+
+print("✅ String concatenation with indexing: PASS");
+
+// ========================================
+// TEST 9: STRING REVERSAL
+// ========================================
+print("\n🔄 TEST 9: String Reversal");
+
+var original = "Bob";
+var reversed = "";
+
+for (var i = len(original) - 1; i >= 0; i = i - 1) {
+    reversed = reversed + original[i];
+}
+
+print("  Original: " + original);
+print("  Reversed: " + reversed);
+
+assert(reversed == "boB", "Reversed string should be 'boB'");
+
+print("✅ String reversal: PASS");
+
+// ========================================
+// TEST 10: CHARACTER COUNTING
+// ========================================
+print("\n📊 TEST 10: Character Counting");
+
+var text = "hello world";
+var letterCount = 0;
+
+for (var i = 0; i < len(text); i = i + 1) {
+    var char = text[i];
+    if (char == "l") {
+        letterCount = letterCount + 1;
+    }
+}
+
+print("  Text: " + text);
+print("  Number of 'l' characters: " + toString(letterCount));
+
+assert(letterCount == 3, "Should find 3 'l' characters");
+
+print("✅ Character counting: PASS");
+
+// ========================================
+// TEST 11: STRING COMPARISON WITH INDEXING
+// ========================================
+print("\n🔍 TEST 11: String Comparison with Indexing");
+
+var strA = "apple";
+var strB = "apple";
+var areEqual = true;
+
+if (len(strA) != len(strB)) {
+    areEqual = false;
+} else {
+    for (var i = 0; i < len(strA); i = i + 1) {
+        if (strA[i] != strB[i]) {
+            areEqual = false;
+            break;
+        }
+    }
+}
+
+print("  String A: " + strA);
+print("  String B: " + strB);
+print("  Are equal: " + toString(areEqual));
+
+assert(areEqual == true, "Strings should be equal");
+
+print("✅ String comparison with indexing: PASS");
+
+// ========================================
+// TEST 12: STRING SEARCH
+// ========================================
+print("\n🔎 TEST 12: String Search");
+
+var haystack = "Hello, Bob!";
+var needle = "Bob";
+var found = false;
+var foundIndex = -1;
+
+for (var i = 0; i <= len(haystack) - len(needle); i = i + 1) {
+    var match = true;
+    for (var j = 0; j < len(needle); j = j + 1) {
+        if (haystack[i + j] != needle[j]) {
+            match = false;
+            break;
+        }
+    }
+    if (match) {
+        found = true;
+        foundIndex = i;
+        break;
+    }
+}
+
+print("  Haystack: " + haystack);
+print("  Needle: " + needle);
+print("  Found: " + toString(found));
+print("  Index: " + toString(foundIndex));
+
+assert(found == true, "Should find 'Bob' in the string");
+assert(foundIndex == 7, "Should find 'Bob' at index 7");
+
+print("✅ String search: PASS");
+
+// ========================================
+// TEST 13: STRING SLICING SIMULATION
+// ========================================
+print("\n✂️ TEST 13: String Slicing Simulation");
+
+var fullString = "Hello, World!";
+var start = 0;
+var end = 5;
+var slice = "";
+
+for (var i = start; i < end; i = i + 1) {
+    slice = slice + fullString[i];
+}
+
+print("  Full string: " + fullString);
+print("  Slice [0:5]: " + slice);
+
+assert(slice == "Hello", "Slice should be 'Hello'");
+
+print("✅ String slicing simulation: PASS");
+
+// ========================================
+// TEST 14: STRING VALIDATION
+// ========================================
+print("\n✅ TEST 14: String Validation");
+
+var email = "user@example.com";
+var hasAt = false;
+var hasDot = false;
+
+for (var i = 0; i < len(email); i = i + 1) {
+    var char = email[i];
+    if (char == "@") {
+        hasAt = true;
+    }
+    if (char == ".") {
+        hasDot = true;
+    }
+}
+
+print("  Email: " + email);
+print("  Has @: " + toString(hasAt));
+print("  Has .: " + toString(hasDot));
+
+assert(hasAt == true, "Email should contain @");
+assert(hasDot == true, "Email should contain .");
+
+print("✅ String validation: PASS");
+
+// ========================================
+// TEST 15: STRING TRANSFORMATION
+// ========================================
+print("\n🔄 TEST 15: String Transformation");
+
+var original = "hello world";
+var transformed = "";
+
+for (var i = 0; i < len(original); i = i + 1) {
+    var char = original[i];
+    if (char == " ") {
+        transformed = transformed + "_";
+    } else {
+        transformed = transformed + char;
+    }
+}
+
+print("  Original: " + original);
+print("  Transformed: " + transformed);
+
+assert(transformed == "hello_world", "Transformed string should be 'hello_world'");
+
+print("✅ String transformation: PASS");
+
+// ========================================
+// SUMMARY
+// ========================================
+print("\n🎉 STRING INDEXING TEST RESULTS ===");
+print("✅ Basic string indexing");
+print("✅ String length and bounds");
+print("✅ Empty string handling");
+print("✅ Single character strings");
+print("✅ Special characters");
+print("✅ Numbers and symbols");
+print("✅ Variable string indexing");
+print("✅ String concatenation with indexing");
+print("✅ String reversal");
+print("✅ Character counting");
+print("✅ String comparison with indexing");
+print("✅ String search");
+print("✅ String slicing simulation");
+print("✅ String validation");
+print("✅ String transformation");
+
+print("\n🏆 STRING INDEXING IS ROCK SOLID! 🏆");
+print("All string indexing operations work perfectly!");
+print("Bob can now process text with precision!");
+print("Ready for advanced text processing tasks!");
+
+print("\n🎊 STRING INDEXING TESTS COMPLETE! 🎊");
+print("String indexing is bulletproof and production-ready!"); 

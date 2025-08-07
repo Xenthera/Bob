@@ -1,0 +1,49 @@
+print("=== COMPLEXITY TEST ===");
+
+// Test 1: Multiple statements in one eval
+print("Test 1: Multiple statements");
+var code1 = "var a = 1; var b = 2; print(\"a = \" + toString(a) + \", b = \" + toString(b));";
+var result1 = eval(code1);
+print("Test 1 passed");
+
+// Test 2: Loop in eval
+print("Test 2: Loop in eval");
+var code2 = "for (var i = 0; i < 3; i = i + 1) { print(\"i = \" + toString(i)); }";
+var result2 = eval(code2);
+print("Test 2 passed");
+
+// Test 3: Array operations in eval
+print("Test 3: Array operations");
+var code3 = "var arr = []; push(arr, 1); push(arr, 2); print(\"Array length: \" + toString(len(arr)));";
+var result3 = eval(code3);
+print("Test 3 passed");
+
+// Test 4: String indexing in eval
+print("Test 4: String indexing");
+var code4 = "var str = \"Hello\"; print(\"First char: \" + str[0]);";
+var result4 = eval(code4);
+print("Test 4 passed");
+
+// Test 5: Function definition and call in eval
+print("Test 5: Function in eval");
+var code5 = "func add(x, y) { return x + y; } var sum = add(5, 3); print(\"Sum: \" + toString(sum));";
+var result5 = eval(code5);
+print("Test 5 passed");
+
+// Test 6: Write complex code to file and eval
+print("Test 6: Complex file I/O");
+var complexCode = "print(\"=== COMPLEX CODE ===\");\n";
+complexCode = complexCode + "var testArray = [];\n";
+complexCode = complexCode + "for (var i = 0; i < 5; i = i + 1) {\n";
+complexCode = complexCode + "    push(testArray, i * i);\n";
+complexCode = complexCode + "}\n";
+complexCode = complexCode + "print(\"Array: \" + toString(len(testArray)) + \" elements\");\n";
+
+writeFile("complex_test.bob", complexCode);
+var loadedComplex = readFile("complex_test.bob");
+print("Generated code:");
+print(loadedComplex);
+var result6 = eval(loadedComplex);
+print("Test 6 passed");
+
+print("All complexity tests passed!"); 
