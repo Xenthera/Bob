@@ -1,7 +1,7 @@
 //
 
 //
-#include "../headers/bob.h"
+#include "bob.h"
 
 int main(int argc, char* argv[]){
     Bob bobLang;

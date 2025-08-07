@@ -1,7 +1,7 @@
 #include <utility>
 
-#include "../headers/bob.h"
-#include "../headers/Parser.h"
+#include "bob.h"
+#include "Parser.h"
 
 void Bob::runFile(const std::string& path)
 {

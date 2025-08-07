@@ -1,4 +1,4 @@
-#include "../headers/Value.h"
+#include "Value.h"
 
 // Global constants for common values (no heap allocation)
 const Value NONE_VALUE = Value();

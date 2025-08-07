@@ -1,5 +1,5 @@
-#include "../headers/Environment.h"
-#include "../headers/ErrorReporter.h"
+#include "Environment.h"
+#include "ErrorReporter.h"
 
 void Environment::assign(const Token& name, const Value& value) {
     auto it = variables.find(name.lexeme);

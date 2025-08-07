@@ -1,8 +1,8 @@
-#include "../headers/BobStdLib.h"
-#include "../headers/Interpreter.h"
-#include "../headers/ErrorReporter.h"
-#include "../headers/Lexer.h"
-#include "../headers/Parser.h"
+#include "BobStdLib.h"
+#include "Interpreter.h"
+#include "ErrorReporter.h"
+#include "Lexer.h"
+#include "Parser.h"
 #include <chrono>
 #include <thread>
 #include <ctime>

@@ -1,48 +1,55 @@
-# Makefile
+# Makefile - Bob language interpreter
 
 # Compiler
 CC = g++
 
-# Compiler flags
+# Compiler flags  
 CFLAGS = -Wall -Wextra -std=c++17 -Wno-unused-variable -Wno-unused-parameter -Wno-switch -O3 -march=native
 
-# Source directory
-SRC_DIR = ./source
+# Source layout:
+# src/
+#   ├── headers/     - All header files (public interface)
+#   │   ├── runtime/     - Runtime execution headers
+#   │   ├── parsing/     - Front-end processing headers  
+#   │   ├── stdlib/      - Standard library headers
+#   │   ├── cli/         - CLI headers
+#   │   └── common/      - Shared utilities (helperFunctions)
+#   └── sources/     - All source files (implementation)
+#       ├── runtime/     - Interpreter, Evaluator, Executor, Environment, Value, TypeWrapper
+#       ├── parsing/     - Lexer, Parser, ErrorReporter, Expression AST
+#       ├── stdlib/      - Built-in functions (BobStdLib)
+#       └── cli/         - Command-line interface (main, bob)
 
-# Output directory
+SRC_ROOT = ./src
 BUILD_DIR = ./build
 
-# Find all C++ files recursively in the source directory
-CPP_FILES := $(shell find $(SRC_DIR) -type f -name '*.cpp')
+# Find all .cpp files under src/sources (recursively)
+CPP_FILES := $(shell find $(SRC_ROOT)/sources -type f -name '*.cpp')
 
-# Generate object file names by replacing the source directory with the build directory
-OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
+# Map every source file to its corresponding object file inside build/
+# Strip src/sources/ prefix and add build/ prefix
+OBJ_FILES := $(patsubst $(SRC_ROOT)/sources/%.cpp,$(BUILD_DIR)/%.o,$(CPP_FILES))
 
-# Create directories for object files
+# Make sure every object directory exists ahead of time
 $(shell mkdir -p $(dir $(OBJ_FILES)))
 
-# Default target
+# Default goal
 all: build
 
-# Rule to create necessary directories
-$(DIRS):
-	mkdir -p $(patsubst $(SRC_DIR)/%, $(OUTPUT_DIR)/%, $@)
+# Pattern rule – compile each .cpp from sources/ into a mirrored .o inside build/
+$(BUILD_DIR)/%.o: $(SRC_ROOT)/sources/%.cpp
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -I$(SRC_ROOT)/headers/runtime -I$(SRC_ROOT)/headers/parsing -I$(SRC_ROOT)/headers/stdlib -I$(SRC_ROOT)/headers/cli -I$(SRC_ROOT)/headers/common -c $< -o $@
 
-# Rule to compile object files
-$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# Rule to link object files into the final executable
+# Link all objects into the final executable
 $(BUILD_DIR)/bob: $(OBJ_FILES)
 	$(CC) $(CFLAGS) $^ -o $@
 
-
+# Convenience targets
 run:
 	./$(BUILD_DIR)/bob
 
 build: clean $(BUILD_DIR)/bob
 
-
-# Clean build directory
 clean:
 	rm -rf $(BUILD_DIR)/*

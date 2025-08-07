@@ -1,4 +1,4 @@
-#include "../headers/ErrorReporter.h"
+#include "ErrorReporter.h"
 #include <algorithm>
 #include <iomanip>
 #include <string>

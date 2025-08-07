@@ -18,13 +18,7 @@ struct BreakStmt;
 struct ContinueStmt;
 struct AssignStmt;
 
-struct ExecutionContext {
-    bool isFunctionBody = false;
-    bool hasReturn = false;
-    bool hasBreak = false;
-    bool hasContinue = false;
-    Value returnValue;
-};
+#include "ExecutionContext.h"
 
 struct StmtVisitor
 {

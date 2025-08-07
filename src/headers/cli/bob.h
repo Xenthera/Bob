@@ -3,10 +3,10 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "../headers/Lexer.h"
-#include "../headers/Interpreter.h"
-#include "../headers/helperFunctions/ShortHands.h"
-#include "../headers/ErrorReporter.h"
+#include "Lexer.h"
+#include "Interpreter.h"
+#include "helperFunctions/ShortHands.h"
+#include "ErrorReporter.h"
 
 #define VERSION "0.0.3"
 

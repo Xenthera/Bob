@@ -1,6 +1,6 @@
-#include "../headers/Lexer.h"
-#include "../headers/ErrorReporter.h"
-#include "../headers/helperFunctions/HelperFunctions.h"
+#include "Lexer.h"
+#include "ErrorReporter.h"
+#include "helperFunctions/HelperFunctions.h"
 #include <cctype>
 #include <stdexcept>
 
