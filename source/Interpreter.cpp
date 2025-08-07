@@ -406,8 +406,13 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
     if (callee.isFunction()) {
         Function* function = callee.asFunction();
         if (arguments.size() != function->params.size()) {
-            throw std::runtime_error("Expected " + std::to_string(function->params.size()) +
-                                   " arguments but got " + std::to_string(arguments.size()) + ".");
+            std::string errorMsg = "Expected " + std::to_string(function->params.size()) +
+                                   " arguments but got " + std::to_string(arguments.size()) + ".";
+            if (errorReporter) {
+                errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+                    errorMsg, "");
+            }
+            throw std::runtime_error(errorMsg);
         }
         
         // Check if this is a tail call
@@ -476,7 +481,13 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
         }
     }
     
-    throw std::runtime_error("Can only call functions and classes.");
+    // Provide better error message with type information
+    std::string errorMsg = "Can only call functions, got " + callee.getType();
+    if (errorReporter) {
+        errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+            errorMsg, "");
+    }
+    throw std::runtime_error(errorMsg);
 }
 
 Value Interpreter::visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) {
