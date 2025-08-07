@@ -13,32 +13,46 @@
 #include "../headers/helperFunctions/HelperFunctions.h"
 #include "../headers/BobStdLib.h"
 
+// 🎪 The Great Return Context Circus! 🎪
+// Where return values go to party before coming back home
 struct ReturnContext {
-    Value returnValue;
-    bool hasReturn;
+    Value returnValue;  // The star of the show
+    bool hasReturn;     // Did someone say "return"? 
     ReturnContext() : returnValue(NONE_VALUE), hasReturn(false) {}
+    // Constructor: "Hello, I'm a return context, and I'm here to make your day better!"
 };
 
-// Trampoline-based tail call optimization - no exceptions needed
+// 🎭 Trampoline-based tail call optimization - no exceptions needed
+// Because we're too cool for stack overflow exceptions
+// We bounce around like kangaroos on a trampoline! 🦘
 
 
 
 
+// 🎯 Literal Expression Interpreter - The Truth Teller! 🎯
+// "I speak only the truth, and sometimes binary!"
 Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
-    if (expr->isNull) return NONE_VALUE;
+    if (expr->isNull) {
+        // Ah, the philosophical question: "To be or not to be?" 
+        // Answer: "Not to be" (none)
+        return NONE_VALUE;
+    }
     if (expr->isNumber) {
         double num;
         if (expr->value[1] == 'b') {
+            // Binary numbers: Because 10 types of people exist - those who understand binary and those who don't! 🤓
             num = binaryStringToLong(expr->value);
         } else {
+            // Decimal numbers: The boring but reliable ones
             num = std::stod(expr->value);
         }
         return Value(num);
     }
     if (expr->isBoolean) {
-        if (expr->value == "true") return TRUE_VALUE;
-        if (expr->value == "false") return FALSE_VALUE;
+        if (expr->value == "true") return TRUE_VALUE;   // The optimist
+        if (expr->value == "false") return FALSE_VALUE; // The pessimist
     }
+    // Everything else is just a string, and strings are like people - unique and special! 💫
     return Value(expr->value);
 }
 
@@ -501,75 +515,118 @@ Value Interpreter::visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>
 }
 
 Value Interpreter::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) {
-    Value array = evaluate(expr->array);
+    Value container = evaluate(expr->array);
     Value index = evaluate(expr->index);
     
-    if (!array.isArray()) {
-        if (errorReporter) {
-            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Can only index arrays", "");
+    if (container.isArray()) {
+        // Array indexing
+        if (!index.isNumber()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index must be a number", "");
+            }
+            throw std::runtime_error("Array index must be a number");
         }
-        throw std::runtime_error("Can only index arrays");
-    }
-    
-    if (!index.isNumber()) {
-        if (errorReporter) {
-            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index must be a number", "");
-        }
-        throw std::runtime_error("Array index must be a number");
-    }
-    
-    int idx = static_cast<int>(index.asNumber());
-    const std::vector<Value>& arr = array.asArray();
-    
-
-    
-    if (idx < 0 || idx >= arr.size()) {
-        if (errorReporter) {
-            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+        
+        int idx = static_cast<int>(index.asNumber());
+        const std::vector<Value>& arr = container.asArray();
+        
+        if (idx < 0 || static_cast<size_t>(idx) >= arr.size()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
                 "Array index out of bounds", "");
+            }
+            throw std::runtime_error("Array index out of bounds");
         }
-        throw std::runtime_error("Array index out of bounds");
+        
+        return arr[idx];
+    } else if (container.isDict()) {
+        // Dictionary indexing
+        if (!index.isString()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Dictionary key must be a string", "");
+            }
+            throw std::runtime_error("Dictionary key must be a string");
+        }
+        
+        const std::unordered_map<std::string, Value>& dict = container.asDict();
+        auto it = dict.find(index.asString());
+        
+        if (it == dict.end()) {
+            return NONE_VALUE; // Return none for missing keys
+        }
+        
+        return it->second;
+    } else {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Can only index arrays and dictionaries", "");
+        }
+        throw std::runtime_error("Can only index arrays and dictionaries");
     }
-    
-    return arr[idx];
 }
 
 Value Interpreter::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) {
-    Value array = evaluate(expr->array);
+    Value container = evaluate(expr->array);
     Value index = evaluate(expr->index);
     Value value = evaluate(expr->value);
     
-    if (!array.isArray()) {
+    if (container.isArray()) {
+        // Array assignment
+        if (!index.isNumber()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index must be a number", "");
+            }
+            throw std::runtime_error("Array index must be a number");
+        }
+        
+        int idx = static_cast<int>(index.asNumber());
+        std::vector<Value>& arr = container.asArray();
+        
+        if (idx < 0 || static_cast<size_t>(idx) >= arr.size()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index out of bounds", "");
+            }
+            throw std::runtime_error("Array index out of bounds");
+        }
+        
+        arr[idx] = value;
+        return value;
+    } else if (container.isDict()) {
+        // Dictionary assignment
+        if (!index.isString()) {
+            if (errorReporter) {
+                errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Dictionary key must be a string", "");
+            }
+            throw std::runtime_error("Dictionary key must be a string");
+        }
+        
+        std::unordered_map<std::string, Value>& dict = container.asDict();
+        dict[index.asString()] = value;
+        return value;
+    } else {
         if (errorReporter) {
             errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Can only assign to arrays", "");
+                "Can only assign to arrays and dictionaries", "");
         }
-        throw std::runtime_error("Can only assign to arrays");
+        throw std::runtime_error("Can only assign to arrays and dictionaries");
+    }
+}
+
+
+Value Interpreter::visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expr) {
+    std::unordered_map<std::string, Value> dict;
+    
+    for (const auto& pair : expr->pairs) {
+        Value value = evaluate(pair.second);
+        dict[pair.first] = value;
     }
     
-    if (!index.isNumber()) {
-        if (errorReporter) {
-            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index must be a number", "");
-        }
-        throw std::runtime_error("Array index must be a number");
-    }
-    
-    int idx = static_cast<int>(index.asNumber());
-    std::vector<Value>& arr = array.asArray();
-    
-    if (idx < 0 || idx >= arr.size()) {
-        if (errorReporter) {
-            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index out of bounds", "");
-        }
-        throw std::runtime_error("Array index out of bounds");
-    }
-    
-    arr[idx] = value;
-    return value;
+    return Value(dict);
 }
 
 Value Interpreter::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expression) {
@@ -1109,6 +1166,21 @@ std::string Interpreter::stringify(Value object) {
         }
         
         result += "]";
+        return result;
+    }
+    else if(object.isDict())
+    {
+        const std::unordered_map<std::string, Value>& dict = object.asDict();
+        std::string result = "{";
+        
+        bool first = true;
+        for (const auto& pair : dict) {
+            if (!first) result += ", ";
+            result += "\"" + pair.first + "\": " + stringify(pair.second);
+            first = false;
+        }
+        
+        result += "}";
         return result;
     }
 

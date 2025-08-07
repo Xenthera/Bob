@@ -35,7 +35,7 @@ struct ScopedEnv {
 };
 
 // Thunk class for trampoline-based tail call optimization
-class Thunk {
+struct Thunk {
 public:
     using ThunkFunction = std::function<Value()>;
     
@@ -69,6 +69,7 @@ public:
     Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expression) override;
     Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expression) override;
     Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expression) override;
+    Value visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expression) override;
 
     void visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context = nullptr) override;

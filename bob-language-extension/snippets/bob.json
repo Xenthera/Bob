@@ -413,5 +413,50 @@
       "var element = ${1:arrayName}[${2:floatIndex}];  // Auto-truncates to int"
     ],
     "description": "Array access with float index (auto-truncates)"
+  },
+  "Dictionary Literal": {
+    "prefix": "dict",
+    "body": [
+      "var ${1:dictName} = {",
+      "\t\"${2:key1}\": ${3:value1},",
+      "\t\"${4:key2}\": ${5:value2}",
+      "};"
+    ],
+    "description": "Create a dictionary literal"
+  },
+  "Dictionary Access": {
+    "prefix": "dictaccess",
+    "body": [
+      "var value = ${1:dictName}[\"${2:key}\"];"
+    ],
+    "description": "Access dictionary value"
+  },
+  "Dictionary Assignment": {
+    "prefix": "dictassign",
+    "body": [
+      "${1:dictName}[\"${2:key}\"] = ${3:value};"
+    ],
+    "description": "Assign value to dictionary key"
+  },
+  "Dictionary Keys": {
+    "prefix": "keys",
+    "body": [
+      "var keys = keys(${1:dictionary});"
+    ],
+    "description": "Get all keys from dictionary"
+  },
+  "Dictionary Values": {
+    "prefix": "values",
+    "body": [
+      "var values = values(${1:dictionary});"
+    ],
+    "description": "Get all values from dictionary"
+  },
+  "Dictionary Has": {
+    "prefix": "has",
+    "body": [
+      "var exists = has(${1:dictionary}, \"${2:key}\");"
+    ],
+    "description": "Check if dictionary has key"
   }
 } 

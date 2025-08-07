@@ -2,21 +2,20 @@
 
 #include "../headers/bob.h"
 #include "../headers/Parser.h"
-using namespace std;
 
-void Bob::runFile(const string& path)
+void Bob::runFile(const std::string& path)
 {
     this->interpreter = msptr(Interpreter)(false);
-    ifstream file = ifstream(path);
+    std::ifstream file = std::ifstream(path);
 
-    string source;
+    std::string source;
 
     if(file.is_open()){
-        source = string(istreambuf_iterator<char>(file), istreambuf_iterator<char>());
+        source = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
     else
     {
-        cout << "File not found" << endl;
+        std::cout << "File not found" << std::endl;
         return;
     }
 
@@ -33,11 +32,11 @@ void Bob::runPrompt()
 {
     this->interpreter = msptr(Interpreter)(true);
 
-    cout << "Bob v" << VERSION << ", 2025" << endl;
+            std::cout << "Bob v" << VERSION << ", 2025" << std::endl;
     for(;;)
     {
-        string line;
-        cout << "\033[0;36m" << "-> " << "\033[0;37m";
+        std::string line;
+        std::cout << "\033[0;36m" << "-> " << "\033[0;37m";
         std::getline(std::cin, line);
 
         if(std::cin.eof())
@@ -58,19 +57,19 @@ void Bob::runPrompt()
     }
 }
 
-void Bob::run(string source)
+void Bob::run(std::string source)
 {
     try {
         // Connect error reporter to lexer
         lexer.setErrorReporter(&errorReporter);
         
-        vector<Token> tokens = lexer.Tokenize(std::move(source));
+        std::vector<Token> tokens = lexer.Tokenize(std::move(source));
         Parser p(tokens);
         
         // Connect error reporter to parser
         p.setErrorReporter(&errorReporter);
         
-        vector<sptr(Stmt)> statements = p.parse();
+        std::vector<sptr(Stmt)> statements = p.parse();
         interpreter->interpret(statements);
     }
     catch(std::exception &e)

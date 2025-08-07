@@ -140,6 +140,7 @@ sptr(Expr) Parser::assignmentExpression()
             auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expr);
             return msptr(ArrayAssignExpr)(arrayExpr->array, arrayExpr->index, value, arrayExpr->bracket);
         }
+
         
         if (errorReporter) {
             errorReporter->reportError(op.line, op.column, "Parse Error",
@@ -294,6 +295,10 @@ sptr(Expr) Parser::primary()
         return arrayLiteral();
     }
 
+    if(match({OPEN_BRACE})) {
+        return dictLiteral();
+    }
+
     if (errorReporter) {
         errorReporter->reportError(peek().line, peek().column, "Parse Error", 
             "Expression expected", "");
@@ -315,6 +320,36 @@ sptr(Expr) Parser::arrayLiteral()
     return msptr(ArrayLiteralExpr)(elements);
 }
 
+sptr(Expr) Parser::dictLiteral()
+{
+    std::vector<std::pair<std::string, sptr(Expr)>> pairs;
+    
+    if (!check(CLOSE_BRACE)) {
+        do {
+            // Parse key (must be a string literal)
+            if (!match({STRING})) {
+                if (errorReporter) {
+                    errorReporter->reportError(peek().line, peek().column, "Parse Error", 
+                        "Dictionary key must be a string literal", "");
+                }
+                throw std::runtime_error("Dictionary key must be a string literal");
+            }
+            std::string key = previous().lexeme;
+            
+            // Parse colon
+            consume(COLON, "Expected ':' after dictionary key");
+            
+            // Parse value
+            sptr(Expr) value = expression();
+            
+            pairs.emplace_back(key, value);
+        } while (match({COMMA}));
+    }
+    
+    consume(CLOSE_BRACE, "Expected '}' after dictionary pairs.");
+    return msptr(DictLiteralExpr)(pairs);
+}
+
 sptr(Expr) Parser::call()
 {
     sptr(Expr) expr = msptr(VarExpr)(previous());
@@ -322,6 +357,8 @@ sptr(Expr) Parser::call()
     while (true) {
         if (match({OPEN_PAREN})) {
             expr = finishCall(expr);
+        } else if (match({OPEN_BRACKET})) {
+            expr = finishArrayIndex(expr);
         } else if (match({OPEN_BRACKET})) {
             expr = finishArrayIndex(expr);
         } else {
@@ -441,7 +478,7 @@ sptr(Stmt) Parser::statement()
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     
     // Check for assignment statement
-    if(check({IDENTIFIER})) {
+    if(check(IDENTIFIER)) {
         // Look ahead to see if this is an assignment
         int currentPos = current;
         advance(); // consume identifier
@@ -462,6 +499,8 @@ sptr(Stmt) Parser::statement()
             consume(SEMICOLON, "Expected ';' after assignment.");
             return msptr(ExpressionStmt)(expr);
         }
+        
+
         
         // Reset position and parse as expression statement
         current = currentPos;
@@ -654,6 +693,8 @@ sptr(Expr) Parser::finishArrayIndex(sptr(Expr) array) {
     Token bracket = consume(CLOSE_BRACKET, "Expected ']' after array index.");
     return msptr(ArrayIndexExpr)(array, index, bracket);
 }
+
+
 
 bool Parser::match(const std::vector<TokenType>& types) {
     for(TokenType t : types)

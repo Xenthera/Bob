@@ -65,7 +65,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in len function for arrays and strings
     auto lenFunc = std::make_shared<BuiltinFunction>("len", 
-        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
@@ -78,12 +78,14 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 return Value(static_cast<double>(args[0].asArray().size()));
             } else if (args[0].isString()) {
                 return Value(static_cast<double>(args[0].asString().length()));
+            } else if (args[0].isDict()) {
+                return Value(static_cast<double>(args[0].asDict().size()));
             } else {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
-                        "len() can only be used on arrays and strings", "", true);
+                        "len() can only be used on arrays, strings, and dictionaries", "", true);
                 }
-                throw std::runtime_error("len() can only be used on arrays and strings");
+                throw std::runtime_error("len() can only be used on arrays, strings, and dictionaries");
             }
         });
     env->define("len", Value(lenFunc.get()));
@@ -93,7 +95,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in push function for arrays
     auto pushFunc = std::make_shared<BuiltinFunction>("push", 
-        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() < 2) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
@@ -125,7 +127,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in pop function for arrays
     auto popFunc = std::make_shared<BuiltinFunction>("pop", 
-        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
@@ -276,6 +278,8 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 typeName = "builtin_function";
             } else if (args[0].isArray()) {
                 typeName = "array";
+            } else if (args[0].isDict()) {
+                typeName = "dict";
             } else {
                 typeName = "unknown";
             }
@@ -505,5 +509,102 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(evalFunc);
+
+    // Create a built-in keys function for dictionaries
+    auto keysFunc = std::make_shared<BuiltinFunction>("keys",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isDict()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "keys() can only be used on dictionaries", "", true);
+                }
+                throw std::runtime_error("keys() can only be used on dictionaries");
+            }
+            
+            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
+            std::vector<Value> keys;
+            
+            for (const auto& pair : dict) {
+                keys.push_back(Value(pair.first));
+            }
+            
+            return Value(keys);
+        });
+    env->define("keys", Value(keysFunc.get()));
+    interpreter.addBuiltinFunction(keysFunc);
+
+    // Create a built-in values function for dictionaries
+    auto valuesFunc = std::make_shared<BuiltinFunction>("values",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isDict()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "values() can only be used on dictionaries", "", true);
+                }
+                throw std::runtime_error("values() can only be used on dictionaries");
+            }
+            
+            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
+            std::vector<Value> values;
+            
+            for (const auto& pair : dict) {
+                values.push_back(pair.second);
+            }
+            
+            return Value(values);
+        });
+    env->define("values", Value(valuesFunc.get()));
+    interpreter.addBuiltinFunction(valuesFunc);
+
+    // Create a built-in has function for dictionaries
+    auto hasFunc = std::make_shared<BuiltinFunction>("has",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 2) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 2 arguments but got " + std::to_string(args.size()) + ".");
+            }
+            
+            if (!args[0].isDict()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "First argument to has() must be a dictionary", "", true);
+                }
+                throw std::runtime_error("First argument to has() must be a dictionary");
+            }
+            
+            if (!args[1].isString()) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Second argument to has() must be a string", "", true);
+                }
+                throw std::runtime_error("Second argument to has() must be a string");
+            }
+            
+            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
+            std::string key = args[1].asString();
+            
+            return Value(dict.find(key) != dict.end());
+        });
+    env->define("has", Value(hasFunc.get()));
+    interpreter.addBuiltinFunction(hasFunc);
 
 } 

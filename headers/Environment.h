@@ -9,7 +9,7 @@
 // Forward declaration
 class ErrorReporter;
 
-class Environment {
+struct Environment {
 public:
     Environment() : parent(nullptr), errorReporter(nullptr) {}
     Environment(std::shared_ptr<Environment> parent_env) : parent(parent_env), errorReporter(nullptr) {}

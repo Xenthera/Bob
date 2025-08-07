@@ -15,6 +15,9 @@
       "include": "#arrays"
     },
     {
+      "include": "#dictionaries"
+    },
+    {
       "include": "#keywords"
     },
     {
@@ -109,6 +112,43 @@
         }
       ]
     },
+    "dictionaries": {
+      "patterns": [
+        {
+          "name": "meta.dictionary.bob",
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            {
+              "name": "string.quoted.double.bob",
+              "begin": "\"",
+              "end": "\"",
+              "patterns": [
+                {
+                  "name": "constant.character.escape.bob",
+                  "match": "\\\\[nt\"\\\\e]"
+                }
+              ]
+            },
+            {
+              "name": "keyword.operator.bob",
+              "match": ":"
+            },
+            {
+              "include": "#expressions"
+            }
+          ]
+        },
+        {
+          "name": "variable.other.dictionary-index.bob",
+          "match": "([a-zA-Z_][a-zA-Z0-9_]*)\\{([^\\}]+)\\}",
+          "captures": {
+            "1": { "name": "variable.other.bob" },
+            "2": { "name": "string.quoted.double.bob" }
+          }
+        }
+      ]
+    },
     "keywords": {
       "patterns": [
         {
@@ -137,7 +177,7 @@
         },
         {
           "name": "support.function.builtin.bob",
-          "match": "\\b(print|assert|input|type|toString|toNumber|toInt|time|sleep|printRaw|len|push|pop|random|eval)\\b"
+          "match": "\\b(print|assert|input|type|toString|toNumber|toInt|time|sleep|printRaw|len|push|pop|random|eval|keys|values|has)\\b"
         }
       ]
     },

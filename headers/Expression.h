@@ -17,6 +17,9 @@ struct TernaryExpr;
 struct ArrayLiteralExpr;
 struct ArrayIndexExpr;
 struct ArrayAssignExpr;
+struct DictLiteralExpr;
+struct DictIndexExpr;
+struct DictAssignExpr;
 struct ExprVisitor;
 
 struct AssignExpr;
@@ -43,6 +46,8 @@ struct ExprVisitor
     virtual Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) = 0;
     virtual Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) = 0;
     virtual Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) = 0;
+    virtual Value visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expr) = 0;
+
 };
 
 struct Expr : public std::enable_shared_from_this<Expr> {
@@ -214,4 +219,18 @@ struct ArrayAssignExpr : Expr
         return visitor->visitArrayAssignExpr(std::static_pointer_cast<ArrayAssignExpr>(shared_from_this()));
     }
 };
+
+struct DictLiteralExpr : Expr
+{
+    std::vector<std::pair<std::string, std::shared_ptr<Expr>>> pairs;
+    
+    explicit DictLiteralExpr(const std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& pairs)
+        : pairs(pairs) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitDictLiteralExpr(std::static_pointer_cast<DictLiteralExpr>(shared_from_this()));
+    }
+};
+
+
 

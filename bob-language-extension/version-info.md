@@ -1,6 +1,41 @@
-# Bob Language Extension v0.3.0
+# Bob Language Extension v0.4.0
 
 ## What's New
+
+### ✨ New Features Added
+
+#### **Dictionary Support**
+- **Dictionary literals**: `{"key": "value", "number": 42}`
+- **Dictionary indexing**: `dict{"key"}` (returns `none` for missing keys)
+- **Dictionary assignment**: `dict{"key"} = value`
+- **Nested dictionaries**: `{"user": {"name": "Bob", "age": 30}}`
+- **Mixed type values**: Any type can be stored as dictionary values
+
+#### **Dictionary Built-in Functions**
+- `keys(dict)` - Returns array of all keys
+- `values(dict)` - Returns array of all values
+- `has(dict, key)` - Returns boolean if key exists
+
+#### **Dictionary Code Snippets**
+- `dict` - Create dictionary literal
+- `dictaccess` - Access dictionary value
+- `dictassign` - Assign to dictionary key
+- `keys`, `values`, `has` - Built-in function snippets
+
+### 🎨 Syntax Highlighting Improvements
+- Dictionary literal syntax highlighting
+- Dictionary indexing syntax support
+- Built-in function highlighting for `keys`, `values`, `has`
+
+### 📝 Documentation Updates
+- Complete dictionary documentation with examples
+- Dictionary built-in functions documentation
+- Updated language reference with dictionary section
+- Array and dictionary built-in functions documentation
+
+---
+
+## Previous Version (v0.3.0)
 
 ### ✨ New Features Added
 
@@ -65,7 +100,7 @@ To create the VSIX package:
 2. Run `npm install -g vsce`
 3. Run `./package-vsix.sh`
 
-The extension will be packaged as `bob-language-0.3.0.vsix`
+The extension will be packaged as `bob-language-0.4.0.vsix`
 
 ## Compatibility
 - VS Code 1.60.0+

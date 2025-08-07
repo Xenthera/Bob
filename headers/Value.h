@@ -9,10 +9,10 @@
 #include <algorithm>
 
 // Forward declarations
-class Environment;
-class Function;
-class BuiltinFunction;
-class Thunk;
+struct Environment;
+struct Function;
+struct BuiltinFunction;
+struct Thunk;
 
 // Type tags for the Value union
 enum ValueType {
@@ -23,7 +23,8 @@ enum ValueType {
     VAL_FUNCTION,
     VAL_BUILTIN_FUNCTION,
     VAL_THUNK,
-    VAL_ARRAY
+    VAL_ARRAY,
+    VAL_DICT
 };
 
 // Tagged value system (like Lua) - no heap allocation for simple values
@@ -38,6 +39,7 @@ struct Value {
     ValueType type;
     std::string string_value; // Store strings outside the union for safety
     std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
+    std::shared_ptr<std::unordered_map<std::string, Value> > dict_value; // Store dictionaries as shared_ptr for mutability
 
     // Constructors
     Value() : number(0.0), type(ValueType::VAL_NONE) {}
@@ -51,13 +53,15 @@ struct Value {
     Value(Thunk* t) : thunk(t), type(ValueType::VAL_THUNK) {}
     Value(const std::vector<Value>& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(arr)) {}
     Value(std::vector<Value>&& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(std::move(arr))) {}
+    Value(const std::unordered_map<std::string, Value>& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(dict)) {}
+    Value(std::unordered_map<std::string, Value>&& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(std::move(dict))) {}
     
 
 
     // Move constructor
     Value(Value&& other) noexcept 
-        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)) {
-        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY) {
+        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)) {
+        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT) {
             number = other.number; // Copy the union
         }
         other.type = ValueType::VAL_NONE;
@@ -71,6 +75,8 @@ struct Value {
                 string_value = std::move(other.string_value);
             } else if (type == ValueType::VAL_ARRAY) {
                 array_value = std::move(other.array_value); // shared_ptr automatically handles moving
+            } else if (type == ValueType::VAL_DICT) {
+                dict_value = std::move(other.dict_value); // shared_ptr automatically handles moving
             } else {
                 number = other.number; // Copy the union
             }
@@ -85,6 +91,8 @@ struct Value {
             string_value = other.string_value;
         } else if (type == ValueType::VAL_ARRAY) {
             array_value = other.array_value; // shared_ptr automatically handles sharing
+        } else if (type == ValueType::VAL_DICT) {
+            dict_value = other.dict_value; // shared_ptr automatically handles sharing
         } else {
             number = other.number; // Copy the union
         }
@@ -98,6 +106,8 @@ struct Value {
                 string_value = other.string_value;
             } else if (type == ValueType::VAL_ARRAY) {
                 array_value = other.array_value; // shared_ptr automatically handles sharing
+            } else if (type == ValueType::VAL_DICT) {
+                dict_value = other.dict_value; // shared_ptr automatically handles sharing
             } else {
                 number = other.number; // Copy the union
             }
@@ -112,6 +122,7 @@ struct Value {
     inline bool isFunction() const { return type == ValueType::VAL_FUNCTION; }
     inline bool isBuiltinFunction() const { return type == ValueType::VAL_BUILTIN_FUNCTION; }
     inline bool isArray() const { return type == ValueType::VAL_ARRAY; }
+    inline bool isDict() const { return type == ValueType::VAL_DICT; }
     inline bool isThunk() const { return type == ValueType::VAL_THUNK; }
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
 
@@ -126,6 +137,7 @@ struct Value {
             case ValueType::VAL_BUILTIN_FUNCTION: return "builtin_function";
             case ValueType::VAL_THUNK: return "thunk";
             case ValueType::VAL_ARRAY: return "array";
+            case ValueType::VAL_DICT: return "dict";
             default: return "unknown";
         }
     }
@@ -142,6 +154,12 @@ struct Value {
     inline std::vector<Value>& asArray() { 
         return *array_value; 
     }
+    inline const std::unordered_map<std::string, Value>& asDict() const { 
+        return *dict_value; 
+    }
+    inline std::unordered_map<std::string, Value>& asDict() { 
+        return *dict_value; 
+    }
     inline Function* asFunction() const { return isFunction() ? function : nullptr; }
     inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function : nullptr; }
     inline Thunk* asThunk() const { return isThunk() ? thunk : nullptr; }
@@ -156,6 +174,8 @@ struct Value {
             case ValueType::VAL_FUNCTION: return function != nullptr;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function != nullptr;
             case ValueType::VAL_THUNK: return thunk != nullptr;
+            case ValueType::VAL_ARRAY: return !array_value->empty();
+            case ValueType::VAL_DICT: return !dict_value->empty();
             default: return false;
         }
     }
@@ -172,6 +192,21 @@ struct Value {
             case ValueType::VAL_FUNCTION: return function == other.function;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function == other.builtin_function;
             case ValueType::VAL_THUNK: return thunk == other.thunk;
+            case ValueType::VAL_ARRAY: {
+                if (array_value->size() != other.array_value->size()) return false;
+                for (size_t i = 0; i < array_value->size(); i++) {
+                    if (!(*array_value)[i].equals((*other.array_value)[i])) return false;
+                }
+                return true;
+            }
+            case ValueType::VAL_DICT: {
+                if (dict_value->size() != other.dict_value->size()) return false;
+                for (const auto& pair : *dict_value) {
+                    auto it = other.dict_value->find(pair.first);
+                    if (it == other.dict_value->end() || !pair.second.equals(it->second)) return false;
+                }
+                return true;
+            }
             default: return false;
         }
     }
@@ -209,8 +244,31 @@ struct Value {
                 result += "]";
                 return result;
             }
+            case ValueType::VAL_DICT: {
+                const std::unordered_map<std::string, Value>& dict = *dict_value;
+                std::string result = "{";
+                
+                bool first = true;
+                for (const auto& pair : dict) {
+                    if (!first) result += ", ";
+                    result += "\"" + pair.first + "\": " + pair.second.toString();
+                    first = false;
+                }
+                
+                result += "}";
+                return result;
+            }
             default: return "unknown";
         }
+    }
+
+    // Equality operator
+    bool operator==(const Value& other) const {
+        return equals(other);
+    }
+    
+    bool operator!=(const Value& other) const {
+        return !equals(other);
     }
 
     // Arithmetic operators

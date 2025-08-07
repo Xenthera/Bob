@@ -4,7 +4,7 @@
 #include <cctype>
 #include <stdexcept>
 
-using namespace std;
+
 
 std::vector<Token> Lexer::Tokenize(std::string source){
     std::vector<Token> tokens;
@@ -535,7 +535,7 @@ std::string Lexer::parseEscapeCharacters(const std::string& input) {
                     output += '\033';
                     break;
                 default:
-                    throw runtime_error("Invalid escape character: " + std::string(1, c));
+                    throw std::runtime_error("Invalid escape character: " + std::string(1, c));
             }
             escapeMode = false;
         } else if (c == '\\') {

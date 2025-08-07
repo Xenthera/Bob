@@ -77,6 +77,13 @@ make
 - **Mixed types**: `[1, "hello", true, 3.14]`
 - **Nested arrays**: `[[1, 2], [3, 4]]`
 
+### Dictionaries
+- **Dictionary literals**: `{"key": "value", "number": 42}`
+- **Empty dictionaries**: `{}`
+- **String keys only**: Keys must be string literals
+- **Any value types**: Values can be any type including nested structures
+- **Nested dictionaries**: `{"user": {"name": "Bob", "age": 30}}`
+
 #### Array Access
 ```go
 var arr = [10, 20, 30, 40, 50];
@@ -115,6 +122,46 @@ print(arr);  // [1, 2, 3, 4]
 var last = pop(arr);
 print(last);  // 4
 print(arr);   // [1, 2, 3]
+```
+
+#### Dictionary Access
+```go
+var person = {"name": "Alice", "age": 30, "city": "New York"};
+
+// Basic access
+print(person["name"]);  // Alice
+print(person["age"]);   // 30
+
+// Missing keys return none
+print(person["email"]); // none
+
+// Assignment
+person["email"] = "alice@example.com";
+person["age"] = 31;
+
+// Nested access
+var gameState = {
+    "player": {"health": 100, "level": 5},
+    "world": {"name": "Bobland", "difficulty": "hard"}
+};
+print(gameState["player"]["health"]);  // 100
+```
+
+#### Dictionary Built-in Functions
+```go
+var person = {"name": "Bob", "age": 25, "city": "San Francisco"};
+
+// Get all keys
+var keys = keys(person);
+print(keys);  // [name, age, city]
+
+// Get all values
+var values = values(person);
+print(values);  // [Bob, 25, San Francisco]
+
+// Check if key exists
+print(has(person, "name"));   // true
+print(has(person, "email"));  // false
 ```
 
 ## Variables
@@ -711,6 +758,112 @@ var result = eval(code);
 print(result);  // 14
 ```
 
+### Array Functions
+
+#### Len Function
+```go
+len(array);
+```
+
+**Usage**:
+- Returns the length of an array
+- Also works with strings
+
+**Examples**:
+```go
+var arr = [1, 2, 3, 4, 5];
+print(len(arr));  // 5
+
+var str = "hello";
+print(len(str));  // 5
+```
+
+#### Push Function
+```go
+push(array, value);
+```
+
+**Usage**:
+- Adds a value to the end of an array
+- Modifies the array in place
+- Returns none
+
+**Examples**:
+```go
+var arr = [1, 2, 3];
+push(arr, 4);
+print(arr);  // [1, 2, 3, 4]
+```
+
+#### Pop Function
+```go
+pop(array);
+```
+
+**Usage**:
+- Removes and returns the last element of an array
+- Throws error if array is empty
+- Modifies the array in place
+
+**Examples**:
+```go
+var arr = [1, 2, 3, 4];
+var last = pop(arr);
+print(last);  // 4
+print(arr);   // [1, 2, 3]
+```
+
+### Dictionary Functions
+
+#### Keys Function
+```go
+keys(dictionary);
+```
+
+**Usage**:
+- Returns an array of all keys in a dictionary
+- Keys are returned as strings
+
+**Examples**:
+```go
+var person = {"name": "Bob", "age": 25, "city": "SF"};
+var keys = keys(person);
+print(keys);  // [name, age, city]
+```
+
+#### Values Function
+```go
+values(dictionary);
+```
+
+**Usage**:
+- Returns an array of all values in a dictionary
+- Values maintain their original types
+
+**Examples**:
+```go
+var person = {"name": "Bob", "age": 25, "city": "SF"};
+var values = values(person);
+print(values);  // [Bob, 25, SF]
+```
+
+#### Has Function
+```go
+has(dictionary, key);
+```
+
+**Usage**:
+- Returns true if the key exists in the dictionary
+- Returns false if the key is missing
+- Key must be a string
+
+**Examples**:
+```go
+var person = {"name": "Bob", "age": 25};
+print(has(person, "name"));   // true
+print(has(person, "email"));  // false
+```
+
 ## Error Handling
 
 ### Current Error Types
@@ -718,6 +871,8 @@ print(result);  // 14
 - **Type errors**: `Operands must be of same type`
 - **String multiplication**: `String multiplier must be whole number`
 - **Assertion failures**: `Assertion failed: condition is false`
+- **Function call errors**: `Can only call functions, got [type]`
+- **Argument count errors**: `Expected X arguments but got Y`
 
 ### Error Behavior
 - **No try-catch**: Exception handling not implemented
@@ -737,6 +892,14 @@ print(result);  // 14
 
 // Undefined variable
 undefinedVar;  // Error: Undefined variable
+
+// Function call errors
+var notAFunction = 42;
+notAFunction();  // Error: Can only call functions, got number
+
+// Argument count errors
+func test(a, b) { return a + b; }
+test(1);  // Error: Expected 2 arguments but got 1
 ```
 
 ## Examples

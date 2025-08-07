@@ -4,7 +4,7 @@
 #include <vector>
 #include <bitset>
 
-inline std::vector<std::string> splitString(const std::string& input, std::string delimiter) {
+inline std::vector<std::string> splitString(const std::string& input, const std::string& delimiter) {
     std::vector<std::string> tokens;
     std::string token;
     size_t start = 0;

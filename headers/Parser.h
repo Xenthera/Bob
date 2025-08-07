@@ -85,8 +85,11 @@ private:
     sptr(Expr) finishCall(sptr(Expr) callee);
     sptr(Expr) finishArrayIndex(sptr(Expr) array);
     sptr(Expr) finishArrayAssign(sptr(Expr) array, sptr(Expr) index, sptr(Expr) value);
+    sptr(Expr) finishDictIndex(sptr(Expr) dict);
+    sptr(Expr) finishDictAssign(sptr(Expr) dict, sptr(Expr) key, sptr(Expr) value);
     sptr(Expr) arrayLiteral();
-    sptr(Expr) call();  // Handle call chains (function calls and array indexing)
+    sptr(Expr) dictLiteral();
+    sptr(Expr) call();  // Handle call chains (function calls, array indexing, and dict indexing)
     
     // Helper methods for function scope tracking
     void enterFunction() { functionDepth++; }
