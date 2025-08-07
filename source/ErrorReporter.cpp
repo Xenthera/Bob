@@ -107,7 +107,8 @@ void ErrorReporter::displaySourceContext(int line, int column, const std::string
         return;
     }
     
-    int maxWidth = 65;
+    static const int ERROR_DISPLAY_MAX_WIDTH = 65;
+    int maxWidth = ERROR_DISPLAY_MAX_WIDTH;
     int startLine = std::max(1, line - 4);
     int endLine = std::min(static_cast<int>(sourceLines.size()), line + 2);
     
@@ -120,7 +121,7 @@ void ErrorReporter::displaySourceContext(int line, int column, const std::string
     
     int errorLineWidth = 8 + column + 1 + static_cast<int>(message.length());
     maxWidth = std::max(maxWidth, errorLineWidth);
-    maxWidth = std::max(maxWidth, 65);
+    maxWidth = std::max(maxWidth, ERROR_DISPLAY_MAX_WIDTH);
     
     std::cout << colorize("Source Code Context:", Colors::BOLD) << "\n";
     std::cout << colorize("┌" + std::string(maxWidth, '-') + "┐", Colors::BLUE) << "\n";
@@ -163,7 +164,8 @@ void ErrorReporter::displaySourceContext(int line, int column, const std::string
 void ErrorReporter::displayCallStack(const std::vector<std::string>& callStack) {
     if (callStack.empty()) return;
     
-    int maxWidth = 65;
+    static const int CALL_STACK_MAX_WIDTH = 65;
+    int maxWidth = CALL_STACK_MAX_WIDTH;
     for (const auto& func : callStack) {
         int funcWidth = static_cast<int>(func.length()) + 6;
         maxWidth = std::max(maxWidth, funcWidth);

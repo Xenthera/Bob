@@ -15,7 +15,7 @@ void Bob::runFile(const std::string& path)
     }
     else
     {
-        std::cout << "File not found" << std::endl;
+        std::cout << "File not found\n";
         return;
     }
 
@@ -32,8 +32,8 @@ void Bob::runPrompt()
 {
     this->interpreter = msptr(Interpreter)(true);
 
-            std::cout << "Bob v" << VERSION << ", 2025" << std::endl;
-    for(;;)
+    std::cout << "Bob v" << VERSION << ", 2025\n";
+    while(true)
     {
         std::string line;
         std::cout << "\033[0;36m" << "-> " << "\033[0;37m";
@@ -81,13 +81,13 @@ void Bob::run(std::string source)
         
         // For errors that weren't reported (like parser errors, undefined variables, etc.)
         // print them normally
-        std::cout << "Error: " << e.what() << std::endl;
+        std::cout << "Error: " << e.what() << '\n';
         return;
     }
-    catch(...)
+    catch(const std::exception& e)
     {
         // Unknown error - report it since it wasn't handled by the interpreter
-        errorReporter.reportError(0, 0, "Unknown Error", "An unknown error occurred");
+        errorReporter.reportError(0, 0, "Unknown Error", "An unknown error occurred: " + std::string(e.what()));
         return;
     }
 }

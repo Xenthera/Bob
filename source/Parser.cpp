@@ -1,12 +1,10 @@
-//
 
-//
 #include "../headers/Parser.h"
 #include <stdexcept>
 
 
-//              Precedence
-// to all the morons on facebook who don't know what pemdas is, fuck you
+// Operator Precedence Rules
+// Following standard mathematical order of operations
 ///////////////////////////////////////////
 
 sptr(Expr) Parser::expression()
@@ -369,8 +367,6 @@ sptr(Expr) Parser::call()
     return expr;
 }
 
-///////////////////////////////////////////
-
 
 std::vector<sptr(Stmt)> Parser::parse() {
 
@@ -442,12 +438,13 @@ std::shared_ptr<Expr> Parser::functionExpression() {
     std::vector<Token> parameters;
     if (!check(CLOSE_PAREN)) {
         do {
-            if (parameters.size() >= 255) {
+            static const size_t MAX_FUNCTION_PARAMETERS = 255;
+            if (parameters.size() >= MAX_FUNCTION_PARAMETERS) {
                 if (errorReporter) {
                                 errorReporter->reportError(peek().line, 0, "Parse Error", 
-                "Cannot have more than 255 parameters", "");
-                }
-                throw std::runtime_error("Cannot have more than 255 parameters.");
+                                "Cannot have more than " + std::to_string(MAX_FUNCTION_PARAMETERS) + " parameters", "");
+            }
+            throw std::runtime_error("Cannot have more than " + std::to_string(MAX_FUNCTION_PARAMETERS) + " parameters.");
             }
             parameters.push_back(consume(IDENTIFIER, "Expect parameter name."));
         } while (match({COMMA}));

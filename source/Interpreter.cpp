@@ -13,46 +13,35 @@
 #include "../headers/helperFunctions/HelperFunctions.h"
 #include "../headers/BobStdLib.h"
 
-// 🎪 The Great Return Context Circus! 🎪
-// Where return values go to party before coming back home
+// Return context for managing function return values
 struct ReturnContext {
-    Value returnValue;  // The star of the show
-    bool hasReturn;     // Did someone say "return"? 
+    Value returnValue;
+    bool hasReturn;
     ReturnContext() : returnValue(NONE_VALUE), hasReturn(false) {}
-    // Constructor: "Hello, I'm a return context, and I'm here to make your day better!"
 };
 
-// 🎭 Trampoline-based tail call optimization - no exceptions needed
-// Because we're too cool for stack overflow exceptions
-// We bounce around like kangaroos on a trampoline! 🦘
+// Trampoline-based tail call optimization to prevent stack overflow
 
 
 
 
-// 🎯 Literal Expression Interpreter - The Truth Teller! 🎯
-// "I speak only the truth, and sometimes binary!"
 Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
     if (expr->isNull) {
-        // Ah, the philosophical question: "To be or not to be?" 
-        // Answer: "Not to be" (none)
         return NONE_VALUE;
     }
     if (expr->isNumber) {
         double num;
         if (expr->value[1] == 'b') {
-            // Binary numbers: Because 10 types of people exist - those who understand binary and those who don't! 🤓
             num = binaryStringToLong(expr->value);
         } else {
-            // Decimal numbers: The boring but reliable ones
             num = std::stod(expr->value);
         }
         return Value(num);
     }
     if (expr->isBoolean) {
-        if (expr->value == "true") return TRUE_VALUE;   // The optimist
-        if (expr->value == "false") return FALSE_VALUE; // The pessimist
+        if (expr->value == "true") return TRUE_VALUE;
+        if (expr->value == "false") return FALSE_VALUE;
     }
-    // Everything else is just a string, and strings are like people - unique and special! 💫
     return Value(expr->value);
 }
 
@@ -420,13 +409,13 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
     if (callee.isFunction()) {
         Function* function = callee.asFunction();
         if (arguments.size() != function->params.size()) {
-            std::string errorMsg = "Expected " + std::to_string(function->params.size()) +
-                                   " arguments but got " + std::to_string(arguments.size()) + ".";
             if (errorReporter) {
                 errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
-                    errorMsg, "");
+                    "Expected " + std::to_string(function->params.size()) +
+                    " arguments but got " + std::to_string(arguments.size()) + ".", "");
             }
-            throw std::runtime_error(errorMsg);
+            throw std::runtime_error("Expected " + std::to_string(function->params.size()) +
+                                   " arguments but got " + std::to_string(arguments.size()) + ".");
         }
         
         // Check if this is a tail call
@@ -662,11 +651,9 @@ void Interpreter::visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, Ex
 void Interpreter::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context) {
     Value value = evaluate(statement->expression);
 
-    if(IsInteractive)
-        std::cout << "\u001b[38;5;8m[" << stringify(value) << "]\u001b[38;5;15m" << std::endl;
+    if(isInteractive)
+        std::cout << "\u001b[38;5;8m[" << stringify(value) << "]\u001b[38;5;15m\n";
 }
-
-
 
 void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement, ExecutionContext* context)
 {
@@ -676,7 +663,7 @@ void Interpreter::visitVarStmt(const std::shared_ptr<VarStmt>& statement, Execut
         value = evaluate(statement->initializer);
     }
 
-    //std::cout << "Visit var stmt: " << statement->name.lexeme << " set to: " << stringify(value) << std::endl;
+
 
     environment->define(statement->name.lexeme, value);
 }
@@ -799,9 +786,7 @@ void Interpreter::visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement
 
 void Interpreter::visitForStmt(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context)
 {
-    // For loops are desugared into while loops in the parser
-    // This method should never be called, but we implement it for completeness
-    // The actual execution happens through the desugared while loop
+    // For loop implementation - executes initializer, condition, body, and increment
     if (statement->initializer != nullptr) {
         execute(statement->initializer, context);
     }

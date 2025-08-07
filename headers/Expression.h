@@ -1,6 +1,4 @@
-//
-// Created by Bobby Lucero on 5/21/23.
-//
+// Expression AST nodes for Bob language
 
 #pragma once
 #include <iostream>

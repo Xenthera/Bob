@@ -86,14 +86,14 @@ public:
 
     void interpret(std::vector<std::shared_ptr<Stmt>> statements);
 
-    explicit Interpreter(bool IsInteractive) : IsInteractive(IsInteractive), errorReporter(nullptr){
+    explicit Interpreter(bool isInteractive) : isInteractive(isInteractive), errorReporter(nullptr){
         environment = std::make_shared<Environment>();
     }
     virtual ~Interpreter() = default;
 
 private:
     std::shared_ptr<Environment> environment;
-    bool IsInteractive;
+    bool isInteractive;
     std::vector<std::shared_ptr<BuiltinFunction>> builtinFunctions;
     std::vector<std::shared_ptr<Function>> functions;
     std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
@@ -104,6 +104,7 @@ private:
     int functionCreationCount = 0;
     int thunkCreationCount = 0;
     static const int CLEANUP_THRESHOLD = 1000000;  // Cleanup every 1M creations (effectively disabled for performance)
+    static const int MAX_FUNCTION_PARAMETERS = 255;  // Maximum number of function parameters
     
 
     

@@ -5,6 +5,7 @@
 #include "../headers/Parser.h"
 #include <chrono>
 #include <thread>
+#include <ctime>
 
 void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter) {
     // Create a built-in toString function
@@ -36,7 +37,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             // Use the interpreter's stringify function
-            std::cout << interpreter.stringify(args[0]) << std::endl;
+            std::cout << interpreter.stringify(args[0]) << '\n';
             return NONE_VALUE;
         });
     env->define("print", Value(printFunc.get()));
@@ -405,7 +406,6 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             }
             
             std::exit(exitCode);
-            return NONE_VALUE;  // This line should never be reached
         });
     env->define("exit", Value(exitFunc.get()));
     
@@ -414,18 +414,30 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in sleep function for animations and timing
     auto sleepFunc = std::make_shared<BuiltinFunction>("sleep",
-        [](std::vector<Value> args, int line, int column) -> Value {
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
-                return NONE_VALUE;  // Return none for wrong argument count
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             
             if (!args[0].isNumber()) {
-                return NONE_VALUE;  // Return none for wrong type
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "sleep() argument must be a number", "", true);
+                }
+                throw std::runtime_error("sleep() argument must be a number");
             }
             
             double seconds = args[0].asNumber();
             if (seconds < 0) {
-                return NONE_VALUE;  // Return none for negative time
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "sleep() argument cannot be negative", "", true);
+                }
+                throw std::runtime_error("sleep() argument cannot be negative");
             }
             
             // Convert to milliseconds and sleep
@@ -448,6 +460,13 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                         "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
                 }
                 throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
+            }
+            
+            // Seed the random number generator if not already done
+            static bool seeded = false;
+            if (!seeded) {
+                srand(static_cast<unsigned int>(time(nullptr)));
+                seeded = true;
             }
             
             return Value(static_cast<double>(rand()) / RAND_MAX);
