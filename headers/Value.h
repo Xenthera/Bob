@@ -1,4 +1,5 @@
 #pragma once
+#include "helperFunctions/ErrorUtils.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -21,7 +22,8 @@ enum ValueType {
     VAL_STRING,
     VAL_FUNCTION,
     VAL_BUILTIN_FUNCTION,
-    VAL_THUNK
+    VAL_THUNK,
+    VAL_ARRAY
 };
 
 // Tagged value system (like Lua) - no heap allocation for simple values
@@ -35,6 +37,7 @@ struct Value {
     };
     ValueType type;
     std::string string_value; // Store strings outside the union for safety
+    std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
 
     // Constructors
     Value() : number(0.0), type(ValueType::VAL_NONE) {}
@@ -46,11 +49,15 @@ struct Value {
     Value(Function* f) : function(f), type(ValueType::VAL_FUNCTION) {}
     Value(BuiltinFunction* bf) : builtin_function(bf), type(ValueType::VAL_BUILTIN_FUNCTION) {}
     Value(Thunk* t) : thunk(t), type(ValueType::VAL_THUNK) {}
+    Value(const std::vector<Value>& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(arr)) {}
+    Value(std::vector<Value>&& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(std::move(arr))) {}
+    
+
 
     // Move constructor
     Value(Value&& other) noexcept 
-        : type(other.type), string_value(std::move(other.string_value)) {
-        if (type != ValueType::VAL_STRING) {
+        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)) {
+        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY) {
             number = other.number; // Copy the union
         }
         other.type = ValueType::VAL_NONE;
@@ -62,6 +69,8 @@ struct Value {
             type = other.type;
             if (type == ValueType::VAL_STRING) {
                 string_value = std::move(other.string_value);
+            } else if (type == ValueType::VAL_ARRAY) {
+                array_value = std::move(other.array_value); // shared_ptr automatically handles moving
             } else {
                 number = other.number; // Copy the union
             }
@@ -74,6 +83,8 @@ struct Value {
     Value(const Value& other) : type(other.type) {
         if (type == ValueType::VAL_STRING) {
             string_value = other.string_value;
+        } else if (type == ValueType::VAL_ARRAY) {
+            array_value = other.array_value; // shared_ptr automatically handles sharing
         } else {
             number = other.number; // Copy the union
         }
@@ -85,6 +96,8 @@ struct Value {
             type = other.type;
             if (type == ValueType::VAL_STRING) {
                 string_value = other.string_value;
+            } else if (type == ValueType::VAL_ARRAY) {
+                array_value = other.array_value; // shared_ptr automatically handles sharing
             } else {
                 number = other.number; // Copy the union
             }
@@ -98,13 +111,37 @@ struct Value {
     inline bool isString() const { return type == ValueType::VAL_STRING; }
     inline bool isFunction() const { return type == ValueType::VAL_FUNCTION; }
     inline bool isBuiltinFunction() const { return type == ValueType::VAL_BUILTIN_FUNCTION; }
+    inline bool isArray() const { return type == ValueType::VAL_ARRAY; }
     inline bool isThunk() const { return type == ValueType::VAL_THUNK; }
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
+
+    // Get type name as string for error messages
+    inline std::string getType() const {
+        switch (type) {
+            case ValueType::VAL_NONE: return "none";
+            case ValueType::VAL_NUMBER: return "number";
+            case ValueType::VAL_BOOLEAN: return "boolean";
+            case ValueType::VAL_STRING: return "string";
+            case ValueType::VAL_FUNCTION: return "function";
+            case ValueType::VAL_BUILTIN_FUNCTION: return "builtin_function";
+            case ValueType::VAL_THUNK: return "thunk";
+            case ValueType::VAL_ARRAY: return "array";
+            default: return "unknown";
+        }
+    }
+    
+
 
     // Value extraction (safe, with type checking) - inline for performance
     inline double asNumber() const { return isNumber() ? number : 0.0; }
     inline bool asBoolean() const { return isBoolean() ? boolean : false; }
     inline const std::string& asString() const { return string_value; }
+    inline const std::vector<Value>& asArray() const { 
+        return *array_value; 
+    }
+    inline std::vector<Value>& asArray() { 
+        return *array_value; 
+    }
     inline Function* asFunction() const { return isFunction() ? function : nullptr; }
     inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function : nullptr; }
     inline Thunk* asThunk() const { return isThunk() ? thunk : nullptr; }
@@ -160,6 +197,18 @@ struct Value {
             case ValueType::VAL_FUNCTION: return "<function>";
             case ValueType::VAL_BUILTIN_FUNCTION: return "<builtin_function>";
             case ValueType::VAL_THUNK: return "<thunk>";
+            case ValueType::VAL_ARRAY: {
+                const std::vector<Value>& arr = *array_value;
+                std::string result = "[";
+                
+                for (size_t i = 0; i < arr.size(); i++) {
+                    if (i > 0) result += ", ";
+                    result += arr[i].toString();
+                }
+                
+                result += "]";
+                return result;
+            }
             default: return "unknown";
         }
     }
@@ -191,14 +240,14 @@ struct Value {
         if (!isString() && !isNumber() && other.isString()) {
             return Value(toString() + other.string_value);
         }
-        throw std::runtime_error("Invalid operands for + operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("+", getType(), other.getType()));
     }
 
     Value operator-(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(number - other.number);
         }
-        throw std::runtime_error("Invalid operands for - operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("-", getType(), other.getType()));
     }
 
     Value operator*(const Value& other) const {
@@ -219,7 +268,7 @@ struct Value {
             }
             return Value(result);
         }
-        throw std::runtime_error("Invalid operands for * operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("*", getType(), other.getType()));
     }
 
     Value operator/(const Value& other) const {
@@ -229,49 +278,49 @@ struct Value {
             }
             return Value(number / other.number);
         }
-        throw std::runtime_error("Invalid operands for / operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("/", getType(), other.getType()));
     }
 
     Value operator%(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(fmod(number, other.number));
         }
-        throw std::runtime_error("Invalid operands for % operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("%", getType(), other.getType()));
     }
 
     Value operator&(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) & static_cast<long>(other.number)));
         }
-        throw std::runtime_error("Invalid operands for & operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("&", getType(), other.getType()));
     }
 
     Value operator|(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) | static_cast<long>(other.number)));
         }
-        throw std::runtime_error("Invalid operands for | operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("|", getType(), other.getType()));
     }
 
     Value operator^(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) ^ static_cast<long>(other.number)));
         }
-        throw std::runtime_error("Invalid operands for ^ operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("^", getType(), other.getType()));
     }
 
     Value operator<<(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) << static_cast<long>(other.number)));
         }
-        throw std::runtime_error("Invalid operands for << operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError("<<", getType(), other.getType()));
     }
 
     Value operator>>(const Value& other) const {
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) >> static_cast<long>(other.number)));
         }
-        throw std::runtime_error("Invalid operands for >> operator");
+        throw std::runtime_error(ErrorUtils::makeOperatorError(">>", getType(), other.getType()));
     }
 };
 

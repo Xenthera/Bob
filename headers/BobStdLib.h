@@ -7,7 +7,7 @@
 class Interpreter;
 class ErrorReporter;
 
-class StdLib {
+class BobStdLib {
 public:
     static void addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter = nullptr);
 }; 

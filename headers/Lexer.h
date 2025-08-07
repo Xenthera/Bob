@@ -6,6 +6,7 @@
 
 enum TokenType{
     OPEN_PAREN, CLOSE_PAREN, OPEN_BRACE, CLOSE_BRACE,
+    OPEN_BRACKET, CLOSE_BRACKET,  // Array brackets
     COMMA, DOT, MINUS, PLUS, SEMICOLON, SLASH, STAR, PERCENT,
 
     BIN_OR, BIN_AND, BIN_NOT, BIN_XOR, BIN_SLEFT, BIN_SRIGHT,
@@ -36,6 +37,7 @@ enum TokenType{
 };
 
 inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", "CLOSE_BRACE",
+                           "OPEN_BRACKET", "CLOSE_BRACKET",  // Array brackets
                            "COMMA", "DOT", "MINUS", "PLUS", "SEMICOLON", "SLASH", "STAR", "PERCENT",
 
                            "BIN_OR", "BIN_AND", "BIN_NOT", "BIN_XOR", "BIN_SLEFT", "BIN_SRIGHT",

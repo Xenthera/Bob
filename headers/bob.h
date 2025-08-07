@@ -8,7 +8,7 @@
 #include "../headers/helperFunctions/ShortHands.h"
 #include "../headers/ErrorReporter.h"
 
-#define VERSION "0.0.2"
+#define VERSION "0.0.3"
 
 class Bob
 {

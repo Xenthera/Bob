@@ -1,5 +1,5 @@
 //
-// Created by Bobby Lucero on 5/26/23.
+
 //
 #include "../headers/Parser.h"
 #include <stdexcept>
@@ -135,6 +135,11 @@ sptr(Expr) Parser::assignmentExpression()
             Token name = std::dynamic_pointer_cast<VarExpr>(expr)->name;
             return msptr(AssignExpr)(name, op, value);
         }
+        else if(std::dynamic_pointer_cast<ArrayIndexExpr>(expr))
+        {
+            auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expr);
+            return msptr(ArrayAssignExpr)(arrayExpr->array, arrayExpr->index, value, arrayExpr->bracket);
+        }
         
         if (errorReporter) {
             errorReporter->reportError(op.line, op.column, "Parse Error",
@@ -216,13 +221,14 @@ sptr(Expr) Parser::unary()
         
         // Handle prefix increment/decrement
         if (op.type == PLUS_PLUS || op.type == MINUS_MINUS) {
-            // Ensure the operand is a variable
-            if (!std::dynamic_pointer_cast<VarExpr>(right)) {
+            // Ensure the operand is a variable or array indexing
+            if (!std::dynamic_pointer_cast<VarExpr>(right) && 
+                !std::dynamic_pointer_cast<ArrayIndexExpr>(right)) {
                 if (errorReporter) {
                     errorReporter->reportError(op.line, op.column, "Parse Error", 
-                        "Prefix increment/decrement can only be applied to variables", "");
+                        "Prefix increment/decrement can only be applied to variables or array elements", "");
                 }
-                throw std::runtime_error("Prefix increment/decrement can only be applied to variables.");
+                throw std::runtime_error("Prefix increment/decrement can only be applied to variables or array elements.");
             }
             return msptr(IncrementExpr)(right, op, true);  // true = prefix
         }
@@ -241,13 +247,14 @@ sptr(Expr) Parser::postfix()
     if (match({PLUS_PLUS, MINUS_MINUS})) {
         Token oper = previous();
         
-        // Ensure the expression is a variable
-        if (!std::dynamic_pointer_cast<VarExpr>(expr)) {
+        // Ensure the expression is a variable or array indexing
+        if (!std::dynamic_pointer_cast<VarExpr>(expr) && 
+            !std::dynamic_pointer_cast<ArrayIndexExpr>(expr)) {
             if (errorReporter) {
                 errorReporter->reportError(oper.line, oper.column, "Parse Error", 
-                    "Postfix increment/decrement can only be applied to variables", "");
+                    "Postfix increment/decrement can only be applied to variables or array elements", "");
             }
-            throw std::runtime_error("Postfix increment/decrement can only be applied to variables.");
+            throw std::runtime_error("Postfix increment/decrement can only be applied to variables or array elements.");
         }
         
         return msptr(IncrementExpr)(expr, oper, false);  // false = postfix
@@ -266,10 +273,7 @@ sptr(Expr) Parser::primary()
     if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false, false);
 
     if(match( {IDENTIFIER})) {
-        if (check(OPEN_PAREN)) {
-            return finishCall(msptr(VarExpr)(previous()));
-        }
-        return msptr(VarExpr)(previous());
+        return call();
     }
 
     if(match({OPEN_PAREN}))
@@ -286,11 +290,46 @@ sptr(Expr) Parser::primary()
         return functionExpression();
     }
 
+    if(match({OPEN_BRACKET})) {
+        return arrayLiteral();
+    }
+
     if (errorReporter) {
         errorReporter->reportError(peek().line, peek().column, "Parse Error", 
             "Expression expected", "");
     }
     throw std::runtime_error("Expression expected at: " + std::to_string(peek().line));
+}
+
+sptr(Expr) Parser::arrayLiteral()
+{
+    std::vector<sptr(Expr)> elements;
+    
+    if (!check(CLOSE_BRACKET)) {
+        do {
+            elements.push_back(expression());
+        } while (match({COMMA}));
+    }
+    
+    consume(CLOSE_BRACKET, "Expected ']' after array elements.");
+    return msptr(ArrayLiteralExpr)(elements);
+}
+
+sptr(Expr) Parser::call()
+{
+    sptr(Expr) expr = msptr(VarExpr)(previous());
+    
+    while (true) {
+        if (match({OPEN_PAREN})) {
+            expr = finishCall(expr);
+        } else if (match({OPEN_BRACKET})) {
+            expr = finishArrayIndex(expr);
+        } else {
+            break;
+        }
+    }
+    
+    return expr;
 }
 
 ///////////////////////////////////////////
@@ -406,12 +445,24 @@ sptr(Stmt) Parser::statement()
         // Look ahead to see if this is an assignment
         int currentPos = current;
         advance(); // consume identifier
+        
+        // Check for simple variable assignment
         if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
                   BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL})) {
             // Reset position and parse as assignment statement
             current = currentPos;
             return assignmentStatement();
         }
+        
+        // Check for array assignment (identifier followed by [)
+        if(match({OPEN_BRACKET})) {
+            // Reset position and parse as assignment expression
+            current = currentPos;
+            sptr(Expr) expr = assignmentExpression();
+            consume(SEMICOLON, "Expected ';' after assignment.");
+            return msptr(ExpressionStmt)(expr);
+        }
+        
         // Reset position and parse as expression statement
         current = currentPos;
     }
@@ -587,9 +638,6 @@ std::vector<sptr(Stmt)> Parser::block()
 sptr(Expr) Parser::finishCall(sptr(Expr) callee) {
     std::vector<sptr(Expr)> arguments;
     
-    // Consume the opening parenthesis
-    consume(OPEN_PAREN, "Expected '(' after function name.");
-    
     // Parse arguments if there are any
     if (!check(CLOSE_PAREN)) {
         do {
@@ -599,6 +647,12 @@ sptr(Expr) Parser::finishCall(sptr(Expr) callee) {
 
     Token paren = consume(CLOSE_PAREN, "Expected ')' after arguments.");
     return msptr(CallExpr)(callee, paren, arguments);
+}
+
+sptr(Expr) Parser::finishArrayIndex(sptr(Expr) array) {
+    sptr(Expr) index = expression();
+    Token bracket = consume(CLOSE_BRACKET, "Expected ']' after array index.");
+    return msptr(ArrayIndexExpr)(array, index, bracket);
 }
 
 bool Parser::match(const std::vector<TokenType>& types) {

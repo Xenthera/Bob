@@ -1,15 +1,19 @@
 var counter = 0;
 
 func fib(n) {
-    if (n <= 1) {
-        return n;
+    return fibTail(n, 0, 1);
+}
+
+func fibTail(n, a, b) {
+    if (n <= 0) {
+        return a;
     }
     counter++;  // Only increment for recursive calls
-    return fib(n - 1) + fib(n - 2);
+    return fibTail(n - 1, b, a + b);
 }
 
 print("Fibonacci test:");
-var fib_result = fib(30);
+var fib_result = fib(50000000);
 
 print("Result: " + fib_result);
 

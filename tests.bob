@@ -1,0 +1,38 @@
+// var code = "var a = [];
+
+// for(var i = 0; i < 1000; i++){
+// 	push(a, func(){print(\"I is: \" + i); return (toString(i) + \": \") * 5;});
+// }
+// var total_ops = 0;
+// // while(len(a) > 0){
+// //     var fun = pop(a);
+// //     print(\"Function returns: \" + fun());
+// //     total_ops++;
+// // }
+// print(len(a));
+// a = [];
+// print(len(a));
+// input(\"Waiting for input\");
+
+// print(\"Total operations: \" + total_ops);";
+
+
+// print(code);
+
+// eval(code);
+
+// print(0xFF);
+var flag = true;
+var arr = [0];
+while(true){
+    if(flag){
+        arr[0]++;
+    }else{
+        arr[0]--;
+    }
+    if(arr[0] == 0 || arr[0] == 10){
+        flag = !flag;
+    }
+    print(arr[0]);
+    sleep(0.01);
+}

@@ -35,6 +35,16 @@ std::vector<Token> Lexer::Tokenize(std::string source){
             tokens.push_back(Token{CLOSE_BRACE, std::string(1, t), line, column});
             advance();
         }
+        else if(t == '[')
+        {
+            tokens.push_back(Token{OPEN_BRACKET, std::string(1, t), line, column});
+            advance();
+        }
+        else if(t == ']')
+        {
+            tokens.push_back(Token{CLOSE_BRACKET, std::string(1, t), line, column});
+            advance();
+        }
         else if(t == ',')
         {
             tokens.push_back(Token{COMMA, std::string(1, t), line, column});
@@ -483,8 +493,11 @@ char Lexer::peekNext()
 std::string Lexer::parseEscapeCharacters(const std::string& input) {
     std::string output;
     bool escapeMode = false;
+    size_t i = 0;
 
-    for (char c : input) {
+    while (i < input.length()) {
+        char c = input[i];
+        
         if (escapeMode) {
             switch (c) {
                 case 'n':
@@ -499,6 +512,28 @@ std::string Lexer::parseEscapeCharacters(const std::string& input) {
                 case '\\':
                     output += '\\';
                     break;
+                case '0':
+                    output += '\0';
+                    break;
+                case 'r':
+                    output += '\r';
+                    break;
+                case 'a':
+                    output += '\a';
+                    break;
+                case 'b':
+                    output += '\b';
+                    break;
+                case 'f':
+                    output += '\f';
+                    break;
+                case 'v':
+                    output += '\v';
+                    break;
+                case 'e':
+                    // ANSI escape sequence
+                    output += '\033';
+                    break;
                 default:
                     throw runtime_error("Invalid escape character: " + std::string(1, c));
             }
@@ -508,6 +543,7 @@ std::string Lexer::parseEscapeCharacters(const std::string& input) {
         } else {
             output += c;
         }
+        i++;
     }
 
     return output;

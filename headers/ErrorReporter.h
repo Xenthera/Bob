@@ -48,6 +48,9 @@ public:
     // Check if an error has been reported
     bool hasReportedError() const { return hadError; }
 
+    // Reset error state (call this between REPL commands)
+    void resetErrorState() { hadError = false; }
+
     // Report errors with full context
     void reportErrorWithContext(const ErrorContext& context);
 

@@ -5,7 +5,7 @@
 #include "TypeWrapper.h"
 #include "Environment.h"
 #include "Value.h"
-#include "StdLib.h"
+#include "BobStdLib.h"
 #include "ErrorReporter.h"
 
 #include <vector>
@@ -66,6 +66,9 @@ public:
     Value visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expression) override;
     Value visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) override;
     Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression) override;
+    Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expression) override;
+    Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expression) override;
+    Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expression) override;
 
     void visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context = nullptr) override;
@@ -80,7 +83,7 @@ public:
     void visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context = nullptr) override;
 
-    void interpret(std::vector<std::shared_ptr<Stmt> > statements);
+    void interpret(std::vector<std::shared_ptr<Stmt>> statements);
 
     explicit Interpreter(bool IsInteractive) : IsInteractive(IsInteractive), errorReporter(nullptr){
         environment = std::make_shared<Environment>();
@@ -90,25 +93,25 @@ public:
 private:
     std::shared_ptr<Environment> environment;
     bool IsInteractive;
-    std::vector<std::shared_ptr<BuiltinFunction> > builtinFunctions;
-    std::vector<std::shared_ptr<Function> > functions;
-    std::vector<std::shared_ptr<Thunk> > thunks;  // Store thunks to prevent memory leaks
+    std::vector<std::shared_ptr<BuiltinFunction>> builtinFunctions;
+    std::vector<std::shared_ptr<Function>> functions;
+    std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
     
     // Automatic cleanup tracking
     int functionCreationCount = 0;
     int thunkCreationCount = 0;
-    static const int CLEANUP_THRESHOLD = 1000;  // Cleanup every 1000 creations
+    static const int CLEANUP_THRESHOLD = 1000000;  // Cleanup every 1M creations (effectively disabled for performance)
     
 
     
     Value evaluate(const std::shared_ptr<Expr>& expr);
     Value evaluateWithoutTrampoline(const std::shared_ptr<Expr>& expr);
     bool isEqual(Value a, Value b);
-    bool isWholeNumer(double num);
+
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context = nullptr);
-    void executeBlock(std::vector<std::shared_ptr<Stmt> > statements, std::shared_ptr<Environment> env, ExecutionContext* context = nullptr);
+    void executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env, ExecutionContext* context = nullptr);
     void addStdLibFunctions();
     
     // Trampoline execution
@@ -122,6 +125,7 @@ public:
     // Memory management
     void cleanupUnusedFunctions();
     void cleanupUnusedThunks();
+    void forceCleanup();
 
     // Error reporting
     void setErrorReporter(ErrorReporter* reporter) { 
@@ -133,4 +137,6 @@ public:
         // Add standard library functions after error reporter is set
         addStdLibFunctions();
     }
+    
+
 };

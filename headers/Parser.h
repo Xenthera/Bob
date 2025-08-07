@@ -83,6 +83,10 @@ private:
     std::vector<std::shared_ptr<Stmt>> block();
     
     sptr(Expr) finishCall(sptr(Expr) callee);
+    sptr(Expr) finishArrayIndex(sptr(Expr) array);
+    sptr(Expr) finishArrayAssign(sptr(Expr) array, sptr(Expr) index, sptr(Expr) value);
+    sptr(Expr) arrayLiteral();
+    sptr(Expr) call();  // Handle call chains (function calls and array indexing)
     
     // Helper methods for function scope tracking
     void enterFunction() { functionDepth++; }

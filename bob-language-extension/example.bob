@@ -7,10 +7,25 @@ var pi = 3.14159;
 var isActive = true;
 var empty = none;
 
+// Binary and hex numbers
+var binaryNum = 0b1010;  // 10 in decimal
+var hexNum = 0xFF;       // 255 in decimal
+
 // Print statements
 print(message);
 print("Number: " + toString(number));
 print("Pi: " + toString(pi));
+
+// Array operations
+var numbers = [1, 2, 3, 4, 5];
+var fruits = ["apple", "banana", "cherry"];
+
+print("Array length: " + len(numbers));
+print("First element: " + numbers[0]);
+
+numbers[2] = 99;  // Array assignment
+push(numbers, 6); // Add element
+var lastElement = pop(numbers); // Remove and get last element
 
 // Function definition
 func factorial(n) {
@@ -38,10 +53,24 @@ for (var i = 0; i < 10; i = i + 1) {
     sum = sum + i;
 }
 
+// Do-while loop
+var doCounter = 0;
+do {
+    doCounter = doCounter + 1;
+} while (doCounter < 5);
+
 // Anonymous function
 var double = func(x) {
     return x * 2;
 };
+
+// Ternary operator
+var max = 10 > 5 ? 10 : 5;
+var status = age >= 18 ? "adult" : "minor";
+
+// String multiplication
+var repeated = "hello" * 3;  // "hellohellohello"
+var numRepeated = 3 * "hi";  // "hihihi"
 
 // Logical operators
 var a = true && false;
@@ -61,6 +90,12 @@ value += 5;
 value *= 2;
 value -= 3;
 
+// New built-in functions
+var randomValue = random();
+sleep(100);  // Sleep for 100ms
+printRaw("No newline here");
+eval("print('Dynamic code execution!');");
+
 // Assertions
 assert(factorial(5) == 120, "Factorial calculation failed");
 assert(sum == 25, "Sum calculation failed");
@@ -68,6 +103,7 @@ assert(sum == 25, "Sum calculation failed");
 // Type checking
 var typeOfMessage = type(message);
 var typeOfNumber = type(number);
+var typeOfArray = type(numbers);
 
 // Time function
 var currentTime = time();

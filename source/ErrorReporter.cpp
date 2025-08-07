@@ -59,6 +59,7 @@ void ErrorReporter::loadSource(const std::string& source, const std::string& fil
 void ErrorReporter::reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_, bool showArrow) {
     hadError = true;
     displaySourceContext(line, column, errorType, message, operator_, showArrow);
+    std::cout.flush(); // Ensure output is flushed before any exception is thrown
 }
 
 void ErrorReporter::reportErrorWithContext(const ErrorContext& context) {

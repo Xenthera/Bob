@@ -51,8 +51,8 @@ struct Stmt : public std::enable_shared_from_this<Stmt>
 
 struct BlockStmt : Stmt
 {
-    std::vector<std::shared_ptr<Stmt> > statements;
-    explicit BlockStmt(std::vector<std::shared_ptr<Stmt> > statements) : statements(statements)
+    std::vector<std::shared_ptr<Stmt>> statements;
+    explicit BlockStmt(std::vector<std::shared_ptr<Stmt>> statements) : statements(statements)
     {
     }
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
@@ -94,9 +94,9 @@ struct FunctionStmt : Stmt
 {
     const Token name;
     const std::vector<Token> params;
-    std::vector<std::shared_ptr<Stmt> > body;
+    std::vector<std::shared_ptr<Stmt>> body;
 
-    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt> > body) 
+    FunctionStmt(Token name, std::vector<Token> params, std::vector<std::shared_ptr<Stmt>> body) 
         : name(name), params(params), body(body) {}
 
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override

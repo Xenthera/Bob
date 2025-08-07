@@ -21,12 +21,14 @@ This extension provides syntax highlighting and language support for the Bob pro
 
 ### Built-in Functions
 - `print()`, `assert()`, `input()`, `type()`, `toString()`, `toNumber()`, `time()`
+- `sleep()`, `printRaw()`, `len()`, `push()`, `pop()`, `random()`, `eval()`
 
 ### Data Types
-- Numbers (integers and floats)
+- Numbers (integers, floats, binary `0b1010`, hex `0xFF`)
 - Strings (single and double quoted)
 - Booleans (`true`, `false`)
 - None value (`none`)
+- Arrays (`[1, 2, 3]`)
 
 ### Operators
 - Arithmetic: `+`, `-`, `*`, `/`, `%`
@@ -34,6 +36,8 @@ This extension provides syntax highlighting and language support for the Bob pro
 - Logical: `&&`, `||`, `!`
 - Bitwise: `&`, `|`, `^`, `<<`, `>>`, `~`
 - Compound assignment: `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
+- Ternary: `condition ? valueIfTrue : valueIfFalse`
+- String multiplication: `"hello" * 3`
 
 ## Installation
 
@@ -67,6 +71,16 @@ Type the following prefixes and press `Tab` to insert code snippets:
 - `continue` - Continue statement
 - `comment` - Comment block
 - `test` - Test function
+- `array` - Array declaration
+- `arrayaccess` - Array access
+- `arrayassign` - Array assignment
+- `len` - Array length
+- `push` - Array push
+- `pop` - Array pop
+- `random` - Random number
+- `sleep` - Sleep function
+- `printraw` - Print raw
+- `eval` - Eval function
 
 ### File Association
 Files with the `.bob` extension will automatically be recognized as Bob language files.
@@ -78,6 +92,12 @@ Files with the `.bob` extension will automatically be recognized as Bob language
 var message = "Hello, Bob!";
 print(message);
 
+// Array operations
+var numbers = [1, 2, 3, 4, 5];
+print("Array length: " + len(numbers));
+print("First element: " + numbers[0]);
+
+// Function with ternary operator
 func factorial(n) {
     if (n <= 1) {
         return 1;
@@ -86,7 +106,11 @@ func factorial(n) {
 }
 
 var result = factorial(5);
+var status = result > 100 ? "large" : "small";
 assert(result == 120, "Factorial calculation failed");
+
+// String multiplication
+var repeated = "hello" * 3;  // "hellohellohello"
 ```
 
 ## Contributing

@@ -1,22 +1,17 @@
-//
-// Created by Bobby Lucero on 5/27/23.
-//
+
 #include <utility>
 #include <sstream>
 #include <cmath>
 #include <iomanip>
 #include <limits>
-#include <cmath>
-#include "../headers/Interpreter.h"
-#include "../headers/helperFunctions/HelperFunctions.h"
 #include <unordered_map>
-#include "../headers/Interpreter.h"
-#include "../headers/StdLib.h"
 #include <iostream>
 #include <chrono>
-#include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include "../headers/Interpreter.h"
+#include "../headers/helperFunctions/HelperFunctions.h"
+#include "../headers/BobStdLib.h"
 
 struct ReturnContext {
     Value returnValue;
@@ -30,28 +25,24 @@ struct ReturnContext {
 
 
 Value Interpreter::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
-    if(expr->isNull) return NONE_VALUE;
-    if(expr->isNumber){
+    if (expr->isNull) return NONE_VALUE;
+    if (expr->isNumber) {
         double num;
-        if(expr->value[1] == 'b')
-        {
+        if (expr->value[1] == 'b') {
             num = binaryStringToLong(expr->value);
-        }
-        else
-        {
+        } else {
             num = std::stod(expr->value);
         }
         return Value(num);
     }
-    if(expr->isBoolean) {
-        if(expr->value == "true") return TRUE_VALUE;
-        if(expr->value == "false") return FALSE_VALUE;
+    if (expr->isBoolean) {
+        if (expr->value == "true") return TRUE_VALUE;
+        if (expr->value == "false") return FALSE_VALUE;
     }
     return Value(expr->value);
 }
 
 Value Interpreter::visitGroupingExpr(const std::shared_ptr<GroupingExpr>& expression) {
-
     return evaluate(expression->expression);
 }
 
@@ -59,405 +50,116 @@ Value Interpreter::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 {
     Value right = evaluate(expression->right);
 
-    if(expression->oper.type == MINUS)
-    {
-        if(right.isNumber())
-        {
-            double value = right.asNumber();
-            return Value(-value);
-        }
-        else
-        {
-            throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
-        }
+    switch (expression->oper.type) {
+        case MINUS:
+            if (!right.isNumber()) {
+                if (errorReporter) {
+                    errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
+                        "Operand must be a number when using: " + expression->oper.lexeme, expression->oper.lexeme);
+                }
+                throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
+            }
+            return Value(-right.asNumber());
 
+        case BANG:
+            return Value(!isTruthy(right));
+
+        case BIN_NOT:
+            if (!right.isNumber()) {
+                if (errorReporter) {
+                    errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
+                        "Operand must be a number when using: " + expression->oper.lexeme, expression->oper.lexeme);
+                }
+                throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
+            }
+            return Value(static_cast<double>(~(static_cast<long>(right.asNumber()))));
+
+        default:
+            if (errorReporter) {
+                errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
+                    "Invalid unary operator: " + expression->oper.lexeme, expression->oper.lexeme);
+            }
+            throw std::runtime_error("Invalid unary operator: " + expression->oper.lexeme);
     }
-
-    if(expression->oper.type == BANG)
-    {
-        return Value(!isTruthy(right));
-    }
-
-    if(expression->oper.type == BIN_NOT)
-    {
-        if(right.isNumber())
-        {
-            double value = right.asNumber();
-            return Value(static_cast<double>(~(static_cast<long>(value))));
-        }
-        else
-        {
-            throw std::runtime_error("Operand must be an int when using: " + expression->oper.lexeme);
-        }
-    }
-
-    //unreachable
-    throw std::runtime_error("Invalid unary expression");
-
 }
 
 Value Interpreter::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) {
     Value left = evaluate(expression->left);
     Value right = evaluate(expression->right);
 
-    if (left.isNumber() && right.isNumber()) {
-        double leftNum = left.asNumber();
-        double rightNum = right.asNumber();
-
-        switch (expression->oper.type) {
-            case PLUS: return Value(leftNum + rightNum);
-            case MINUS: return Value(leftNum - rightNum);
-            case SLASH: {
-                if (rightNum == 0) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Division by Zero", 
-                            "Cannot divide by zero", expression->oper.lexeme);
-                    }
-                    throw std::runtime_error("Division by zero");
-                }
-                return Value(leftNum / rightNum);
-            }
-            case STAR: return Value(leftNum * rightNum);
-            case PERCENT: {
-                if (rightNum == 0) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Modulo by Zero", 
-                            "Cannot perform modulo operation with zero", expression->oper.lexeme);
-                    }
-                    throw std::runtime_error("Modulo by zero");
-                }
-                return Value(std::fmod(leftNum, rightNum));
-            }
-            case GREATER: return Value(leftNum > rightNum);
-            case GREATER_EQUAL: return Value(leftNum >= rightNum);
-            case LESS: return Value(leftNum < rightNum);
-            case LESS_EQUAL: return Value(leftNum <= rightNum);
-            case DOUBLE_EQUAL: return Value(leftNum == rightNum);
-            case BANG_EQUAL: return Value(leftNum != rightNum);
-            case BIN_AND: return Value(static_cast<double>(static_cast<int>(leftNum) & static_cast<int>(rightNum)));
-            case BIN_OR: return Value(static_cast<double>(static_cast<int>(leftNum) | static_cast<int>(rightNum)));
-            case BIN_XOR: return Value(static_cast<double>(static_cast<int>(leftNum) ^ static_cast<int>(rightNum)));
-            case BIN_SLEFT: return Value(static_cast<double>(static_cast<int>(leftNum) << static_cast<int>(rightNum)));
-            case BIN_SRIGHT: return Value(static_cast<double>(static_cast<int>(leftNum) >> static_cast<int>(rightNum)));
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-        }
+    // Handle logical operators (AND, OR) - these work with any types
+    if (expression->oper.type == AND) {
+        return isTruthy(left) ? right : left;
+    }
+    if (expression->oper.type == OR) {
+        return isTruthy(left) ? left : right;
     }
 
-    if (left.isString() && right.isString()) {
-        std::string left_string = left.asString();
-        std::string right_string = right.asString();
+    // Handle equality operators - these work with any types
+    if (expression->oper.type == DOUBLE_EQUAL || expression->oper.type == BANG_EQUAL) {
+        bool equal = isEqual(left, right);
+        return Value(expression->oper.type == DOUBLE_EQUAL ? equal : !equal);
+    }
+
+    // Handle comparison operators - only work with numbers
+    if (expression->oper.type == GREATER || expression->oper.type == GREATER_EQUAL || 
+        expression->oper.type == LESS || expression->oper.type == LESS_EQUAL) {
         
+        if (left.isNumber() && right.isNumber()) {
+            double leftNum = left.asNumber();
+            double rightNum = right.asNumber();
+            
+            switch (expression->oper.type) {
+                case GREATER: return Value(leftNum > rightNum);
+                case GREATER_EQUAL: return Value(leftNum >= rightNum);
+                case LESS: return Value(leftNum < rightNum);
+                case LESS_EQUAL: return Value(leftNum <= rightNum);
+            }
+        }
+        
+        // Error for non-number comparisons
+        std::string opName;
         switch (expression->oper.type) {
-            case PLUS: return Value(left_string + right_string);
-            case DOUBLE_EQUAL: return Value(left_string == right_string);
-            case BANG_EQUAL: return Value(left_string != right_string);
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
+            case GREATER: opName = ">"; break;
+            case GREATER_EQUAL: opName = ">="; break;
+            case LESS: opName = "<"; break;
+            case LESS_EQUAL: opName = "<="; break;
+        }
+        
+        if (errorReporter) {
+            errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
+                ErrorUtils::makeOperatorError(opName, left.getType(), right.getType()), opName);
+        }
+        throw std::runtime_error(ErrorUtils::makeOperatorError(opName, left.getType(), right.getType()));
+    }
+
+    // Handle all other operators using Value's operator overloads
+    try {
+        switch (expression->oper.type) {
+            case PLUS: return left + right;
+            case MINUS: return left - right;
+            case STAR: return left * right;
+            case SLASH: return left / right;
+            case PERCENT: return left % right;
+            case BIN_AND: return left & right;
+            case BIN_OR: return left | right;
+            case BIN_XOR: return left ^ right;
+            case BIN_SLEFT: return left << right;
+            case BIN_SRIGHT: return left >> right;
             default:
                 if (errorReporter) {
                     errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                        "Cannot use '" + expression->oper.lexeme + "' on two strings", expression->oper.lexeme);
+                        "Unknown operator: " + expression->oper.lexeme, expression->oper.lexeme);
                 }
-                throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on two strings");
+                throw std::runtime_error("Unknown operator: " + expression->oper.lexeme);
         }
-    }
-
-    if (left.isString() && right.isNumber()) {
-        std::string left_string = left.asString();
-        double right_num = right.asNumber();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-            case STAR: {
-                if (!isWholeNumer(right_num)) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Invalid String Multiplication", 
-                            "String multiplier must be a whole number", expression->oper.lexeme);
-                    }
-                    throw std::runtime_error("String multiplier must be whole number");
-                }
-                std::string result;
-                for (int i = 0; i < static_cast<int>(right_num); i++) {
-                    result += left_string;
-                }
-                return Value(result);
-            }
-        }
-    }
-
-    if (left.isNumber() && right.isString()) {
-        double left_num = left.asNumber();
-        std::string right_string = right.asString();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-            case STAR: {
-                if (!isWholeNumer(left_num)) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Invalid String Multiplication", 
-                            "String multiplier must be a whole number", expression->oper.lexeme);
-                    }
-                    throw std::runtime_error("String multiplier must be whole number");
-                }
-                std::string result;
-                for (int i = 0; i < static_cast<int>(left_num); i++) {
-                    result += right_string;
-                }
-                return Value(result);
-            }
-        }
-    }
-
-    if (left.isBoolean() && right.isBoolean()) {
-        bool left_bool = left.asBoolean();
-        bool right_bool = right.asBoolean();
-        
-        switch (expression->oper.type) {
-            case AND: return Value(left_bool && right_bool);
-            case OR: return Value(left_bool || right_bool);
-            case DOUBLE_EQUAL: return Value(left_bool == right_bool);
-            case BANG_EQUAL: return Value(left_bool != right_bool);
-        }
-    }
-
-
-
-    if (left.isBoolean() && right.isString()) {
-        bool left_bool = left.asBoolean();
-        std::string right_string = right.asString();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-        }
-    }
-
-    if (left.isString() && right.isBoolean()) {
-        std::string left_string = left.asString();
-        bool right_bool = right.asBoolean();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-        }
-    }
-
-    if (left.isNumber() && right.isBoolean()) {
-        double left_num = left.asNumber();
-        bool right_bool = right.asBoolean();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-        }
-    }
-
-    if (left.isBoolean() && right.isNumber()) {
-        bool left_bool = left.asBoolean();
-        double right_num = right.asNumber();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-        }
-    }
-
-    // Mixed-type logical operations (string && boolean, etc.)
-    if (left.isString() && right.isBoolean()) {
-        bool right_bool = right.asBoolean();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case PLUS: return left + right;
-        }
-    }
-
-    if (left.isBoolean() && right.isString()) {
-        bool left_bool = left.asBoolean();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case PLUS: return left + right;
-        }
-    }
-
-    if (left.isString() && right.isNumber()) {
-        double right_num = right.asNumber();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case PLUS: return left + right;
-            case STAR: {
-                if (!isWholeNumer(right_num)) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Invalid String Multiplication", 
-                            "String multiplier must be a whole number");
-                    }
-                    throw std::runtime_error("String multiplier must be whole number");
-                }
-                std::string result;
-                for (int i = 0; i < static_cast<int>(right_num); i++) {
-                    result += left.asString();
-                }
-                return Value(result);
-            }
-        }
-    }
-
-    if (left.isNumber() && right.isString()) {
-        double left_num = left.asNumber();
-        
-        switch (expression->oper.type) {
-            case AND: {
-                if (!isTruthy(left)) {
-                    return left; // Return the falsy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case OR: {
-                if (isTruthy(left)) {
-                    return left; // Return the truthy value
-                } else {
-                    return right; // Return the second value
-                }
-            }
-            case PLUS: return left + right;
-            case STAR: {
-                if (!isWholeNumer(left_num)) {
-                    if (errorReporter) {
-                        errorReporter->reportError(expression->oper.line, expression->oper.column, "Invalid String Multiplication", 
-                            "String multiplier must be a whole number");
-                    }
-                    throw std::runtime_error("String multiplier must be whole number");
-                }
-                std::string result;
-                for (int i = 0; i < static_cast<int>(left_num); i++) {
-                    result += right.asString();
-                }
-                return Value(result);
-            }
-        }
-    }
-
-    if (left.isNone() && right.isString()) {
-        std::string right_string = right.asString();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-        }
+    } catch (const std::runtime_error& e) {
+        // The Value operators provide good error messages, just add context
         if (errorReporter) {
             errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                "Cannot use '" + expression->oper.lexeme + "' on none and a string", expression->oper.lexeme);
+                e.what(), expression->oper.lexeme);
         }
-        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on none and a string");
-    }
-    
-    if (left.isString() && right.isNone()) {
-        std::string left_string = left.asString();
-        
-        switch (expression->oper.type) {
-            case PLUS: return left + right;
-        }
-        if (errorReporter) {
-            errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                "Cannot use '" + expression->oper.lexeme + "' on a string and none", expression->oper.lexeme);
-        }
-        throw std::runtime_error("Cannot use '" + expression->oper.lexeme + "' on a string and none");
-    }
-    else
-    {
-        if (errorReporter) {
-            errorReporter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                "Operands must be of same type when using: " + expression->oper.lexeme, expression->oper.lexeme);
-        }
-        throw std::runtime_error("Operands must be of same type when using: " + expression->oper.lexeme);
+        throw;
     }
 }
 
@@ -494,33 +196,69 @@ Value Interpreter::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expr
         throw std::runtime_error("Invalid increment/decrement operator.");
     }
     
-    // Update the variable if it's a variable expression
+    // Update the variable or array element
     if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(expression->operand)) {
         environment->assign(varExpr->name, Value(newValue));
+    } else if (auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expression->operand)) {
+        // Handle array indexing increment/decrement
+        Value array = evaluate(arrayExpr->array);
+        Value index = evaluate(arrayExpr->index);
+        
+        if (!array.isArray()) {
+            if (errorReporter) {
+                errorReporter->reportError(expression->oper.line, expression->oper.column, 
+                    "Runtime Error", "Can only index arrays", "");
+            }
+            throw std::runtime_error("Can only index arrays");
+        }
+        
+        if (!index.isNumber()) {
+            if (errorReporter) {
+                errorReporter->reportError(expression->oper.line, expression->oper.column, 
+                    "Runtime Error", "Array index must be a number", "");
+            }
+            throw std::runtime_error("Array index must be a number");
+        }
+        
+        int idx = static_cast<int>(index.asNumber());
+        std::vector<Value>& arr = array.asArray();
+        
+        if (idx < 0 || idx >= static_cast<int>(arr.size())) {
+            if (errorReporter) {
+                errorReporter->reportError(arrayExpr->bracket.line, arrayExpr->bracket.column, 
+                    "Runtime Error", "Array index out of bounds", "");
+            }
+            throw std::runtime_error("Array index out of bounds");
+        }
+        
+        // Update the array element
+        arr[idx] = Value(newValue);
     } else {
         if (errorReporter) {
             errorReporter->reportError(expression->oper.line, expression->oper.column, 
-                "Runtime Error", "Increment/decrement can only be applied to variables.", "");
+                "Runtime Error", "Increment/decrement can only be applied to variables or array elements.", "");
         }
-        throw std::runtime_error("Increment/decrement can only be applied to variables.");
+        throw std::runtime_error("Increment/decrement can only be applied to variables or array elements.");
     }
     
     // Return the appropriate value based on prefix/postfix
     if (expression->isPrefix) {
-        return Value(newValue);  // Prefix: return new value
-    } else {
-        return currentValue;     // Postfix: return old value
-    }
+            return Value(newValue);  // Prefix: return new value
+} else {
+    return currentValue;     // Postfix: return old value
+}
 }
 
 void Interpreter::addStdLibFunctions() {
     // Add standard library functions to the environment
-            StdLib::addToEnvironment(environment, *this, errorReporter);
+            BobStdLib::addToEnvironment(environment, *this, errorReporter);
 }
 
 void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {
     builtinFunctions.push_back(func);
 }
+
+
 
 Value Interpreter::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) {
     Value value = evaluate(expression->value);
@@ -536,7 +274,69 @@ Value Interpreter::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression
         case BIN_XOR_EQUAL:
         case BIN_SLEFT_EQUAL:
         case BIN_SRIGHT_EQUAL: {
-            Value currentValue = environment->get(expression->name.lexeme);
+            Value currentValue = environment->get(expression->name);
+            
+            // Check if the operation is supported before attempting it
+            std::string opName;
+            switch (expression->op.type) {
+                case PLUS_EQUAL: opName = "+="; break;
+                case MINUS_EQUAL: opName = "-="; break;
+                case STAR_EQUAL: opName = "*="; break;
+                case SLASH_EQUAL: opName = "/="; break;
+                case PERCENT_EQUAL: opName = "%="; break;
+                case BIN_AND_EQUAL: opName = "&="; break;
+                case BIN_OR_EQUAL: opName = "|="; break;
+                case BIN_XOR_EQUAL: opName = "^="; break;
+                case BIN_SLEFT_EQUAL: opName = "<<="; break;
+                case BIN_SRIGHT_EQUAL: opName = ">>="; break;
+                default: opName = expression->op.lexeme; break;
+            }
+            
+            // Check if the operation is supported for these types
+            bool operationSupported = false;
+            switch (expression->op.type) {
+                case PLUS_EQUAL:
+                    operationSupported = (currentValue.isNumber() && value.isNumber()) ||
+                                       (currentValue.isString() && value.isString()) ||
+                                       (currentValue.isString() && value.isNumber()) ||
+                                       (currentValue.isNumber() && value.isString()) ||
+                                       (currentValue.isString() && value.isNone()) ||
+                                       (currentValue.isNone() && value.isString()) ||
+                                       (currentValue.isString() && !value.isString() && !value.isNumber()) ||
+                                       (!currentValue.isString() && !currentValue.isNumber() && value.isString());
+                    break;
+                case MINUS_EQUAL:
+                case PERCENT_EQUAL:
+                case BIN_AND_EQUAL:
+                case BIN_OR_EQUAL:
+                case BIN_XOR_EQUAL:
+                case BIN_SLEFT_EQUAL:
+                case BIN_SRIGHT_EQUAL:
+                    operationSupported = currentValue.isNumber() && value.isNumber();
+                    break;
+                case STAR_EQUAL:
+                    operationSupported = (currentValue.isNumber() && value.isNumber()) ||
+                                       (currentValue.isString() && value.isNumber()) ||
+                                       (currentValue.isNumber() && value.isString());
+                    break;
+                case SLASH_EQUAL:
+                    operationSupported = currentValue.isNumber() && value.isNumber();
+                    break;
+                default:
+                    operationSupported = false;
+                    break;
+            }
+            
+            if (!operationSupported) {
+                if (errorReporter) {
+                    errorReporter->reportError(expression->op.line, expression->op.column, "Runtime Error", 
+                        ErrorUtils::makeOperatorError(opName, currentValue.getType(), value.getType()), 
+                        expression->op.lexeme);
+                }
+                throw std::runtime_error(ErrorUtils::makeOperatorError(opName, currentValue.getType(), value.getType()));
+            }
+            
+            // Perform the operation
             switch (expression->op.type) {
                 case PLUS_EQUAL:
                     value = currentValue + value;
@@ -679,6 +479,88 @@ Value Interpreter::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
     throw std::runtime_error("Can only call functions and classes.");
 }
 
+Value Interpreter::visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) {
+    std::vector<Value> elements;
+    
+    for (const auto& element : expr->elements) {
+        elements.push_back(evaluate(element));
+    }
+    
+    return Value(elements);
+}
+
+Value Interpreter::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) {
+    Value array = evaluate(expr->array);
+    Value index = evaluate(expr->index);
+    
+    if (!array.isArray()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Can only index arrays", "");
+        }
+        throw std::runtime_error("Can only index arrays");
+    }
+    
+    if (!index.isNumber()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Array index must be a number", "");
+        }
+        throw std::runtime_error("Array index must be a number");
+    }
+    
+    int idx = static_cast<int>(index.asNumber());
+    const std::vector<Value>& arr = array.asArray();
+    
+
+    
+    if (idx < 0 || idx >= arr.size()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Array index out of bounds", "");
+        }
+        throw std::runtime_error("Array index out of bounds");
+    }
+    
+    return arr[idx];
+}
+
+Value Interpreter::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) {
+    Value array = evaluate(expr->array);
+    Value index = evaluate(expr->index);
+    Value value = evaluate(expr->value);
+    
+    if (!array.isArray()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Can only assign to arrays", "");
+        }
+        throw std::runtime_error("Can only assign to arrays");
+    }
+    
+    if (!index.isNumber()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Array index must be a number", "");
+        }
+        throw std::runtime_error("Array index must be a number");
+    }
+    
+    int idx = static_cast<int>(index.asNumber());
+    std::vector<Value>& arr = array.asArray();
+    
+    if (idx < 0 || idx >= arr.size()) {
+        if (errorReporter) {
+            errorReporter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Array index out of bounds", "");
+        }
+        throw std::runtime_error("Array index out of bounds");
+    }
+    
+    arr[idx] = value;
+    return value;
+}
+
 Value Interpreter::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expression) {
     // Convert Token parameters to string parameters
     std::vector<std::string> paramNames;
@@ -686,7 +568,11 @@ Value Interpreter::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expres
         paramNames.push_back(param.lexeme);
     }
     
-    auto function = msptr(Function)("anonymous", paramNames, expression->body, environment);
+    // Create a snapshot of the current environment for proper closure behavior
+    auto closureEnv = std::make_shared<Environment>(*environment);
+    closureEnv->setErrorReporter(errorReporter);
+    
+    auto function = msptr(Function)("anonymous", paramNames, expression->body, closureEnv);
     functions.push_back(function); // Keep the shared_ptr alive
     
     // Automatic cleanup check
@@ -735,6 +621,8 @@ void Interpreter::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& stateme
         paramNames.push_back(param.lexeme);
     }
     
+    // For named functions, use the current environment (not a snapshot)
+    // This allows mutual recursion and forward references
     auto function = msptr(Function)(statement->name.lexeme, 
                                    paramNames, 
                                    statement->body, 
@@ -908,11 +796,77 @@ void Interpreter::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, 
     
     // Handle different assignment operators
     if (statement->op.type == EQUAL) {
+        // Check if the variable previously held an array
+        Value oldValue = environment->get(statement->name.lexeme);
+        if (oldValue.isArray()) {
+            forceCleanup(); // Clean up when breaking array references
+        }
+        
         // Simple assignment
         environment->assign(statement->name, value);
     } else {
         // Compound assignment - get current value first
         Value currentValue = environment->get(statement->name.lexeme);
+        
+        // Check if the operation is supported before attempting it
+        std::string opName;
+        switch (statement->op.type) {
+            case PLUS_EQUAL: opName = "+="; break;
+            case MINUS_EQUAL: opName = "-="; break;
+            case STAR_EQUAL: opName = "*="; break;
+            case SLASH_EQUAL: opName = "/="; break;
+            case PERCENT_EQUAL: opName = "%="; break;
+            case BIN_AND_EQUAL: opName = "&="; break;
+            case BIN_OR_EQUAL: opName = "|="; break;
+            case BIN_XOR_EQUAL: opName = "^="; break;
+            case BIN_SLEFT_EQUAL: opName = "<<="; break;
+            case BIN_SRIGHT_EQUAL: opName = ">>="; break;
+            default: opName = statement->op.lexeme; break;
+        }
+        
+        // Check if the operation is supported for these types
+        bool operationSupported = false;
+        switch (statement->op.type) {
+            case PLUS_EQUAL:
+                operationSupported = (currentValue.isNumber() && value.isNumber()) ||
+                                   (currentValue.isString() && value.isString()) ||
+                                   (currentValue.isString() && value.isNumber()) ||
+                                   (currentValue.isNumber() && value.isString()) ||
+                                   (currentValue.isString() && value.isNone()) ||
+                                   (currentValue.isNone() && value.isString()) ||
+                                   (currentValue.isString() && !value.isString() && !value.isNumber()) ||
+                                   (!currentValue.isString() && !currentValue.isNumber() && value.isString());
+                break;
+            case MINUS_EQUAL:
+            case PERCENT_EQUAL:
+            case BIN_AND_EQUAL:
+            case BIN_OR_EQUAL:
+            case BIN_XOR_EQUAL:
+            case BIN_SLEFT_EQUAL:
+            case BIN_SRIGHT_EQUAL:
+                operationSupported = currentValue.isNumber() && value.isNumber();
+                break;
+            case STAR_EQUAL:
+                operationSupported = (currentValue.isNumber() && value.isNumber()) ||
+                                   (currentValue.isString() && value.isNumber()) ||
+                                   (currentValue.isNumber() && value.isString());
+                break;
+            case SLASH_EQUAL:
+                operationSupported = currentValue.isNumber() && value.isNumber();
+                break;
+            default:
+                operationSupported = false;
+                break;
+        }
+        
+        if (!operationSupported) {
+            if (errorReporter) {
+                errorReporter->reportError(statement->op.line, statement->op.column, "Runtime Error", 
+                    ErrorUtils::makeOperatorError(opName, currentValue.getType(), value.getType()), 
+                    statement->op.lexeme);
+            }
+            throw std::runtime_error(ErrorUtils::makeOperatorError(opName, currentValue.getType(), value.getType()));
+        }
         
         // Apply the compound operation
         Value result;
@@ -944,7 +898,7 @@ void Interpreter::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, 
     }
 }
 
-void Interpreter::interpret(std::vector<std::shared_ptr<Stmt> > statements) {
+void Interpreter::interpret(std::vector<std::shared_ptr<Stmt>> statements) {
     for(const std::shared_ptr<Stmt>& s : statements)
     {
         execute(s, nullptr); // No context needed for top-level execution
@@ -956,7 +910,7 @@ void Interpreter::execute(const std::shared_ptr<Stmt>& statement, ExecutionConte
     statement->accept(this, context);
 }
 
-void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt> > statements, std::shared_ptr<Environment> env, ExecutionContext* context)
+void Interpreter::executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env, ExecutionContext* context)
 {
     std::shared_ptr<Environment> previous = this->environment;
     this->environment = env;
@@ -1022,44 +976,71 @@ bool Interpreter::isTruthy(Value object) {
 }
 
 bool Interpreter::isEqual(Value a, Value b) {
-    if(a.isNumber())
-    {
-        if(b.isNumber())
-        {
-            return a.asNumber() == b.asNumber();
-        }
-
-        return false;
+    // Handle none comparisons first
+    if (a.isNone() || b.isNone()) {
+        return a.isNone() && b.isNone();
     }
-    else if(a.isBoolean())
-    {
-        if(b.isBoolean())
-        {
-            return a.asBoolean() == b.asBoolean();
-        }
-
-        return false;
+    
+    // Handle same type comparisons
+    if (a.isNumber() && b.isNumber()) {
+        return a.asNumber() == b.asNumber();
     }
-    else if(a.isString())
-    {
-        if(b.isString())
-        {
-            return a.asString() == b.asString();
-        }
-
-        return false;
+    
+    if (a.isBoolean() && b.isBoolean()) {
+        return a.asBoolean() == b.asBoolean();
     }
-    else if(a.isNone())
-    {
-        if(b.isNone())
-        {
-            return true;
-        }
-
-        return false;
+    
+    if (a.isString() && b.isString()) {
+        return a.asString() == b.asString();
     }
-
-    throw std::runtime_error("Invalid isEqual compariosn");
+    
+    if (a.isArray() && b.isArray()) {
+        const std::vector<Value>& arrA = a.asArray();
+        const std::vector<Value>& arrB = b.asArray();
+        
+        if (arrA.size() != arrB.size()) {
+            return false;
+        }
+        
+        for (size_t i = 0; i < arrA.size(); i++) {
+            if (!isEqual(arrA[i], arrB[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    if (a.isFunction() && b.isFunction()) {
+        // Functions are equal only if they are the same object
+        return a.asFunction() == b.asFunction();
+    }
+    
+    if (a.isBuiltinFunction() && b.isBuiltinFunction()) {
+        // Builtin functions are equal only if they are the same object
+        return a.asBuiltinFunction() == b.asBuiltinFunction();
+    }
+    
+    // Cross-type comparisons that make sense
+    if (a.isNumber() && b.isBoolean()) {
+        // Numbers and booleans: 0 and false are equal, non-zero and true are equal
+        if (b.asBoolean()) {
+            return a.asNumber() != 0.0;
+        } else {
+            return a.asNumber() == 0.0;
+        }
+    }
+    
+    if (a.isBoolean() && b.isNumber()) {
+        // Same as above, but reversed
+        if (a.asBoolean()) {
+            return b.asNumber() != 0.0;
+        } else {
+            return b.asNumber() == 0.0;
+        }
+    }
+    
+    // For all other type combinations, return false
+    return false;
 }
 
 std::string Interpreter::stringify(Value object) {
@@ -1106,23 +1087,24 @@ std::string Interpreter::stringify(Value object) {
     {
         return "<builtin_function " + object.asBuiltinFunction()->name + ">";
     }
+    else if(object.isArray())
+    {
+        const std::vector<Value>& arr = object.asArray();
+        std::string result = "[";
+        
+        for (size_t i = 0; i < arr.size(); i++) {
+            if (i > 0) result += ", ";
+            result += stringify(arr[i]);
+        }
+        
+        result += "]";
+        return result;
+    }
 
     throw std::runtime_error("Could not convert object to string");
 }
 
-bool Interpreter::isWholeNumer(double num) {
-    double integral = num;
-    double fractional = std::modf(num, &integral);
 
-    if(std::abs(fractional) < std::numeric_limits<double>::epsilon())
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
 
 void Interpreter::cleanupUnusedFunctions() {
     // Only remove functions that are definitely not referenced anywhere (use_count == 1)
@@ -1147,6 +1129,27 @@ void Interpreter::cleanupUnusedThunks() {
         thunks.end()
     );
 }
+
+void Interpreter::forceCleanup() {
+    // More aggressive cleanup when breaking array references
+    functions.erase(
+        std::remove_if(functions.begin(), functions.end(),
+            [](const std::shared_ptr<Function>& func) {
+                return func.use_count() <= 2; // More aggressive than == 1
+            }),
+        functions.end()
+    );
+    
+    thunks.erase(
+        std::remove_if(thunks.begin(), thunks.end(),
+            [](const std::shared_ptr<Thunk>& thunk) {
+                return thunk.use_count() <= 2; // More aggressive than == 1
+            }),
+        thunks.end()
+    );
+}
+
+
 
 
 

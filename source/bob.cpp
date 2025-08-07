@@ -45,6 +45,9 @@ void Bob::runPrompt()
             break;
         }
 
+        // Reset error state before each REPL command
+        errorReporter.resetErrorState();
+        
         // Load source code into error reporter for context
         errorReporter.loadSource(line, "REPL");
         

@@ -229,6 +229,76 @@
     ],
     "description": "Check type of expression"
   },
+  "Array Declaration": {
+    "prefix": "array",
+    "body": [
+      "var ${1:arrayName} = [${2:element1}, ${3:element2}];"
+    ],
+    "description": "Declare an array"
+  },
+  "Array Access": {
+    "prefix": "arrayaccess",
+    "body": [
+      "var element = ${1:arrayName}[${2:index}];"
+    ],
+    "description": "Access array element"
+  },
+  "Array Assignment": {
+    "prefix": "arrayassign",
+    "body": [
+      "${1:arrayName}[${2:index}] = ${3:value};"
+    ],
+    "description": "Assign value to array element"
+  },
+  "Array Length": {
+    "prefix": "len",
+    "body": [
+      "var length = len(${1:arrayName});"
+    ],
+    "description": "Get array length"
+  },
+  "Array Push": {
+    "prefix": "push",
+    "body": [
+      "push(${1:arrayName}, ${2:value});"
+    ],
+    "description": "Add element to array"
+  },
+  "Array Pop": {
+    "prefix": "pop",
+    "body": [
+      "var element = pop(${1:arrayName});"
+    ],
+    "description": "Remove and return last element"
+  },
+  "Random Number": {
+    "prefix": "random",
+    "body": [
+      "var randomValue = random();"
+    ],
+    "description": "Generate random number"
+  },
+  "Sleep": {
+    "prefix": "sleep",
+    "body": [
+      "sleep(${1:milliseconds});"
+    ],
+    "description": "Sleep for specified milliseconds"
+  },
+  "Print Raw": {
+    "prefix": "printraw",
+    "body": [
+      "printRaw(${1:expression});"
+    ],
+    "description": "Print without newline"
+  },
+  "Eval": {
+    "prefix": "eval",
+    "body": [
+      "eval(\"${1:code}\");"
+    ],
+    "description": "Evaluate dynamic code"
+  },
   "ToString": {
     "prefix": "tostring",
     "body": [
@@ -287,5 +357,61 @@
       "print(\"SUCCESS: ${1:success message}\");"
     ],
     "description": "Success message print"
+  },
+  "ToInt": {
+    "prefix": "toint",
+    "body": [
+      "var intValue = toInt(${1:floatValue});"
+    ],
+    "description": "Convert float to integer"
+  },
+  "Compound Assignment": {
+    "prefix": "compound",
+    "body": [
+      "${1:variable} += ${2:value};"
+    ],
+    "description": "Compound assignment operator"
+  },
+  "Increment": {
+    "prefix": "inc",
+    "body": [
+      "${1:variable}++;"
+    ],
+    "description": "Increment variable"
+  },
+  "Decrement": {
+    "prefix": "dec",
+    "body": [
+      "${1:variable}--;"
+    ],
+    "description": "Decrement variable"
+  },
+  "Array Increment": {
+    "prefix": "arrayinc",
+    "body": [
+      "${1:arrayName}[${2:index}]++;"
+    ],
+    "description": "Increment array element"
+  },
+  "Array Decrement": {
+    "prefix": "arraydec",
+    "body": [
+      "${1:arrayName}[${2:index}]--;"
+    ],
+    "description": "Decrement array element"
+  },
+  "Cross-Type Comparison": {
+    "prefix": "crosscomp",
+    "body": [
+      "var result = ${1:value1} == ${2:value2};  // Works with any types"
+    ],
+    "description": "Cross-type comparison"
+  },
+  "Float Array Index": {
+    "prefix": "floatindex",
+    "body": [
+      "var element = ${1:arrayName}[${2:floatIndex}];  // Auto-truncates to int"
+    ],
+    "description": "Array access with float index (auto-truncates)"
   }
 } 

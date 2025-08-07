@@ -71,6 +71,52 @@ make
 ### None
 - **Null value**: `none` (represents absence of value)
 
+### Arrays
+- **Array literals**: `[1, 2, 3, 4, 5]`
+- **Empty arrays**: `[]`
+- **Mixed types**: `[1, "hello", true, 3.14]`
+- **Nested arrays**: `[[1, 2], [3, 4]]`
+
+#### Array Access
+```go
+var arr = [10, 20, 30, 40, 50];
+
+// Basic indexing
+print(arr[0]);  // 10
+print(arr[2]);  // 30
+
+// Float indices auto-truncate (like JavaScript/Lua)
+print(arr[3.14]);  // 40 (truncated to arr[3])
+print(arr[2.99]);  // 30 (truncated to arr[2])
+
+// Assignment
+arr[1] = 25;
+print(arr[1]);  // 25
+
+// Increment/decrement on array elements
+arr[0]++;
+print(arr[0]);  // 11
+++arr[1];
+print(arr[1]);  // 26
+```
+
+#### Array Built-in Functions
+```go
+var arr = [1, 2, 3];
+
+// Get array length
+print(len(arr));  // 3
+
+// Add element to end
+push(arr, 4);
+print(arr);  // [1, 2, 3, 4]
+
+// Remove and return last element
+var last = pop(arr);
+print(last);  // 4
+print(arr);   // [1, 2, 3]
+```
+
 ## Variables
 
 ### Declaration
@@ -170,6 +216,42 @@ var result = (x = 10) + 5;             // AssignExpr not allowed in arithmetic
 - **Division**: `/`
 - **Modulo**: `%`
 
+### Compound Assignment Operators
+- **Add and assign**: `+=`
+- **Subtract and assign**: `-=`
+- **Multiply and assign**: `*=`
+- **Divide and assign**: `/=`
+- **Modulo and assign**: `%=`
+
+```go
+var x = 10;
+x += 5;   // x = 15
+x -= 3;   // x = 12
+x *= 2;   // x = 24
+x /= 4;   // x = 6
+x %= 4;   // x = 2
+```
+
+### Increment and Decrement Operators
+- **Prefix increment**: `++x`
+- **Postfix increment**: `x++`
+- **Prefix decrement**: `--x`
+- **Postfix decrement**: `x--`
+
+```go
+var x = 5;
+print(++x);   // 6 (increments first, then prints)
+print(x++);   // 6 (prints first, then increments)
+print(x);     // 7
+
+// Works with array elements
+var arr = [1, 2, 3];
+arr[0]++;
+print(arr[0]);  // 2
+++arr[1];
+print(arr[1]);  // 3
+```
+
 ### Comparison Operators
 - **Equal**: `==`
 - **Not equal**: `!=`
@@ -177,6 +259,21 @@ var result = (x = 10) + 5;             // AssignExpr not allowed in arithmetic
 - **Less than**: `<`
 - **Greater than or equal**: `>=`
 - **Less than or equal**: `<=`
+
+#### Cross-Type Comparisons
+Bob supports cross-type comparisons with intuitive behavior:
+
+```go
+// Equality operators work with any types
+print(none == "hello");    // false (different types)
+print(42 == "42");         // false (different types)
+print(true == true);       // true (same type and value)
+
+// Comparison operators only work with numbers
+print(5 > 3);              // true
+print(5 > "3");            // Error: > not supported between number and string
+print(none > 5);           // Error: > not supported between none and number
+```
 
 ### Logical Operators
 - **And**: `&&`
@@ -425,6 +522,194 @@ assert(condition, "optional message");
 - Terminates program execution on failure
 - No exception handling mechanism (yet)
 - Useful for testing and validation
+
+### Type Function
+```go
+type(value);
+```
+
+**Usage**:
+- Returns the type of a value as a string
+- Returns: `"number"`, `"string"`, `"boolean"`, `"none"`, `"array"`, `"function"`
+
+**Examples**:
+```go
+print(type(42));        // "number"
+print(type("hello"));   // "string"
+print(type(true));      // "boolean"
+print(type(none));      // "none"
+print(type([1, 2, 3])); // "array"
+print(type(func() {})); // "function"
+```
+
+### ToString Function
+```go
+toString(value);
+```
+
+**Usage**:
+- Converts any value to a string
+- Works with all data types
+
+**Examples**:
+```go
+print(toString(42));        // "42"
+print(toString(3.14));      // "3.14"
+print(toString(true));      // "true"
+print(toString([1, 2, 3])); // "[1, 2, 3]"
+```
+
+### ToNumber Function
+```go
+toNumber(value);
+```
+
+**Usage**:
+- Converts a value to a number
+- Returns 0 for non-numeric strings
+- Returns 0 for boolean false, 1 for boolean true
+
+**Examples**:
+```go
+print(toNumber("42"));      // 42
+print(toNumber("3.14"));    // 3.14
+print(toNumber("hello"));   // 0
+print(toNumber(true));      // 1
+print(toNumber(false));     // 0
+```
+
+### ToInt Function
+```go
+toInt(value);
+```
+
+**Usage**:
+- Converts a number to an integer (truncates decimal part)
+- Throws error for non-numeric values
+- Same result as using bitwise OR with 0 (`value | 0`)
+
+**Examples**:
+```go
+print(toInt(3.7));   // 3
+print(toInt(3.2));   // 3
+print(toInt(-3.7));  // -3
+print(toInt(3.0));   // 3
+```
+
+### Input Function
+```go
+input();
+input("prompt");
+```
+
+**Usage**:
+- Reads a line from standard input
+- Optional prompt string
+- Returns the input as a string
+
+**Examples**:
+```go
+var name = input("Enter your name: ");
+print("Hello, " + name + "!");
+```
+
+### Time Function
+```go
+time();
+```
+
+**Usage**:
+- Returns current Unix timestamp (seconds since epoch)
+- Useful for timing and random seed generation
+
+**Examples**:
+```go
+var start = time();
+// ... do some work ...
+var end = time();
+print("Elapsed: " + (end - start) + " seconds");
+```
+
+### Sleep Function
+```go
+sleep(seconds);
+```
+
+**Usage**:
+- Pauses execution for specified number of seconds
+- Useful for animations and timing
+
+**Examples**:
+```go
+print("Starting...");
+sleep(1);
+print("One second later...");
+```
+
+### PrintRaw Function
+```go
+printRaw("text");
+```
+
+**Usage**:
+- Prints text without adding a newline
+- Supports ANSI escape codes for colors and cursor control
+- Useful for animations and formatted output
+
+**Examples**:
+```go
+// Simple output
+printRaw("Hello");
+printRaw(" World");  // Prints: Hello World
+
+// ANSI colors
+printRaw("\e[31mRed text\e[0m");  // Red text
+printRaw("\e[32mGreen text\e[0m"); // Green text
+
+// Cursor positioning
+printRaw("\e[2J");   // Clear screen
+printRaw("\e[H");    // Move cursor to top-left
+```
+
+### Random Function
+```go
+random();
+```
+
+**Usage**:
+- Returns a random number between 0.0 and 1.0
+- Uses current time as seed
+
+**Examples**:
+```go
+var randomValue = random();
+print(randomValue);  // 0.0 to 1.0
+
+// Generate random integer 1-10
+var randomInt = toInt(random() * 10) + 1;
+print(randomInt);
+```
+
+### Eval Function
+```go
+eval("code");
+```
+
+**Usage**:
+- Executes Bob code as a string
+- Returns the result of the last expression
+- Runs in the current scope (can access variables)
+
+**Examples**:
+```go
+var x = 10;
+var result = eval("x + 5");
+print(result);  // 15
+
+var code = "2 + 3 * 4";
+var result = eval(code);
+print(result);  // 14
+```
 
 ## Error Handling
 

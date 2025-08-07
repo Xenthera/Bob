@@ -14,6 +14,9 @@
 struct FunctionExpr;
 struct IncrementExpr;
 struct TernaryExpr;
+struct ArrayLiteralExpr;
+struct ArrayIndexExpr;
+struct ArrayAssignExpr;
 struct ExprVisitor;
 
 struct AssignExpr;
@@ -37,6 +40,9 @@ struct ExprVisitor
     virtual Value visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expr) = 0;
     virtual Value visitVarExpr(const std::shared_ptr<VarExpr>& expr) = 0;
     virtual Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expr) = 0;
+    virtual Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) = 0;
+    virtual Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) = 0;
+    virtual Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) = 0;
 };
 
 struct Expr : public std::enable_shared_from_this<Expr> {
@@ -165,6 +171,47 @@ struct TernaryExpr : Expr
     Value accept(ExprVisitor* visitor) override
     {
         return visitor->visitTernaryExpr(std::static_pointer_cast<TernaryExpr>(shared_from_this()));
+    }
+};
+
+struct ArrayLiteralExpr : Expr
+{
+    std::vector<std::shared_ptr<Expr>> elements;
+    
+    explicit ArrayLiteralExpr(const std::vector<std::shared_ptr<Expr>>& elements)
+        : elements(elements) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitArrayLiteralExpr(std::static_pointer_cast<ArrayLiteralExpr>(shared_from_this()));
+    }
+};
+
+struct ArrayIndexExpr : Expr
+{
+    std::shared_ptr<Expr> array;
+    std::shared_ptr<Expr> index;
+    Token bracket;  // The closing bracket token for error reporting
+    
+    ArrayIndexExpr(std::shared_ptr<Expr> array, std::shared_ptr<Expr> index, Token bracket)
+        : array(array), index(index), bracket(bracket) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitArrayIndexExpr(std::static_pointer_cast<ArrayIndexExpr>(shared_from_this()));
+    }
+};
+
+struct ArrayAssignExpr : Expr
+{
+    std::shared_ptr<Expr> array;
+    std::shared_ptr<Expr> index;
+    std::shared_ptr<Expr> value;
+    Token bracket;  // The closing bracket token for error reporting
+    
+    ArrayAssignExpr(std::shared_ptr<Expr> array, std::shared_ptr<Expr> index, std::shared_ptr<Expr> value, Token bracket)
+        : array(array), index(index), value(value), bracket(bracket) {}
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitArrayAssignExpr(std::static_pointer_cast<ArrayAssignExpr>(shared_from_this()));
     }
 };
 
