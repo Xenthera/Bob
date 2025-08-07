@@ -1,2 +1,0 @@
-Hello, Bob!
-This is a test file.

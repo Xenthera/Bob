@@ -1,4 +1,0 @@
-print("Hello from generated program!");
-var x = 10;
-var y = 20;
-print("Sum: " + toString(x + y));
