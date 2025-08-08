@@ -47,8 +47,8 @@ Bob is a mature, working programming language with a modern architecture and com
 #### **Data Structures (Complete)**
 - **Arrays**: Full support with indexing, assignment, nested arrays
 - **Dictionaries**: Full support with key-value pairs, nested dictionaries
-- **Array Operations**: `len()`, `push()`, `pop()`, indexing, assignment
-- **Dictionary Operations**: `keys()`, `values()`, `has()`, indexing, assignment
+- **Array Operations**: `len()`, `push()`, `pop()`, indexing, assignment, properties (`length`, `first`, `last`, `empty`)
+- **Dictionary Operations**: `keys()`, `values()`, `has()`, indexing, assignment, dot notation (`obj.prop`)
 - **Mixed Types**: Arrays and dictionaries can hold any value types
 
 #### **Standard Library (Complete)**
@@ -169,7 +169,7 @@ var person = {
 - Add object literal syntax
 - Implement `this` binding
 - Support method calls
-- Add property access/assignment
+- ✅ Add property access/assignment (completed - dot notation for dictionaries and arrays)
 
 #### **Classes (Optional)**
 ```bob

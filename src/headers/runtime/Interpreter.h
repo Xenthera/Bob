@@ -64,6 +64,12 @@ private:
     std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
+    
+    // Automatic cleanup tracking
+    int functionCreationCount = 0;
+    int thunkCreationCount = 0;
+    static const int CLEANUP_THRESHOLD = 1000000;
+    
     RuntimeDiagnostics diagnostics;  // Utility functions for runtime operations
     std::unique_ptr<Evaluator> evaluator;
     std::unique_ptr<Executor> executor;
@@ -78,6 +84,7 @@ public:
 
     // Methods needed by Evaluator
     Value evaluate(const std::shared_ptr<Expr>& expr);
+    Value evaluateCallExprInline(const std::shared_ptr<CallExpr>& expression);  // Inline TCO for performance
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context = nullptr);
     void executeBlock(std::vector<std::shared_ptr<Stmt>> statements, std::shared_ptr<Environment> env, ExecutionContext* context = nullptr);
     bool isTruthy(Value object);
@@ -93,6 +100,15 @@ public:
     void cleanupUnusedFunctions();
     void cleanupUnusedThunks();
     void forceCleanup();
+    
+    // Function creation count management
+    void incrementFunctionCreationCount();
+    int getFunctionCreationCount() const;
+    void resetFunctionCreationCount();
+    int getCleanupThreshold() const;
+    
+    // Public access for Evaluator
+    bool& getInThunkExecutionRef() { return inThunkExecution; }
 
 private:
     Value evaluateWithoutTrampoline(const std::shared_ptr<Expr>& expr);

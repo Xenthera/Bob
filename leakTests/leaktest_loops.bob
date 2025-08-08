@@ -1,0 +1,145 @@
+// Memory leak test: Loop and repetitive operation scenarios
+// Test memory behavior in various loop patterns
+
+print("=== Loop Memory Leak Tests ===");
+print("Initial memory: " + memoryUsage() + " MB");
+
+// Test 1: Nested loop memory allocation
+print("Test 1: Nested loop allocation");
+var nestedData = [];
+for (var i = 0; i < 1000; i++) {
+    var row = [];
+    for (var j = 0; j < 1000; j++) {
+        push(row, {
+            "i": i,
+            "j": j,
+            "func": func() { return i * j; },
+            "data": [i, j, i+j]
+        });
+    }
+    push(nestedData, row);
+}
+print("Created " + len(nestedData) + "x" + len(nestedData[0]) + " nested structure");
+print("Memory: " + memoryUsage() + " MB");
+input("Press Enter to clear nested data...");
+nestedData = none;
+print("Memory after clear: " + memoryUsage() + " MB");
+input("Cleared. Check memory usage...");
+
+// Test 2: While loop with accumulation
+print("Test 2: While loop accumulation");
+var accumulator = [];
+var counter = 0;
+while (counter < 500000) {
+    push(accumulator, {
+        "count": counter,
+        "func": func() { return counter * 2; },
+        "meta": ["item" + counter, counter % 100]
+    });
+    counter = counter + 1;
+}
+print("Accumulated " + len(accumulator) + " items in while loop");
+print("Memory: " + memoryUsage() + " MB");
+input("Press Enter to clear accumulator...");
+accumulator = [];
+print("Memory after clear: " + memoryUsage() + " MB");
+input("Cleared. Check memory usage...");
+
+// Test 3: For loop with variable reassignment
+print("Test 3: Variable reassignment in loops");
+var reassignVar = none;
+for (var i = 0; i < 200000; i++) {
+    // Constantly reassign to different types
+    if (i % 4 == 0) {
+        reassignVar = [i, func() { return i; }];
+    } else if (i % 4 == 1) {
+        reassignVar = {"id": i, "func": func() { return i*2; }};
+    } else if (i % 4 == 2) {
+        reassignVar = func() { return i*3; };
+    } else {
+        reassignVar = "string" + i;
+    }
+}
+print("Completed " + 200000 + " reassignments, final type: " + type(reassignVar));
+print("Memory: " + memoryUsage() + " MB");
+input("Press Enter to clear reassignment var...");
+reassignVar = none;
+print("Memory after clear: " + memoryUsage() + " MB");
+input("Cleared. Check memory usage...");
+
+// Test 4: Do-while with function creation
+print("Test 4: Do-while function creation");
+var doWhileFuncs = [];
+var dwCounter = 0;
+do {
+    push(doWhileFuncs, func() {
+        var captured = dwCounter;
+        return func() {
+            return captured * captured;
+        };
+    });
+    dwCounter = dwCounter + 1;
+} while (dwCounter < 100000);
+print("Created " + len(doWhileFuncs) + " functions in do-while");
+print("Memory: " + memoryUsage() + " MB");
+input("Press Enter to clear do-while functions...");
+doWhileFuncs = "cleared";
+print("Memory after clear: " + memoryUsage() + " MB");
+input("Cleared. Check memory usage...");
+
+// Test 5: Loop with early breaks and continues
+print("Test 5: Complex loop control flow");
+var complexData = [];
+for (var i = 0; i < 500000; i++) {
+    if (i % 7 == 0) {
+        continue; // Skip some iterations
+    }
+    
+    if (i > 400000 && i % 100 == 0) {
+        // Create larger objects near the end
+        push(complexData, {
+            "large": [
+                func() { return i; },
+                [i, i+1, i+2, i+3],
+                {"nested": {"deep": func() { return i*2; }}}
+            ]
+        });
+    } else {
+        push(complexData, func() { return i; });
+    }
+    
+    if (i > 450000 && len(complexData) > 350000) {
+        break; // Early exit
+    }
+}
+print("Complex loop created " + len(complexData) + " items");
+print("Memory: " + memoryUsage() + " MB");
+input("Press Enter to clear complex data...");
+complexData = none;
+print("Memory after clear: " + memoryUsage() + " MB");
+input("Cleared. Check memory usage...");
+
+// Test 6: Memory churn test (create and destroy in same loop)
+print("Test 6: Memory churn test");
+for (var cycle = 0; cycle < 100; cycle++) {
+    var churnData = [];
+    
+    // Create lots of data
+    for (var i = 0; i < 10000; i++) {
+        push(churnData, [
+            func() { return i + cycle; },
+            {"cycle": cycle, "item": i}
+        ]);
+    }
+    
+    // Clear it immediately
+    churnData = none;
+    
+    if (cycle % 10 == 0) {
+        print("Completed churn cycle " + cycle + ", Memory: " + memoryUsage() + " MB");
+    }
+}
+print("Final memory after churn test: " + memoryUsage() + " MB");
+input("Completed memory churn test. Check memory usage...");
+
+print("=== Loop Tests Complete ===");

@@ -52,15 +52,40 @@ var nested = [[1, 2], [3, 4]];
 // Access and modify
 print(numbers[0]);  // 1
 numbers[1] = 99;
+
+// Array properties (read-only)
+print(numbers.length);  // 3
+print(numbers.first);   // 1
+print(numbers.last);    // 3
+print(numbers.empty);   // false
+
+var empty = [];
+print(empty.length);    // 0
+print(empty.first);     // none
+print(empty.empty);     // true
 ```
 
 ### Dictionaries
 ```go
 var person = {"name": "Alice", "age": 30};
 
-// Access and modify
+// Access and modify (bracket notation)
 print(person["name"]);  // Alice
 person["city"] = "NYC";
+
+// Access and modify (dot notation - cleaner syntax)
+print(person.name);     // Alice
+person.city = "NYC";
+person.age = 31;
+
+// Both notations are equivalent
+assert(person.name == person["name"]);
+
+// Dictionary properties (built-in)
+print(person.length);   // 3 (number of key-value pairs)
+print(person.empty);    // false
+print(person.keys);     // ["name", "age", "city"]
+print(person.values);   // ["Alice", 31, "NYC"]
 ```
 
 ## Variables
@@ -229,7 +254,7 @@ assert(condition, "message");  // Testing
 time();                        // Current time in microseconds
 sleep(1.5);                   // Sleep for 1.5 seconds
 random();                     // Random number 0-1
-eval("1 + 2");               // Evaluate string as code
+eval("print('Hello');");     // Execute string as code
 exit(0);                     // Exit program
 ```
 
@@ -342,7 +367,14 @@ for (var i = 0; i < len(lines); i = i + 1) {
     }
 }
 
-writeFile("output.txt", join(processed, "\n"));
+var output = "";
+for (var i = 0; i < len(processed); i = i + 1) {
+    output = output + processed[i];
+    if (i < len(processed) - 1) {
+        output = output + "\n";
+    }
+}
+writeFile("output.txt", output);
 ```
 
 ---

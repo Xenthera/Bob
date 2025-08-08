@@ -9,6 +9,16 @@
 #include <fstream>
 #include <sstream>
 
+// Platform-specific includes for memory usage
+#if defined(__APPLE__) && defined(__MACH__)
+    #include <mach/mach.h>
+#elif defined(__linux__)
+    // Uses /proc/self/status, no extra includes needed
+#elif defined(_WIN32)
+    #include <windows.h>
+    #include <psapi.h>
+#endif
+
 void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& interpreter, ErrorReporter* errorReporter) {
     // Create a built-in toString function
     auto toStringFunc = std::make_shared<BuiltinFunction>("toString",
@@ -23,7 +33,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(interpreter.stringify(args[0]));
         });
-    env->define("toString", Value(toStringFunc.get()));
+    env->define("toString", Value(toStringFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toStringFunc);
@@ -42,7 +52,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             std::cout << interpreter.stringify(args[0]) << '\n';
             return NONE_VALUE;
         });
-    env->define("print", Value(printFunc.get()));
+    env->define("print", Value(printFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(printFunc);
@@ -61,7 +71,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             std::cout << interpreter.stringify(args[0]) << std::flush;
             return NONE_VALUE;
         });
-    env->define("printRaw", Value(printRawFunc.get()));
+    env->define("printRaw", Value(printRawFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(printRawFunc);
@@ -91,7 +101,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 throw std::runtime_error("len() can only be used on arrays, strings, and dictionaries");
             }
         });
-    env->define("len", Value(lenFunc.get()));
+    env->define("len", Value(lenFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(lenFunc);
@@ -125,7 +135,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return args[0]; // Return the modified array
         });
-    env->define("push", Value(pushFunc.get()));
+    env->define("push", Value(pushFunc));
     interpreter.addBuiltinFunction(pushFunc);
 
     // Create a built-in pop function for arrays
@@ -162,7 +172,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return lastElement; // Return the popped element
         });
-    env->define("pop", Value(popFunc.get()));
+    env->define("pop", Value(popFunc));
     interpreter.addBuiltinFunction(popFunc);
 
     // Create a built-in assert function
@@ -201,7 +211,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return NONE_VALUE;
         });
-    env->define("assert", Value(assertFunc.get()));
+    env->define("assert", Value(assertFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(assertFunc);
@@ -223,7 +233,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(static_cast<double>(microseconds));
         });
-    env->define("time", Value(timeFunc.get()));
+    env->define("time", Value(timeFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(timeFunc);
@@ -250,7 +260,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(userInput);
         });
-    env->define("input", Value(inputFunc.get()));
+    env->define("input", Value(inputFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(inputFunc);
@@ -289,7 +299,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(typeName);
         });
-    env->define("type", Value(typeFunc.get()));
+    env->define("type", Value(typeFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(typeFunc);
@@ -324,7 +334,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 return NONE_VALUE;  // Return none for out of range
             }
         });
-    env->define("toNumber", Value(toNumberFunc.get()));
+    env->define("toNumber", Value(toNumberFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toNumberFunc);
@@ -352,7 +362,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             double value = args[0].asNumber();
             return Value(static_cast<double>(static_cast<long long>(value)));
         });
-    env->define("toInt", Value(toIntFunc.get()));
+    env->define("toInt", Value(toIntFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toIntFunc);
@@ -390,7 +400,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             // For any other type (functions, etc.), consider them truthy
             return Value(true);
         });
-    env->define("toBoolean", Value(toBooleanFunc.get()));
+    env->define("toBoolean", Value(toBooleanFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toBooleanFunc);
@@ -409,7 +419,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             std::exit(exitCode);
         });
-    env->define("exit", Value(exitFunc.get()));
+    env->define("exit", Value(exitFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(exitFunc);
@@ -448,7 +458,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return NONE_VALUE;
         });
-    env->define("sleep", Value(sleepFunc.get()));
+    env->define("sleep", Value(sleepFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(sleepFunc);
@@ -473,7 +483,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(static_cast<double>(rand()) / RAND_MAX);
         });
-    env->define("random", Value(randomFunc.get()));
+    env->define("random", Value(randomFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(randomFunc);
@@ -526,7 +536,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 throw std::runtime_error("eval failed: " + std::string(e.what()));
             }
         });
-    env->define("eval", Value(evalFunc.get()));
+    env->define("eval", Value(evalFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(evalFunc);
@@ -559,7 +569,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(keys);
         });
-    env->define("keys", Value(keysFunc.get()));
+    env->define("keys", Value(keysFunc));
     interpreter.addBuiltinFunction(keysFunc);
 
     // Create a built-in values function for dictionaries
@@ -590,7 +600,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(values);
         });
-    env->define("values", Value(valuesFunc.get()));
+    env->define("values", Value(valuesFunc));
     interpreter.addBuiltinFunction(valuesFunc);
 
     // Create a built-in has function for dictionaries
@@ -625,7 +635,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(dict.find(key) != dict.end());
         });
-    env->define("has", Value(hasFunc.get()));
+    env->define("has", Value(hasFunc));
     interpreter.addBuiltinFunction(hasFunc);
 
     // Create a built-in readFile function
@@ -664,7 +674,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(buffer.str());
         });
-    env->define("readFile", Value(readFileFunc.get()));
+    env->define("readFile", Value(readFileFunc));
     interpreter.addBuiltinFunction(readFileFunc);
 
     // Create a built-in writeFile function
@@ -711,7 +721,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return NONE_VALUE;
         });
-    env->define("writeFile", Value(writeFileFunc.get()));
+    env->define("writeFile", Value(writeFileFunc));
     interpreter.addBuiltinFunction(writeFileFunc);
 
     // Create a built-in readLines function
@@ -754,7 +764,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             file.close();
             return Value(lines);
         });
-    env->define("readLines", Value(readLinesFunc.get()));
+    env->define("readLines", Value(readLinesFunc));
     interpreter.addBuiltinFunction(readLinesFunc);
 
     // Create a built-in fileExists function
@@ -783,7 +793,56 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             return Value(exists);
         });
-    env->define("fileExists", Value(fileExistsFunc.get()));
+    env->define("fileExists", Value(fileExistsFunc));
     interpreter.addBuiltinFunction(fileExistsFunc);
+
+    // Create a built-in memoryUsage function (platform-specific, best effort)
+    auto memoryUsageFunc = std::make_shared<BuiltinFunction>("memoryUsage",
+        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 0) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
+            }
+            
+            // Platform-specific memory usage detection
+            size_t memoryBytes = 0;
+            
+#if defined(__APPLE__) && defined(__MACH__)
+            // macOS
+            struct mach_task_basic_info info;
+            mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+            if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount) == KERN_SUCCESS) {
+                memoryBytes = info.resident_size;
+            }
+#elif defined(__linux__)
+            // Linux - read from /proc/self/status
+            std::ifstream statusFile("/proc/self/status");
+            std::string line;
+            while (std::getline(statusFile, line)) {
+                if (line.substr(0, 6) == "VmRSS:") {
+                    std::istringstream iss(line);
+                    std::string label, value, unit;
+                    iss >> label >> value >> unit;
+                    memoryBytes = std::stoull(value) * 1024; // Convert KB to bytes
+                    break;
+                }
+            }
+#elif defined(_WIN32)
+            // Windows
+            PROCESS_MEMORY_COUNTERS pmc;
+            if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+                memoryBytes = pmc.WorkingSetSize;
+            }
+#endif
+            
+            // Return memory usage in MB for readability
+            double memoryMB = static_cast<double>(memoryBytes) / (1024.0 * 1024.0);
+            return Value(memoryMB);
+        });
+    env->define("memoryUsage", Value(memoryUsageFunc));
+    interpreter.addBuiltinFunction(memoryUsageFunc);
 
 } 

@@ -2,10 +2,16 @@
 #include "Value.h"
 #include "TypeWrapper.h"  // For Function and BuiltinFunction definitions
 #include <sstream>
+#if defined(__linux__)
+#include <malloc.h>
+#elif defined(__APPLE__)
+#include <malloc/malloc.h>
+#endif
 #include <iomanip>
 #include <limits>
 #include <cmath>
 #include <algorithm>
+
 
 bool RuntimeDiagnostics::isTruthy(Value object) {
     if(object.isBoolean()) {
@@ -182,6 +188,18 @@ void RuntimeDiagnostics::cleanupUnusedFunctions(std::vector<std::shared_ptr<Buil
     );
 }
 
+void RuntimeDiagnostics::cleanupUnusedFunctions(std::vector<std::shared_ptr<Function>>& functions) {
+    // Only remove functions that are definitely not referenced anywhere (use_count == 1)
+    // This is more conservative to prevent dangling pointer issues
+    functions.erase(
+        std::remove_if(functions.begin(), functions.end(),
+            [](const std::shared_ptr<Function>& func) {
+                return func.use_count() == 1;  // Only referenced by this vector, nowhere else
+            }),
+        functions.end()
+    );
+}
+
 void RuntimeDiagnostics::cleanupUnusedThunks(std::vector<std::shared_ptr<Thunk>>& thunks) {
     // Only remove thunks that are definitely not referenced anywhere (use_count == 1)
     // This is more conservative to prevent dangling pointer issues
@@ -212,4 +230,39 @@ void RuntimeDiagnostics::forceCleanup(std::vector<std::shared_ptr<BuiltinFunctio
             }),
         thunks.end()
     );
+}
+
+void RuntimeDiagnostics::forceCleanup(std::vector<std::shared_ptr<BuiltinFunction>>& builtinFunctions,
+                                     std::vector<std::shared_ptr<Function>>& functions,
+                                     std::vector<std::shared_ptr<Thunk>>& thunks) {
+    try {
+        // Remove functions only when they are exclusively held by the interpreter vector
+        functions.erase(
+            std::remove_if(functions.begin(), functions.end(),
+                [](const std::shared_ptr<Function>& func) {
+                    return func.use_count() == 1;
+                }),
+            functions.end()
+        );
+        
+        // Also cleanup builtin functions and thunks
+        builtinFunctions.erase(
+            std::remove_if(builtinFunctions.begin(), builtinFunctions.end(),
+                [](const std::shared_ptr<BuiltinFunction>& func) {
+                    return func.use_count() <= 1; // Only referenced by Interpreter
+                }),
+            builtinFunctions.end()
+        );
+        
+        thunks.erase(
+            std::remove_if(thunks.begin(), thunks.end(),
+                [](const std::shared_ptr<Thunk>& thunk) {
+                    return thunk.use_count() <= 1; // Only referenced by Interpreter
+                }),
+            thunks.end()
+        );
+    } catch (const std::exception& e) {
+        std::cerr << "Exception in forceCleanup: " << e.what() << std::endl;
+        throw; // Re-throw to let the caller handle it
+    }
 }

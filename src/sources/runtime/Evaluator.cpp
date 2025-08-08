@@ -213,27 +213,74 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
 Value Evaluator::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) {
     Value value = interpreter->evaluate(expression->value);
     
-    switch (expression->op.type) {
-        case PLUS_EQUAL:
-        case MINUS_EQUAL:
-        case STAR_EQUAL:
-        case SLASH_EQUAL:
-        case PERCENT_EQUAL:
-        case BIN_AND_EQUAL:
-        case BIN_OR_EQUAL:
-        case BIN_XOR_EQUAL:
-        case BIN_SLEFT_EQUAL:
-        case BIN_SRIGHT_EQUAL: {
-            Value currentValue = interpreter->getEnvironment()->get(expression->name);
-            
-            // ... (rest of compound assignment logic) ...
-            
-            break;
+            if (expression->op.type == EQUAL) {
+        try {
+            // Check if the variable existed and whether it held a collection
+            bool existed = false;
+            bool wasCollection = false;
+            try {
+                Value oldValue = interpreter->getEnvironment()->get(expression->name);
+                existed = true;
+                wasCollection = oldValue.isArray() || oldValue.isDict();
+            } catch (...) {
+                existed = false;
+            }
+
+            // Assign first to release references held by the old values
+            interpreter->getEnvironment()->assign(expression->name, value);
+
+            // Now that the old values are released, perform cleanup on any reassignment
+            interpreter->forceCleanup();
+        } catch (const std::exception& e) {
+            std::cerr << "Error during assignment: " << e.what() << std::endl;
+            throw; // Re-throw to see the full stack trace
         }
-        default:
-            break;
+    } else {
+        // Handle compound assignment operators
+        Value currentValue = interpreter->getEnvironment()->get(expression->name);
+        Value newValue;
+        
+        switch (expression->op.type) {
+            case PLUS_EQUAL:
+                newValue = currentValue + value;
+                break;
+            case MINUS_EQUAL:
+                newValue = currentValue - value;
+                break;
+            case STAR_EQUAL:
+                newValue = currentValue * value;
+                break;
+            case SLASH_EQUAL:
+                newValue = currentValue / value;
+                break;
+            case PERCENT_EQUAL:
+                newValue = currentValue % value;
+                break;
+            case BIN_AND_EQUAL:
+                newValue = currentValue & value;
+                break;
+            case BIN_OR_EQUAL:
+                newValue = currentValue | value;
+                break;
+            case BIN_XOR_EQUAL:
+                newValue = currentValue ^ value;
+                break;
+            case BIN_SLEFT_EQUAL:
+                newValue = currentValue << value;
+                break;
+            case BIN_SRIGHT_EQUAL:
+                newValue = currentValue >> value;
+                break;
+            default:
+                interpreter->reportError(expression->op.line, expression->op.column, "Runtime Error",
+                    "Unknown assignment operator: " + expression->op.lexeme, "");
+                throw std::runtime_error("Unknown assignment operator: " + expression->op.lexeme);
+        }
+        
+        interpreter->getEnvironment()->assign(expression->name, newValue);
+        return newValue;
     }
-    interpreter->getEnvironment()->assign(expression->name, value);
+    
     return value;
 }
 
@@ -248,62 +295,8 @@ Value Evaluator::visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression
 }
 
 Value Evaluator::visitCallExpr(const std::shared_ptr<CallExpr>& expression) {
-    Value callee = expression->callee->accept(this);
-    
-    std::vector<Value> arguments;
-    for (const auto& argument : expression->arguments) {
-        arguments.push_back(argument->accept(this));
-    }
-    
-    if (callee.isFunction()) {
-        Function* function = callee.asFunction();
-        
-        // Check arity
-        if (arguments.size() != function->params.size()) {
-            interpreter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
-                "Expected " + std::to_string(function->params.size()) + " arguments but got " + 
-                std::to_string(arguments.size()) + ".", "");
-            throw std::runtime_error("Wrong number of arguments.");
-        }
-        
-        // Create new environment for function call
-        auto environment = std::make_shared<Environment>(function->closure);
-        for (size_t i = 0; i < function->params.size(); i++) {
-            environment->define(function->params[i], arguments[i]);
-        }
-        
-        // Execute function body
-        auto previous = interpreter->getEnvironment();
-        interpreter->setEnvironment(environment);
-        
-        ExecutionContext context;
-        context.isFunctionBody = true;
-        
-        try {
-            for (const auto& stmt : function->body) {
-                interpreter->execute(stmt, &context);
-                if (context.hasReturn) {
-                    interpreter->setEnvironment(previous);
-                    return context.returnValue;
-                }
-            }
-        } catch (...) {
-            interpreter->setEnvironment(previous);
-            throw;
-        }
-        
-        interpreter->setEnvironment(previous);
-        return NONE_VALUE;
-        
-    } else if (callee.isBuiltinFunction()) {
-        BuiltinFunction* builtinFunction = callee.asBuiltinFunction();
-        return builtinFunction->func(arguments, expression->paren.line, expression->paren.column);
-        
-    } else {
-        interpreter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
-            "Can only call functions and classes.", "");
-        throw std::runtime_error("Can only call functions and classes.");
-    }
+    // Delegate to inline implementation in Interpreter for performance
+    return interpreter->evaluateCallExprInline(expression);
 }
 
 Value Evaluator::visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) {
@@ -361,6 +354,21 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
             "Can only index arrays and dictionaries", "");
         throw std::runtime_error("Can only index arrays and dictionaries");
+    }
+}
+
+Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
+    Value object = expr->object->accept(this);
+    std::string propertyName = expr->name.lexeme;
+    
+    if (object.isDict()) {
+        return getDictProperty(object, propertyName);
+    } else if (object.isArray()) {
+        return getArrayProperty(object, propertyName);
+    } else {
+        interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
+            "Cannot access property '" + propertyName + "' on this type", "");
+        throw std::runtime_error("Cannot access property '" + propertyName + "' on this type");
     }
 }
 
@@ -422,13 +430,95 @@ Value Evaluator::visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& ex
     return Value(dict);
 }
 
+Value Evaluator::visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExpr>& expr) {
+    Value object = expr->object->accept(this);
+    Value value = expr->value->accept(this);
+    std::string propertyName = expr->name.lexeme;
+    
+    if (object.isDict()) {
+        // Modify the dictionary in place
+        std::unordered_map<std::string, Value>& dict = object.asDict();
+        dict[propertyName] = value;
+        return value;  // Return the assigned value
+    } else {
+        interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
+            "Cannot assign property '" + propertyName + "' on non-object", "");
+        throw std::runtime_error("Cannot assign property '" + propertyName + "' on non-object");
+    }
+}
+
 Value Evaluator::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expression) {
     std::vector<std::string> paramNames;
     for (const Token& param : expression->params) {
         paramNames.push_back(param.lexeme);
     }
     
-    auto function = std::make_shared<Function>("", paramNames, expression->body, interpreter->getEnvironment());
-    interpreter->addFunction(function);
-    return Value(function.get());
+    // Capture a snapshot of the current environment so loop vars like 'i' are frozen per iteration
+    auto closureEnv = std::make_shared<Environment>(*interpreter->getEnvironment());
+    closureEnv->pruneForClosureCapture();
+    
+    auto function = std::make_shared<Function>("", paramNames, expression->body, closureEnv);
+    return Value(function);
+}
+
+Value Evaluator::getArrayProperty(const Value& arrayValue, const std::string& propertyName) {
+    const std::vector<Value>& arr = arrayValue.asArray();
+    
+    // Create builtin array properties as an actual dictionary
+    std::unordered_map<std::string, Value> arrayProperties;
+    arrayProperties["length"] = Value(static_cast<double>(arr.size()));
+    arrayProperties["empty"] = Value(arr.empty());
+    
+    if (!arr.empty()) {
+        arrayProperties["first"] = arr[0];
+        arrayProperties["last"] = arr[arr.size() - 1];
+    } else {
+        arrayProperties["first"] = NONE_VALUE;
+        arrayProperties["last"] = NONE_VALUE;
+    }
+    
+    // Look up the requested property
+    auto it = arrayProperties.find(propertyName);
+    if (it != arrayProperties.end()) {
+        return it->second;
+    } else {
+        return NONE_VALUE; // Unknown property
+    }
+}
+
+Value Evaluator::getDictProperty(const Value& dictValue, const std::string& propertyName) {
+    const std::unordered_map<std::string, Value>& dict = dictValue.asDict();
+    
+    // First check if it's a user-defined property
+    auto userProp = dict.find(propertyName);
+    if (userProp != dict.end()) {
+        return userProp->second;
+    }
+    
+    // If not found, check for builtin dictionary properties
+    std::unordered_map<std::string, Value> dictProperties;
+    dictProperties["length"] = Value(static_cast<double>(dict.size()));
+    dictProperties["empty"] = Value(dict.empty());
+    
+    // Create keys array
+    std::vector<Value> keysArray;
+    for (const auto& pair : dict) {
+        keysArray.push_back(Value(pair.first));
+    }
+    dictProperties["keys"] = Value(keysArray);
+    
+    // Create values array  
+    std::vector<Value> valuesArray;
+    for (const auto& pair : dict) {
+        valuesArray.push_back(pair.second);
+    }
+    dictProperties["values"] = Value(valuesArray);
+    
+    auto builtinProp = dictProperties.find(propertyName);
+    if (builtinProp != dictProperties.end()) {
+        return builtinProp->second;
+    }
+    
+    // Property not found
+    return NONE_VALUE;
 }

@@ -33,6 +33,13 @@ public:
     Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression) override;
     Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expression) override;
     Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expression) override;
+    Value visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expression) override;
     Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expression) override;
+    Value visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExpr>& expression) override;
     Value visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expression) override;
+
+private:
+    // Helper methods for builtin properties
+    Value getArrayProperty(const Value& array, const std::string& propertyName);
+    Value getDictProperty(const Value& dict, const std::string& propertyName);
 };

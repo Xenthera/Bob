@@ -26,8 +26,12 @@ public:
     
     // Memory management utilities
     void cleanupUnusedFunctions(std::vector<std::shared_ptr<BuiltinFunction>>& functions);
+    void cleanupUnusedFunctions(std::vector<std::shared_ptr<Function>>& functions);
     void cleanupUnusedThunks(std::vector<std::shared_ptr<Thunk>>& thunks);
     void forceCleanup(std::vector<std::shared_ptr<BuiltinFunction>>& functions, 
+                     std::vector<std::shared_ptr<Thunk>>& thunks);
+    void forceCleanup(std::vector<std::shared_ptr<BuiltinFunction>>& builtinFunctions,
+                     std::vector<std::shared_ptr<Function>>& functions,
                      std::vector<std::shared_ptr<Thunk>>& thunks);
     
 private:

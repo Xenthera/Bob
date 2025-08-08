@@ -14,8 +14,10 @@ struct IncrementExpr;
 struct TernaryExpr;
 struct ArrayLiteralExpr;
 struct ArrayIndexExpr;
+struct PropertyExpr;
 
 struct ArrayAssignExpr;
+struct PropertyAssignExpr;
 struct DictLiteralExpr;
 struct DictIndexExpr;
 struct DictAssignExpr;
@@ -44,8 +46,10 @@ struct ExprVisitor
     virtual Value visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expr) = 0;
     virtual Value visitArrayLiteralExpr(const std::shared_ptr<ArrayLiteralExpr>& expr) = 0;
     virtual Value visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr) = 0;
+    virtual Value visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) = 0;
 
     virtual Value visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& expr) = 0;
+    virtual Value visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExpr>& expr) = 0;
     virtual Value visitDictLiteralExpr(const std::shared_ptr<DictLiteralExpr>& expr) = 0;
 
 };
@@ -205,7 +209,19 @@ struct ArrayIndexExpr : Expr
     }
 };
 
-
+struct PropertyExpr : Expr
+{
+    std::shared_ptr<Expr> object;
+    Token name;
+    
+    PropertyExpr(std::shared_ptr<Expr> object, Token name)
+        : object(object), name(name) {}
+        
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitPropertyExpr(std::static_pointer_cast<PropertyExpr>(shared_from_this()));
+    }
+};
 
 struct ArrayAssignExpr : Expr
 {
@@ -219,6 +235,21 @@ struct ArrayAssignExpr : Expr
     Value accept(ExprVisitor* visitor) override
     {
         return visitor->visitArrayAssignExpr(std::static_pointer_cast<ArrayAssignExpr>(shared_from_this()));
+    }
+};
+
+struct PropertyAssignExpr : Expr
+{
+    std::shared_ptr<Expr> object;
+    Token name;
+    std::shared_ptr<Expr> value;
+    
+    PropertyAssignExpr(std::shared_ptr<Expr> object, Token name, std::shared_ptr<Expr> value)
+        : object(object), name(name), value(value) {}
+        
+    Value accept(ExprVisitor* visitor) override
+    {
+        return visitor->visitPropertyAssignExpr(std::static_pointer_cast<PropertyAssignExpr>(shared_from_this()));
     }
 };
 

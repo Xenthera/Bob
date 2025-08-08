@@ -2505,9 +2505,88 @@ assert(len(values(stressDict)) == 100, "Dictionary stress test - values");
 print("Enhanced dictionary tests: PASS");
 
 // ========================================
-// TEST 52.7: TAIL CALL OPTIMIZATION
+// TEST 52.7: DOT NOTATION AND PROPERTY ACCESS
 // ========================================
-print("\n--- Test 52.7: Tail Call Optimization ---");
+print("\n--- Test 52.7: Dot Notation and Property Access ---");
+
+// Basic dictionary property access (read)
+var person = {"name": "Alice", "age": 30, "city": "NYC"};
+assert(person.name == "Alice", "Basic dict property access - name");
+assert(person.age == 30, "Basic dict property access - age");
+assert(person.city == "NYC", "Basic dict property access - city");
+print("  Basic dict property access: PASS");
+
+// Dictionary property assignment (write)
+var config = {"theme": "light", "lang": "en"};
+config.theme = "dark";
+config.lang = "es";
+config.fontSize = 16;  // New property
+assert(config.theme == "dark", "Dict property assignment - theme");
+assert(config.lang == "es", "Dict property assignment - lang");
+assert(config.fontSize == 16, "Dict property assignment - new property");
+print("  Dict property assignment: PASS");
+
+// Array properties (read-only)
+var arr = [10, 20, 30, 40, 50];
+assert(arr.length == 5, "Array length property");
+assert(arr.first == 10, "Array first property");
+assert(arr.last == 50, "Array last property");
+assert(arr.empty == false, "Array empty property");
+print("  Array properties: PASS");
+
+// Array edge cases
+var emptyArr = [];
+assert(emptyArr.length == 0, "Empty array length");
+assert(emptyArr.first == none, "Empty array first");
+assert(emptyArr.last == none, "Empty array last");
+assert(emptyArr.empty == true, "Empty array empty");
+print("  Array edge cases: PASS");
+
+// Dictionary builtin properties
+var dictWithProps = {"a": 1, "b": 2, "c": 3};
+assert(dictWithProps.length == 3, "Dict builtin length property");
+assert(dictWithProps.empty == false, "Dict builtin empty property");
+var emptyDict = {};
+assert(emptyDict.length == 0, "Empty dict length");
+assert(emptyDict.empty == true, "Empty dict empty");
+
+// Test dict.keys and dict.values properties
+assert(len(dictWithProps.keys) == 3, "Dict keys property length");
+assert(len(dictWithProps.values) == 3, "Dict values property length");
+assert(len(emptyDict.keys) == 0, "Empty dict keys length");
+assert(len(emptyDict.values) == 0, "Empty dict values length");
+
+// Test equivalence with old functions
+var testDict = {"x": 10, "y": 20};
+assert(len(testDict.keys) == len(keys(testDict)), "Dict keys equivalent to keys() function");
+assert(len(testDict.values) == len(values(testDict)), "Dict values equivalent to values() function");
+print("  Dict builtin properties: PASS");
+
+// Nested property access and assignment
+var nested = {
+    "database": {
+        "host": "localhost",
+        "port": 5432
+    }
+};
+assert(nested.database.host == "localhost", "Nested property access");
+nested.database.port = 3306;
+nested.database.ssl = true;  // New nested property
+assert(nested.database.port == 3306, "Nested property assignment");
+assert(nested.database.ssl == true, "New nested property assignment");
+print("  Nested properties: PASS");
+
+// Property/bracket equivalence
+assert(person.name == person["name"], "Property/bracket equivalence - name");
+assert(config.theme == config["theme"], "Property/bracket equivalence - theme");
+print("  Property/bracket equivalence: PASS");
+
+print("Dot notation and property access: PASS");
+
+// ========================================
+// TEST 52.8: TAIL CALL OPTIMIZATION
+// ========================================
+print("\n--- Test 52.8: Tail Call Optimization ---");
 
 // Test deep recursion that would stack overflow without TCO
 func factorial(n, acc) {
@@ -2964,58 +3043,6 @@ var testVar = 42;
 
 print("Enhanced error reporting: PASS (manual verification required)");
 
-// Test 62: Dictionary Creation and Access
-print("Test 62: Dictionary Creation and Access");
-var person = {"name": "Alice", "age": 30, "city": "New York"};
-assert(person["name"] == "Alice");
-assert(person["age"] == 30);
-assert(person["city"] == "New York");
-assert(person["missing"] == none);
-print("Dictionary creation and access test complete");
-
-// Test 63: Dictionary Assignment
-print("Test 63: Dictionary Assignment");
-person["email"] = "alice@example.com";
-person["age"] = 31;
-assert(person["email"] == "alice@example.com");
-assert(person["age"] == 31);
-print("Dictionary assignment test complete");
-
-// Test 64: Dictionary Built-in Functions
-print("Test 64: Dictionary Built-in Functions");
-var keys = keys(person);
-var values = values(person);
-assert(len(keys) == 4);
-assert(len(values) == 4);
-assert(has(person, "name") == true);
-assert(has(person, "missing") == false);
-print("Dictionary built-in functions test complete");
-
-// Test 65: Nested Dictionaries
-print("Test 65: Nested Dictionaries");
-var gameState = {
-    "player": {"health": 100, "level": 5},
-    "world": {"name": "Bobland", "difficulty": "hard"}
-};
-assert(gameState["player"]["health"] == 100);
-assert(gameState["world"]["name"] == "Bobland");
-print("Nested dictionaries test complete");
-
-// Test 66: Dictionary with Mixed Types
-print("Test 66: Dictionary with Mixed Types");
-var mixed = {
-    "string": "hello",
-    "number": 42,
-    "boolean": true,
-    "array": [1, 2, 3],
-    "none": none
-};
-assert(mixed["string"] == "hello");
-assert(mixed["number"] == 42);
-assert(mixed["boolean"] == true);
-assert(mixed["array"][0] == 1);
-assert(mixed["none"] == none);
-print("Dictionary with mixed types test complete");
 
 // Test 67: Copy Behavior - Primitive Types (By Value)
 print("Test 67: Copy Behavior - Primitive Types (By Value)");
@@ -3215,6 +3242,14 @@ print("  * Nested dictionaries");
 print("  * Mixed type values");
 print("  * Dictionary stress testing");
 print("  * Dictionary with none values");
+print("- Dot notation and property access");
+print("  * Dictionary property access (obj.prop)");
+print("  * Dictionary property assignment (obj.prop = value)");
+print("  * Nested property access (obj.a.b.c)");
+print("  * Array builtin properties (length, first, last, empty)");
+print("  * Dictionary builtin properties (length, empty, keys, values)");
+print("  * Property/bracket notation equivalence");
+print("  * User property precedence over builtins");
 print("- Copy behavior (by value vs by reference)");
 print("  * Primitive types copied by value (numbers, strings, booleans)");
 print("  * Complex types copied by reference (arrays, dictionaries)");

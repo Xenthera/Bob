@@ -32,14 +32,17 @@ struct Value {
     union {
         double number;
         bool boolean;
-        Function* function;
-        BuiltinFunction* builtin_function;
-        Thunk* thunk;
     };
     ValueType type;
     std::string string_value; // Store strings outside the union for safety
     std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
     std::shared_ptr<std::unordered_map<std::string, Value> > dict_value; // Store dictionaries as shared_ptr for mutability
+    
+    // Store functions as shared_ptr for proper reference counting
+    std::shared_ptr<Function> function;
+    std::shared_ptr<BuiltinFunction> builtin_function;
+    std::shared_ptr<Thunk> thunk;
+
 
     // Constructors
     Value() : number(0.0), type(ValueType::VAL_NONE) {}
@@ -48,20 +51,28 @@ struct Value {
     Value(const char* s) : type(ValueType::VAL_STRING), string_value(s ? s : "") {}
     Value(const std::string& s) : type(ValueType::VAL_STRING), string_value(s) {}
     Value(std::string&& s) : type(ValueType::VAL_STRING), string_value(std::move(s)) {}
-    Value(Function* f) : function(f), type(ValueType::VAL_FUNCTION) {}
-    Value(BuiltinFunction* bf) : builtin_function(bf), type(ValueType::VAL_BUILTIN_FUNCTION) {}
-    Value(Thunk* t) : thunk(t), type(ValueType::VAL_THUNK) {}
+    Value(std::shared_ptr<Function> f) : function(f), type(ValueType::VAL_FUNCTION) {}
+    Value(std::shared_ptr<BuiltinFunction> bf) : builtin_function(bf), type(ValueType::VAL_BUILTIN_FUNCTION) {}
+    Value(std::shared_ptr<Thunk> t) : thunk(t), type(ValueType::VAL_THUNK) {}
     Value(const std::vector<Value>& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(arr)) {}
     Value(std::vector<Value>&& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(std::move(arr))) {}
     Value(const std::unordered_map<std::string, Value>& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(dict)) {}
     Value(std::unordered_map<std::string, Value>&& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(std::move(dict))) {}
     
+    // Destructor to clean up functions and thunks
+    ~Value() {
+        // Functions and thunks are managed by the Interpreter, so we don't delete them
+        // Arrays and dictionaries are managed by shared_ptr, so they clean up automatically
+    }
+    
 
 
     // Move constructor
     Value(Value&& other) noexcept 
-        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)) {
-        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT) {
+        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)),
+          function(std::move(other.function)), builtin_function(std::move(other.builtin_function)), thunk(std::move(other.thunk)) {
+        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT && 
+            type != ValueType::VAL_FUNCTION && type != ValueType::VAL_BUILTIN_FUNCTION && type != ValueType::VAL_THUNK) {
             number = other.number; // Copy the union
         }
         other.type = ValueType::VAL_NONE;
@@ -74,12 +85,19 @@ struct Value {
             if (type == ValueType::VAL_STRING) {
                 string_value = std::move(other.string_value);
             } else if (type == ValueType::VAL_ARRAY) {
-                array_value = std::move(other.array_value); // shared_ptr automatically handles moving
+                array_value = std::move(other.array_value);
             } else if (type == ValueType::VAL_DICT) {
-                dict_value = std::move(other.dict_value); // shared_ptr automatically handles moving
+                dict_value = std::move(other.dict_value);
+            } else if (type == ValueType::VAL_FUNCTION) {
+                function = std::move(other.function);
+            } else if (type == ValueType::VAL_BUILTIN_FUNCTION) {
+                builtin_function = std::move(other.builtin_function);
+            } else if (type == ValueType::VAL_THUNK) {
+                thunk = std::move(other.thunk);
             } else {
-                number = other.number; // Copy the union
+                number = other.number;
             }
+
             other.type = ValueType::VAL_NONE;
         }
         return *this;
@@ -93,23 +111,43 @@ struct Value {
             array_value = other.array_value; // shared_ptr automatically handles sharing
         } else if (type == ValueType::VAL_DICT) {
             dict_value = other.dict_value; // shared_ptr automatically handles sharing
+        } else if (type == ValueType::VAL_FUNCTION) {
+            function = other.function; // shared_ptr automatically handles sharing
+        } else if (type == ValueType::VAL_BUILTIN_FUNCTION) {
+            builtin_function = other.builtin_function; // shared_ptr automatically handles sharing
+        } else if (type == ValueType::VAL_THUNK) {
+            thunk = other.thunk; // shared_ptr automatically handles sharing
         } else {
-            number = other.number; // Copy the union
+            number = other.number;
         }
     }
 
     // Copy assignment (only when needed)
     Value& operator=(const Value& other) {
         if (this != &other) {
+            // First, clear all old shared_ptr members to release references
+            array_value.reset();
+            dict_value.reset();
+            function.reset();
+            builtin_function.reset();
+            thunk.reset();
+            
+            // Then set the new type and value
             type = other.type;
             if (type == ValueType::VAL_STRING) {
                 string_value = other.string_value;
             } else if (type == ValueType::VAL_ARRAY) {
                 array_value = other.array_value; // shared_ptr automatically handles sharing
             } else if (type == ValueType::VAL_DICT) {
-                dict_value = other.dict_value; // shared_ptr automatically handles sharing
+                dict_value = other.dict_value;
+            } else if (type == ValueType::VAL_FUNCTION) {
+                function = other.function; // shared_ptr automatically handles sharing
+            } else if (type == ValueType::VAL_BUILTIN_FUNCTION) {
+                builtin_function = other.builtin_function; // shared_ptr automatically handles sharing
+            } else if (type == ValueType::VAL_THUNK) {
+                thunk = other.thunk; // shared_ptr automatically handles sharing
             } else {
-                number = other.number; // Copy the union
+                number = other.number;
             }
         }
         return *this;
@@ -160,9 +198,9 @@ struct Value {
     inline std::unordered_map<std::string, Value>& asDict() { 
         return *dict_value; 
     }
-    inline Function* asFunction() const { return isFunction() ? function : nullptr; }
-    inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function : nullptr; }
-    inline Thunk* asThunk() const { return isThunk() ? thunk : nullptr; }
+    inline Function* asFunction() const { return isFunction() ? function.get() : nullptr; }
+    inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function.get() : nullptr; }
+    inline Thunk* asThunk() const { return isThunk() ? thunk.get() : nullptr; }
 
     // Truthiness check - inline for performance
     inline bool isTruthy() const {

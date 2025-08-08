@@ -49,3 +49,19 @@ Value Environment::get(const std::string& name) {
     
     throw std::runtime_error("Undefined variable '" + name + "'");
 } 
+
+void Environment::pruneForClosureCapture() {
+    for (auto &entry : variables) {
+        Value &v = entry.second;
+        if (v.isArray()) {
+            // Replace with a new empty array to avoid mutating original shared storage
+            entry.second = Value(std::vector<Value>{});
+        } else if (v.isDict()) {
+            // Replace with a new empty dict to avoid mutating original shared storage
+            entry.second = Value(std::unordered_map<std::string, Value>{});
+        }
+    }
+    if (parent) {
+        parent->pruneForClosureCapture();
+    }
+}

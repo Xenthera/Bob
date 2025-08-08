@@ -63,7 +63,7 @@ void Executor::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement,
                                    statement->body, 
                                    interpreter->getEnvironment());
     interpreter->addFunction(function);
-    interpreter->getEnvironment()->define(statement->name.lexeme, Value(function.get()));
+    interpreter->getEnvironment()->define(statement->name.lexeme, Value(function));
 }
 
 void Executor::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context) {

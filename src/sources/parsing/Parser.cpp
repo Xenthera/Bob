@@ -138,6 +138,16 @@ sptr(Expr) Parser::assignmentExpression()
             auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expr);
             return msptr(ArrayAssignExpr)(arrayExpr->array, arrayExpr->index, value, arrayExpr->bracket);
         }
+        else if(std::dynamic_pointer_cast<PropertyExpr>(expr))
+        {
+            auto propertyExpr = std::dynamic_pointer_cast<PropertyExpr>(expr);
+            return msptr(PropertyAssignExpr)(propertyExpr->object, propertyExpr->name, value);
+        }
+        else if(std::dynamic_pointer_cast<ArrayIndexExpr>(expr))
+        {
+            auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expr);
+            return msptr(ArrayAssignExpr)(arrayExpr->array, arrayExpr->index, value, arrayExpr->bracket);
+        }
 
         
         if (errorReporter) {
@@ -357,6 +367,9 @@ sptr(Expr) Parser::call()
             expr = finishCall(expr);
         } else if (match({OPEN_BRACKET})) {
             expr = finishArrayIndex(expr);
+        } else if (match({DOT})) {
+            Token name = consume(IDENTIFIER, "Expected property name after '.'.");
+            expr = msptr(PropertyExpr)(expr, name);
         } else {
             break;
         }
@@ -472,33 +485,27 @@ sptr(Stmt) Parser::statement()
     if(match({CONTINUE})) return continueStatement();
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     
-    // Check for assignment statement
+    // Check for assignment statement - simplified approach
     if(check(IDENTIFIER)) {
-        // Look ahead to see if this is an assignment
+        // Try to parse as assignment expression first
         int currentPos = current;
-        advance(); // consume identifier
-        
-        // Check for simple variable assignment
-        if(match({EQUAL, PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
-                  BIN_AND_EQUAL, BIN_OR_EQUAL, BIN_XOR_EQUAL, BIN_SLEFT_EQUAL, BIN_SRIGHT_EQUAL})) {
-            // Reset position and parse as assignment statement
-            current = currentPos;
-            return assignmentStatement();
-        }
-        
-        // Check for array assignment (identifier followed by [)
-        if(match({OPEN_BRACKET})) {
-            // Reset position and parse as assignment expression
-            current = currentPos;
+        try {
             sptr(Expr) expr = assignmentExpression();
-            consume(SEMICOLON, "Expected ';' after assignment.");
-            return msptr(ExpressionStmt)(expr);
+            
+            // If we successfully parsed an assignment expression, it's an assignment statement
+            if(std::dynamic_pointer_cast<AssignExpr>(expr) || 
+               std::dynamic_pointer_cast<ArrayAssignExpr>(expr) ||
+               std::dynamic_pointer_cast<PropertyAssignExpr>(expr)) {
+                consume(SEMICOLON, "Expected ';' after assignment.");
+                return msptr(ExpressionStmt)(expr);
+            }
+            
+            // If it's not an assignment, reset and parse as expression statement
+            current = currentPos;
+        } catch (...) {
+            // If assignment parsing failed, reset and parse as expression statement
+            current = currentPos;
         }
-        
-
-        
-        // Reset position and parse as expression statement
-        current = currentPos;
     }
     
     return expressionStatement();

@@ -73,6 +73,18 @@ target_include_directories(bob PRIVATE
 # Apply compiler options
 target_compile_options(bob PRIVATE ${BOB_COMPILE_OPTIONS})
 
+# Enable Link Time Optimization (LTO) for Release builds
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+    if(ipo_supported)
+        message(STATUS "IPO/LTO enabled")
+        set_property(TARGET bob PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "IPO/LTO not supported: ${ipo_error}")
+    endif()
+endif()
+
 # Platform-specific settings
 if(WIN32)
     # Windows-specific settings
@@ -142,4 +154,7 @@ message(STATUS "  Build Type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "  Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "  C++ Standard: ${CMAKE_CXX_STANDARD}")
 message(STATUS "  Install Prefix: ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "  Source Files Found: ${BOB_ALL_SOURCES}")
+message(STATUS "  Runtime Sources: ${BOB_RUNTIME_SOURCES}")
+message(STATUS "  Parsing Sources: ${BOB_PARSING_SOURCES}")
+message(STATUS "  Stdlib Sources: ${BOB_STDLIB_SOURCES}")
+message(STATUS "  CLI Sources: ${BOB_CLI_SOURCES}")

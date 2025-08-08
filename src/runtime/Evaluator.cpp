@@ -430,5 +430,5 @@ Value Evaluator::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expressi
     
     auto function = std::make_shared<Function>("", paramNames, expression->body, interpreter->getEnvironment());
     interpreter->addFunction(function);
-    return Value(function.get());
+    return Value(function);
 }

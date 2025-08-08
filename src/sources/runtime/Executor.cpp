@@ -63,7 +63,7 @@ void Executor::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement,
                                    statement->body, 
                                    interpreter->getEnvironment());
     interpreter->addFunction(function);
-    interpreter->getEnvironment()->define(statement->name.lexeme, Value(function.get()));
+    interpreter->getEnvironment()->define(statement->name.lexeme, Value(function));
 }
 
 void Executor::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context) {
@@ -194,11 +194,21 @@ void Executor::visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement,
 }
 
 void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context) {
-    Value value = statement->value->accept(evaluator);
-    
-    if (statement->op.type == EQUAL) {
-        interpreter->getEnvironment()->assign(statement->name, value);
-    } else {
+    try {
+        Value value = statement->value->accept(evaluator);
+        
+        if (statement->op.type == EQUAL) {
+            try {
+                // Assign first to release references held by the old value
+                interpreter->getEnvironment()->assign(statement->name, value);
+                
+                // Clean up on any reassignment, regardless of old/new type
+                interpreter->forceCleanup();
+            } catch (const std::exception& e) {
+                std::cerr << "Error during assignment: " << e.what() << std::endl;
+                throw; // Re-throw to see the full stack trace
+            }
+        } else {
         // Handle compound assignment operators
         Value currentValue = interpreter->getEnvironment()->get(statement->name);
         Value newValue;
@@ -241,5 +251,9 @@ void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, Exe
         }
         
         interpreter->getEnvironment()->assign(statement->name, newValue);
+    }
+    } catch (const std::exception& e) {
+        std::cerr << "Error in visitAssignStmt: " << e.what() << std::endl;
+        throw; // Re-throw to see the full stack trace
     }
 }
