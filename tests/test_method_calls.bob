@@ -1,0 +1,28 @@
+print("\n--- Test: Method Calls on Objects ---");
+
+// Setup a dictionary object
+var obj = {};
+
+// 1) Zero-arg method assigned to a property and invoked via dot call
+obj.hello = func(){ print("hello-method"); };
+obj.hello();
+
+// 2) Method that uses the receiver as first implicit argument (self)
+obj.set = func(self, key, value){ self[key] = value; };
+obj.get = func(self, key){ return self[key]; };
+
+obj.set(obj, "name", "Bob");
+assert(obj.get(obj, "name") == "Bob", "obj.get should return value set via method using receiver");
+
+// 3) Ensure taking a reference to a method and calling it as a plain function still works
+var ref = obj.hello;
+ref();
+
+// 4) Ensure passing extra args still respects order after receiver injection
+obj.concat3 = func(self, a, b){ return toString(a) + ":" + toString(b) + ":" + toString(self["name"]); };
+var s = obj.concat3(obj, 1, 2);
+assert(s == "1:2:Bob", "receiver should be last component in return value");
+
+print("Method calls on objects: PASS");
+
+

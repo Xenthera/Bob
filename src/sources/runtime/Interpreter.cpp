@@ -4,6 +4,7 @@
 #include "BobStdLib.h"
 #include "ErrorReporter.h"
 #include "Environment.h"
+#include "Expression.h"
 #include <iostream>
 
 Interpreter::Interpreter(bool isInteractive) 
@@ -107,13 +108,13 @@ void Interpreter::forceCleanup() {
 }
 
 Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expression) {
-    Value callee = evaluate(expression->callee);  // Direct call instead of through evaluator
+    Value callee = evaluate(expression->callee);
     
     if (callee.isBuiltinFunction()) {
         // Handle builtin functions with direct evaluation
         std::vector<Value> arguments;
         for (const auto& argument : expression->arguments) {
-            arguments.push_back(evaluate(argument));  // Direct call
+            arguments.push_back(evaluate(argument));
         }
         BuiltinFunction* builtinFunction = callee.asBuiltinFunction();
         return builtinFunction->func(arguments, expression->paren.line, expression->paren.column);
@@ -132,7 +133,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     
     std::vector<Value> arguments;
     for (const auto& argument : expression->arguments) {
-        arguments.push_back(evaluate(argument));  // Direct call instead of through evaluator
+        arguments.push_back(evaluate(argument));
     }
     
     // Check arity (like original)
