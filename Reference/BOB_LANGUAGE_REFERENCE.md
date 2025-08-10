@@ -266,6 +266,38 @@ var lines = readLines("config.txt");
 var exists = fileExists("test.txt");
 ```
 
+## Standard Library Reference
+
+The following built-ins are available by default. Unless specified, functions throw on invalid argument counts/types.
+
+- print(x): prints x with newline
+- printRaw(x): prints x without newline
+- input(prompt?): reads a line from stdin (optional prompt)
+- toString(x): returns string representation
+- toNumber(s): parses string to number or returns none
+- toInt(n): truncates number to integer
+- toBoolean(x): converts to boolean using truthiness rules
+- type(x): returns the type name as string
+- len(x): length of array/string/dict
+- push(arr, ...values): appends values to array in place, returns arr
+- pop(arr): removes and returns last element
+- keys(dict): returns array of keys
+- values(dict): returns array of values
+- has(dict, key): returns true if key exists
+- readFile(path): returns entire file contents as string
+- writeFile(path, content): writes content to file
+- readLines(path): returns array of lines
+- fileExists(path): boolean
+- time(): microseconds since Unix epoch
+- sleep(seconds): pauses execution
+- random(): float in [0,1)
+- eval(code): executes code string in current environment
+- exit(code?): terminates the program
+
+Notes:
+- Arrays support properties: length, first, last, empty
+- Dicts support properties: length, empty, keys, values
+
 ## Advanced Features
 
 ### String Interpolation

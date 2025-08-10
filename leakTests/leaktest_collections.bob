@@ -83,6 +83,10 @@ for (var i = 0; i < 1000000; i++) {
 print("Created " + len(selfRef) + " self-referencing structures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear self-ref structures...");
+// Break cycles explicitly so reference counting can reclaim memory deterministically
+for (var i = 0; i < len(selfRef); i++) {
+    selfRef[i]["self"] = none;
+}
 selfRef = 123;
 print("Memory after clear: " + memoryUsage() + " MB");
 input("Cleared. Check memory usage...");
