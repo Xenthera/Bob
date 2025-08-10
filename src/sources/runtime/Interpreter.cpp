@@ -2,6 +2,8 @@
 #include "Evaluator.h"
 #include "Executor.h"
 #include "BobStdLib.h"
+#include "ErrorReporter.h"
+#include "Environment.h"
 #include <iostream>
 
 Interpreter::Interpreter(bool isInteractive) 
@@ -61,9 +63,7 @@ void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {
     builtinFunctions.push_back(func);
 }
 
-void Interpreter::addThunk(std::shared_ptr<Thunk> thunk) {
-    thunks.push_back(thunk);
-}
+ 
 
 void Interpreter::addFunction(std::shared_ptr<Function> function) {
     functions.push_back(function);
@@ -74,7 +74,6 @@ void Interpreter::setErrorReporter(ErrorReporter* reporter) {
     if (environment) {
         environment->setErrorReporter(reporter);
     }
-    addStdLibFunctions();
 }
 
 bool Interpreter::isInteractiveMode() const {
@@ -121,7 +120,6 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     }
     
     if (!callee.isFunction()) {
-        // Provide better error message with type information (like original)
         std::string errorMsg = "Can only call functions, got " + callee.getType();
         if (errorReporter) {
             errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
@@ -150,9 +148,8 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     
     // Check if this is a tail call for inline TCO
     if (expression->isTailCall) {
-        // Create a thunk for tail call optimization - original inline version
+        
         auto thunk = std::make_shared<Thunk>([this, function, arguments]() -> Value {
-            // Use RAII to manage environment (exactly like original)
             ScopedEnv _env(environment);
             environment = std::make_shared<Environment>(function->closure);
             environment->setErrorReporter(errorReporter);
@@ -164,12 +161,10 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
             ExecutionContext context;
             context.isFunctionBody = true;
             
-            // Use RAII to manage thunk execution flag
             ScopedThunkFlag _inThunk(inThunkExecution);
             
-                            // Execute function body (inline like original - direct accept for performance)
                 for (const auto& stmt : function->body) {
-                    stmt->accept(executor.get(), &context);  // Direct call like original
+                    stmt->accept(executor.get(), &context);
                     if (context.hasReturn) {
                         return context.returnValue;
                     }
@@ -178,10 +173,8 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
             return context.returnValue;
         });
         
-        // Store the thunk to keep it alive and return as Value (exactly like original)
         thunks.push_back(thunk);
         
-        // Automatic cleanup check
         thunkCreationCount++;
         if (thunkCreationCount >= CLEANUP_THRESHOLD) {
             cleanupUnusedThunks();
@@ -190,7 +183,6 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         
         return Value(thunk);
     } else {
-        // Normal function call - create new environment (exactly like original)
         ScopedEnv _env(environment);
         environment = std::make_shared<Environment>(function->closure);
         environment->setErrorReporter(errorReporter);
@@ -202,9 +194,8 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         ExecutionContext context;
         context.isFunctionBody = true;
         
-        // Execute function body (exactly like original - direct accept for performance)
         for (const auto& stmt : function->body) {
-            stmt->accept(executor.get(), &context);  // Direct call like original
+            stmt->accept(executor.get(), &context);
             if (context.hasReturn) {
                 return context.returnValue;
             }
@@ -213,20 +204,4 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         return context.returnValue;
     }
 }
-
-// Function creation count management
-void Interpreter::incrementFunctionCreationCount() {
-    functionCreationCount++;
-}
-
-int Interpreter::getFunctionCreationCount() const {
-    return functionCreationCount;
-}
-
-void Interpreter::resetFunctionCreationCount() {
-    functionCreationCount = 0;
-}
-
-int Interpreter::getCleanupThreshold() const {
-    return 1000000; // Same as CLEANUP_THRESHOLD used for thunks
-}
+ 

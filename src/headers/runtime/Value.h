@@ -424,5 +424,3 @@ struct Value {
 extern const Value NONE_VALUE;
 extern const Value TRUE_VALUE;
 extern const Value FALSE_VALUE;
-extern const Value ZERO_VALUE;
-extern const Value ONE_VALUE; 

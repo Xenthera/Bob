@@ -1,6 +1,8 @@
 #include "Executor.h"
 #include "Evaluator.h"
 #include "Interpreter.h"
+#include "Environment.h"
+#include "AssignmentUtils.h"
 #include <iostream>
 
 Executor::Executor(Interpreter* interpreter, Evaluator* evaluator) 
@@ -194,66 +196,24 @@ void Executor::visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement,
 }
 
 void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context) {
-    try {
-        Value value = statement->value->accept(evaluator);
-        
-        if (statement->op.type == EQUAL) {
-            try {
-                // Assign first to release references held by the old value
-                interpreter->getEnvironment()->assign(statement->name, value);
-                
-                // Clean up on any reassignment, regardless of old/new type
-                interpreter->forceCleanup();
-            } catch (const std::exception& e) {
-                std::cerr << "Error during assignment: " << e.what() << std::endl;
-                throw; // Re-throw to see the full stack trace
-            }
-        } else {
-        // Handle compound assignment operators
-        Value currentValue = interpreter->getEnvironment()->get(statement->name);
-        Value newValue;
-        
-        switch (statement->op.type) {
-            case PLUS_EQUAL:
-                newValue = currentValue + value;
-                break;
-            case MINUS_EQUAL:
-                newValue = currentValue - value;
-                break;
-            case STAR_EQUAL:
-                newValue = currentValue * value;
-                break;
-            case SLASH_EQUAL:
-                newValue = currentValue / value;
-                break;
-            case PERCENT_EQUAL:
-                newValue = currentValue % value;
-                break;
-            case BIN_AND_EQUAL:
-                newValue = currentValue & value;
-                break;
-            case BIN_OR_EQUAL:
-                newValue = currentValue | value;
-                break;
-            case BIN_XOR_EQUAL:
-                newValue = currentValue ^ value;
-                break;
-            case BIN_SLEFT_EQUAL:
-                newValue = currentValue << value;
-                break;
-            case BIN_SRIGHT_EQUAL:
-                newValue = currentValue >> value;
-                break;
-            default:
-                interpreter->reportError(statement->op.line, statement->op.column, "Runtime Error",
-                    "Unknown assignment operator: " + statement->op.lexeme, "");
-                throw std::runtime_error("Unknown assignment operator: " + statement->op.lexeme);
-        }
-        
-        interpreter->getEnvironment()->assign(statement->name, newValue);
+    Value value = statement->value->accept(evaluator);
+
+    if (statement->op.type == EQUAL) {
+        // Assign first to release references held by the old value
+        interpreter->getEnvironment()->assign(statement->name, value);
+        // Clean up on any reassignment
+        interpreter->forceCleanup();
+        return;
     }
-    } catch (const std::exception& e) {
-        std::cerr << "Error in visitAssignStmt: " << e.what() << std::endl;
-        throw; // Re-throw to see the full stack trace
+
+    // Compound assignment operators
+    Value currentValue = interpreter->getEnvironment()->get(statement->name);
+    try {
+        Value newValue = computeCompoundAssignment(currentValue, statement->op.type, value);
+        interpreter->getEnvironment()->assign(statement->name, newValue);
+    } catch (const std::runtime_error&) {
+        interpreter->reportError(statement->op.line, statement->op.column, "Runtime Error",
+                                 "Unknown assignment operator: " + statement->op.lexeme, "");
+        throw;
     }
 }

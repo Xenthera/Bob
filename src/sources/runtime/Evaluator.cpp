@@ -1,5 +1,7 @@
 #include "Evaluator.h"
 #include "Interpreter.h"
+#include "Environment.h"
+#include "AssignmentUtils.h"
 #include "helperFunctions/HelperFunctions.h"
 
 Evaluator::Evaluator(Interpreter* interpreter) : interpreter(interpreter) {}
@@ -212,76 +214,26 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
 
 Value Evaluator::visitAssignExpr(const std::shared_ptr<AssignExpr>& expression) {
     Value value = interpreter->evaluate(expression->value);
-    
-            if (expression->op.type == EQUAL) {
-        try {
-            // Check if the variable existed and whether it held a collection
-            bool existed = false;
-            bool wasCollection = false;
-            try {
-                Value oldValue = interpreter->getEnvironment()->get(expression->name);
-                existed = true;
-                wasCollection = oldValue.isArray() || oldValue.isDict();
-            } catch (...) {
-                existed = false;
-            }
 
-            // Assign first to release references held by the old values
-            interpreter->getEnvironment()->assign(expression->name, value);
+    if (expression->op.type == EQUAL) {
+        // Assign first to release references held by the old values
+        interpreter->getEnvironment()->assign(expression->name, value);
+        // Perform cleanup on any reassignment
+        interpreter->forceCleanup();
+        return value;
+    }
 
-            // Now that the old values are released, perform cleanup on any reassignment
-            interpreter->forceCleanup();
-        } catch (const std::exception& e) {
-            std::cerr << "Error during assignment: " << e.what() << std::endl;
-            throw; // Re-throw to see the full stack trace
-        }
-    } else {
-        // Handle compound assignment operators
-        Value currentValue = interpreter->getEnvironment()->get(expression->name);
-        Value newValue;
-        
-        switch (expression->op.type) {
-            case PLUS_EQUAL:
-                newValue = currentValue + value;
-                break;
-            case MINUS_EQUAL:
-                newValue = currentValue - value;
-                break;
-            case STAR_EQUAL:
-                newValue = currentValue * value;
-                break;
-            case SLASH_EQUAL:
-                newValue = currentValue / value;
-                break;
-            case PERCENT_EQUAL:
-                newValue = currentValue % value;
-                break;
-            case BIN_AND_EQUAL:
-                newValue = currentValue & value;
-                break;
-            case BIN_OR_EQUAL:
-                newValue = currentValue | value;
-                break;
-            case BIN_XOR_EQUAL:
-                newValue = currentValue ^ value;
-                break;
-            case BIN_SLEFT_EQUAL:
-                newValue = currentValue << value;
-                break;
-            case BIN_SRIGHT_EQUAL:
-                newValue = currentValue >> value;
-                break;
-            default:
-                interpreter->reportError(expression->op.line, expression->op.column, "Runtime Error",
-                    "Unknown assignment operator: " + expression->op.lexeme, "");
-                throw std::runtime_error("Unknown assignment operator: " + expression->op.lexeme);
-        }
-        
+    // Compound assignment operators
+    Value currentValue = interpreter->getEnvironment()->get(expression->name);
+    try {
+        Value newValue = computeCompoundAssignment(currentValue, expression->op.type, value);
         interpreter->getEnvironment()->assign(expression->name, newValue);
         return newValue;
+    } catch (const std::runtime_error&) {
+        interpreter->reportError(expression->op.line, expression->op.column, "Runtime Error",
+                                 "Unknown assignment operator: " + expression->op.lexeme, "");
+        throw;
     }
-    
-    return value;
 }
 
 Value Evaluator::visitTernaryExpr(const std::shared_ptr<TernaryExpr>& expression) {
@@ -453,10 +405,8 @@ Value Evaluator::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expressi
         paramNames.push_back(param.lexeme);
     }
     
-    // Capture a snapshot of the current environment so loop vars like 'i' are frozen per iteration
     auto closureEnv = std::make_shared<Environment>(*interpreter->getEnvironment());
     closureEnv->pruneForClosureCapture();
-    
     auto function = std::make_shared<Function>("", paramNames, expression->body, closureEnv);
     return Value(function);
 }

@@ -22,8 +22,8 @@ void Bob::runFile(const std::string& path)
     // Load source code into error reporter for context
     errorReporter.loadSource(source, path);
     
-    // Connect error reporter to interpreter
     interpreter->setErrorReporter(&errorReporter);
+    interpreter->addStdLibFunctions();
     
     this->run(source);
 }
@@ -52,6 +52,7 @@ void Bob::runPrompt()
         
         // Connect error reporter to interpreter
         interpreter->setErrorReporter(&errorReporter);
+        interpreter->addStdLibFunctions();
         
         this->run(line);
     }

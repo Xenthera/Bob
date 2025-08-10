@@ -41,19 +41,11 @@ public:
     // Enhanced get with error reporting
     Value get(const Token& name);
     
-    // Get by string name with error reporting
-    Value get(const std::string& name);
-    
     // Prune heavy containers in a snapshot to avoid capture cycles
     void pruneForClosureCapture();
     
     std::shared_ptr<Environment> getParent() const { return parent; }
-    inline void clear() { variables.clear(); }
     
-    // Set parent environment for TCO environment reuse
-    inline void setParent(std::shared_ptr<Environment> newParent) {
-        parent = newParent;
-    }
 
 private:
     std::unordered_map<std::string, Value> variables;

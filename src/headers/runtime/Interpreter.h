@@ -1,21 +1,25 @@
 #pragma once
-#include "Expression.h"
-#include "Statement.h"
-#include "helperFunctions/ShortHands.h"
-#include "TypeWrapper.h"
-#include "Environment.h"
-#include "Value.h"
-#include "BobStdLib.h"
-#include "ErrorReporter.h"
-#include "ExecutionContext.h"
-#include "RuntimeDiagnostics.h"
-
 #include <vector>
 #include <memory>
 #include <unordered_map>
 #include <stack>
 #include <optional>
 #include <functional>
+
+#include "Value.h"
+#include "RuntimeDiagnostics.h"
+
+struct Expr;
+struct Stmt;
+struct Environment;
+struct BuiltinFunction;
+struct Function;
+struct Thunk;
+class ErrorReporter;
+struct ExecutionContext;
+struct CallExpr;
+
+ 
 
 // Forward declaration
 class Evaluator;
@@ -66,9 +70,8 @@ private:
     bool inThunkExecution = false;
     
     // Automatic cleanup tracking
-    int functionCreationCount = 0;
     int thunkCreationCount = 0;
-    static const int CLEANUP_THRESHOLD = 1000000;
+    static const int CLEANUP_THRESHOLD = 10000;
     
     RuntimeDiagnostics diagnostics;  // Utility functions for runtime operations
     std::unique_ptr<Evaluator> evaluator;
@@ -93,25 +96,17 @@ public:
     bool isInteractiveMode() const;
     std::shared_ptr<Environment> getEnvironment();
     void setEnvironment(std::shared_ptr<Environment> env);
-    void addThunk(std::shared_ptr<Thunk> thunk);
+    
     void addFunction(std::shared_ptr<Function> function);
     void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme = "");
     void addBuiltinFunction(std::shared_ptr<BuiltinFunction> func);
     void cleanupUnusedFunctions();
     void cleanupUnusedThunks();
     void forceCleanup();
+    void addStdLibFunctions();
     
-    // Function creation count management
-    void incrementFunctionCreationCount();
-    int getFunctionCreationCount() const;
-    void resetFunctionCreationCount();
-    int getCleanupThreshold() const;
     
-    // Public access for Evaluator
-    bool& getInThunkExecutionRef() { return inThunkExecution; }
 
 private:
-    Value evaluateWithoutTrampoline(const std::shared_ptr<Expr>& expr);
-    void addStdLibFunctions();
     Value runTrampoline(Value initialResult);
 };

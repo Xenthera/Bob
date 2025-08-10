@@ -42,7 +42,7 @@ if (len(a[3692]) > 0) {
 if (a[3693]["func"]) {
     a[3693]["func"](); // Nested dict function
 }
-print(a);
+//print(a);
 //writeFile("array_contents.txt", toString(a));
 print("Array contents written to array_contents.txt");
 print("Memory before cleanup: " + memoryUsage() + " MB");
