@@ -8,13 +8,13 @@ print("Initial memory: " + memoryUsage() + " MB");
 print("Test 1: Large nested arrays");
 var nestedArrays = [];
 for (var i = 0; i < 50000; i++) {
-    push(nestedArrays, [
+    nestedArrays.push([
         [i, i+1, i+2],
         [i*2, i*3, i*4],
         [[i, [i+1, [i+2]]], i*5]
     ]);
 }
-print("Created " + len(nestedArrays) + " nested array structures");
+print("Created " + nestedArrays.len() + " nested array structures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear nested arrays...");
 nestedArrays = none;
@@ -25,7 +25,7 @@ input("Cleared. Check memory usage...");
 print("Test 2: Large nested dictionaries");
 var nestedDicts = [];
 for (var i = 0; i < 50000; i++) {
-    push(nestedDicts, {
+    nestedDicts.push({
         "id": i,
         "data": {
             "value": i * 2,
@@ -42,7 +42,7 @@ for (var i = 0; i < 50000; i++) {
         }
     });
 }
-print("Created " + len(nestedDicts) + " nested dictionary structures");
+print("Created " + nestedDicts.len() + " nested dictionary structures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear nested dicts...");
 nestedDicts = [];
@@ -53,7 +53,7 @@ input("Cleared. Check memory usage...");
 print("Test 3: Mixed array/dict structures");
 var mixedStructures = [];
 for (var i = 0; i < 30000; i++) {
-    push(mixedStructures, [
+    mixedStructures.push([
         {"arrays": [[i, i+1], [i+2, i+3]]},
         [{"dicts": {"a": i, "b": i+1}}, {"more": [i, i+1]}],
         {
@@ -64,7 +64,7 @@ for (var i = 0; i < 30000; i++) {
         }
     ]);
 }
-print("Created " + len(mixedStructures) + " mixed structures");
+print("Created " + mixedStructures.len() + " mixed structures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear mixed structures...");
 mixedStructures = "cleared";
@@ -78,13 +78,13 @@ for (var i = 0; i < 1000000; i++) {
     var item = {"id": i, "value": i * 2};
     // Create a structure that references itself
     item["self"] = [item, {"parent": item}];
-    push(selfRef, item);
+    selfRef.push(item);
 }
-print("Created " + len(selfRef) + " self-referencing structures");
+print("Created " + selfRef.len() + " self-referencing structures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear self-ref structures...");
 // Break cycles explicitly so reference counting can reclaim memory deterministically
-for (var i = 0; i < len(selfRef); i++) {
+for (var i = 0; i < selfRef.len(); i++) {
     selfRef[i]["self"] = none;
 }
 selfRef = 123;
@@ -99,12 +99,12 @@ for (var i = 0; i < 100000; i++) {
     for (var j = 0; j < 100; j++) {
         longString = longString + "data" + i + "_" + j + " ";
     }
-    push(stringCollections, {
+    stringCollections.push({
         "content": longString,
         "words": [longString, longString + "_copy", longString + "_backup"]
     });
 }
-print("Created " + len(stringCollections) + " string collections");
+print("Created " + stringCollections.len() + " string collections");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear string collections...");
 stringCollections = none;

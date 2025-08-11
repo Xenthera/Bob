@@ -1,0 +1,94 @@
+print("\n--- Test: Classes Comprehensive ---");
+
+// Basic class with field and method using this
+class Person {
+  var name;
+  func init(n) { this.name = n; }
+  func greet() { return "Hello " + this.name; }
+}
+
+var p = Person("Bob");
+assert(p.name == "Bob", "init sets name");
+assert(p.greet() == "Hello Bob", "method with this works");
+
+// Field initializers (constant)
+class Box {
+  var width = 2;
+  var height = 3;
+  func area() { return this.width * this.height; }
+}
+var b = Box();
+assert(b.width == 2, "field initializer width");
+assert(b.height == 3, "field initializer height");
+assert(b.area() == 6, "method sees initialized fields");
+
+// Inline method precedence over extensions
+class Animal {
+  var name;
+  func init(n) { this.name = n; }
+}
+extension Animal { func speak() { return this.name + "?"; } }
+var a = Animal("crit");
+assert(a.speak() == "crit?", "Animal.speak via extension");
+
+class Dog extends Animal {
+  func speak() { return this.name + "!"; }
+}
+var d = Dog("fido");
+assert(d.speak() == "fido!", "Dog inline speak overrides Animal extension");
+
+// Inheritance chain for extensions: define on parent only
+class Cat extends Animal {}
+var c = Cat("mew");
+assert(c.speak() == "mew?", "Cat inherits Animal.speak extension");
+
+// Add extension later and ensure it applies retroactively
+class Bird { var name; func init(n) { this.name = n; } }
+var bird = Bird("tweet");
+extension Bird { func speak() { return this.name + "~"; } }
+assert(bird.speak() == "tweet~", "Late extension attaches to existing instances");
+
+// any fallback extension when nothing else matches
+extension any { func tag() { return "<" + toString(this) + ">"; } }
+var plain = { "x": 1 };
+assert(plain.tag() == "<{" + "\"x\": 1}" + ">", "any fallback extension works on dict");
+
+// Ensure property value shadows extension lookup
+class Shadow { }
+extension Shadow { func value() { return 42; } }
+var sh = Shadow();
+sh.value = 7;
+assert(sh.value == 7, "user property shadows extension method");
+
+// Ensure instance method shadows extension
+class Shadow2 { func m() { return 1; } }
+extension Shadow2 { func m() { return 2; } }
+var sh2 = Shadow2();
+assert(sh2.m() == 1, "instance method shadows extension method");
+
+// Method call injection of this; method reference does not auto-bind
+class Ref {
+  var v = 5;
+  func get() { return this.v; }
+}
+var r = Ref();
+var m = r.get;
+// Calling m() should fail due to missing this; instead call through property again
+assert(r.get() == 5, "method call via property injects this");
+
+// Inheritance of inline methods
+class Base { func id() { return 1; } }
+class Child extends Base { }
+var ch = Child();
+assert(ch.id() == 1, "inherit inline method");
+
+// Parent chain precedence: Child has no say(), extension on Base should work
+extension Base { func say() { return "base"; } }
+assert(ch.say() == "base", "inherit extension from parent");
+
+// Verify __class tag exists for instances (check with method that reads this)
+assert(Ref().get() == 5, "instance constructed correctly");
+
+print("Classes comprehensive: PASS");
+
+

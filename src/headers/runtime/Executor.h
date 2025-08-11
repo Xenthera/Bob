@@ -38,6 +38,8 @@ public:
     void visitBreakStmt(const std::shared_ptr<BreakStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitClassStmt(const std::shared_ptr<ClassStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statement, ExecutionContext* context = nullptr) override;
 
 private:
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context);

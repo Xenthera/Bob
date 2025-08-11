@@ -1,0 +1,40 @@
+print("\n--- Test: Class Inheritance (extensions) ---");
+
+class Animal { var name; func init(n) { this.name = n; } }
+extension Animal { func speak() { return this.name + "?"; } }
+
+class Dog extends Animal { }
+extension Dog { func bark() { return this.name + " woof"; } }
+
+var a = Animal("crit");
+var d = Dog("fido");
+
+assert(a.speak() == "crit?", "Animal.speak works");
+assert(d.speak() == "fido?", "Dog inherits Animal.speak via extension chain");
+assert(d.bark() == "fido woof", "Dog.bark works");
+
+print("Inheritance via extensions: PASS");
+
+
+print("\n--- Test: Class Inheritance (inline methods) ---");
+
+class Animal2 {
+  var name;
+  func init(n) { this.name = n; }
+  func speak() { return this.name + "!"; }
+}
+
+class Dog2 extends Animal2 {
+  func bark() { return this.name + " woof"; }
+}
+
+var a2 = Animal2("crit");
+var d2 = Dog2("fido");
+
+assert(a2.speak() == "crit!", "Animal2.speak works (inline)");
+assert(d2.speak() == "fido!", "Dog2 inherits Animal2.speak (inline)");
+assert(d2.bark() == "fido woof", "Dog2.bark works (inline)");
+
+print("Inheritance via inline methods: PASS");
+
+

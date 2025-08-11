@@ -1,0 +1,15 @@
+print("\n--- Test: Class methods with this (assignment allowed) ---");
+
+class Person {
+  var name;
+  func setName(n) { this.name = n; }
+  func getName() { return this.name; }
+}
+
+var p = Person();
+p.setName("Bob");
+assert(p.getName() == "Bob", "this-based methods should read/write instance fields");
+
+print("Class with this: PASS");
+
+

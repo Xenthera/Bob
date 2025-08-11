@@ -1,0 +1,103 @@
+print("\n--- Test: Polymorphism and Complex Inheritance ---");
+
+// 1) Inline overrides across deep chain
+class P0 { func id() { return "p0"; } }
+class P1 extends P0 { func id() { return "p1"; } }
+class P2 extends P1 {}
+class P3 extends P2 { func id() { return "p3"; } }
+
+var pa = [P0(), P1(), P2(), P3()];
+assert(pa[0].id() == "p0", "inline base");
+assert(pa[1].id() == "p1", "inline override");
+assert(pa[2].id() == "p1", "inherit parent's override");
+assert(pa[3].id() == "p3", "leaf override");
+
+// 2) Extension overrides with super chain length 3
+class E0 {}
+class E1 extends E0 {}
+class E2 extends E1 {}
+class E3 extends E2 {}
+extension E0 { func val() { return 1; } }
+extension E1 { func val() { return super.val() + 1; } }
+extension E2 { func val() { return super.val() + 1; } }
+extension E3 { func val() { return super.val() + 1; } }
+var ea = [E0(), E1(), E2(), E3()];
+assert(ea[0].val() == 1, "ext base");
+assert(ea[1].val() == 2, "ext override 1");
+assert(ea[2].val() == 3, "ext override 2");
+assert(ea[3].val() == 4, "ext override 3");
+
+// 3) Mixed: base inline, child extension using super to inline
+class M0 { func name() { return "M0"; } }
+class M1 extends M0 {}
+extension M1 { func name() { return super.name() + "*"; } }
+assert(M0().name() == "M0", "mixed base inline");
+assert(M1().name() == "M0*", "child ext super->inline parent");
+
+// 4) Mixed: base extension, child inline using super to extension
+class N0 {}
+class N1 extends N0 { func k() { return super.k() + 9; } }
+extension N0 { func k() { return 3; } }
+assert(N1().k() == 12, "child inline super->parent ext");
+
+// 5) Late parent extension update reflected in children (polymorphic)
+class L0 {}
+class L1 extends L0 {}
+var l0 = L0(); var l1 = L1();
+extension L0 { func x() { return 10; } }
+assert(l0.x() == 10 && l1.x() == 10, "late ext applies to existing instances");
+extension L0 { func x() { return 11; } }
+assert(l0.x() == 11 && l1.x() == 11, "late re-ext applies to existing instances");
+
+// 6) Polymorphic processing over arrays
+class A0 { func f() { return 1; } }
+class A1 extends A0 { func f() { return 2; } }
+class A2 extends A1 {}
+var arr = [A0(), A1(), A2(), A0(), A1()];
+var sum = 0;
+for (var i = 0; i < arr.len(); i = i + 1) { sum = sum + arr[i].f(); }
+assert(sum == 1 + 2 + 2 + 1 + 2, "poly sum");
+
+// 7) Super from extension to extension up chain
+class SX0 {}
+class SX1 extends SX0 {}
+class SX2 extends SX1 {}
+extension SX0 { func s() { return "a"; } }
+extension SX1 { func s() { return super.s() + "b"; } }
+extension SX2 { func s() { return super.s() + "c"; } }
+assert(SX2().s() == "abc", "super ext->ext chain");
+
+// 8) Ensure class extension precedence over any in polymorphic arrays
+class ANYC {}
+extension any { func tag() { return "<" + toString(this) + ">"; } }
+extension ANYC { func tag() { return "class"; } }
+var anyarr = [ANYC(), {"k":1}];
+assert(anyarr[0].tag() == "class", "class over any");
+assert(anyarr[1].tag() == "<" + toString(anyarr[1]) + ">", "any on dict");
+
+// 9) Stress: long chain resolution correctness
+class Z0 {}
+class Z1 extends Z0 {}
+class Z2 extends Z1 {}
+class Z3 extends Z2 {}
+class Z4 extends Z3 {}
+class Z5 extends Z4 {}
+class Z6 extends Z5 {}
+class Z7 extends Z6 {}
+class Z8 extends Z7 {}
+class Z9 extends Z8 {}
+extension Z0 { func z() { return 0; } }
+extension Z1 { func z() { return super.z() + 1; } }
+extension Z2 { func z() { return super.z() + 1; } }
+extension Z3 { func z() { return super.z() + 1; } }
+extension Z4 { func z() { return super.z() + 1; } }
+extension Z5 { func z() { return super.z() + 1; } }
+extension Z6 { func z() { return super.z() + 1; } }
+extension Z7 { func z() { return super.z() + 1; } }
+extension Z8 { func z() { return super.z() + 1; } }
+extension Z9 { func z() { return super.z() + 1; } }
+assert(Z9().z() == 9, "deep chain 10 levels");
+
+print("Polymorphism & complex inheritance: PASS");
+
+

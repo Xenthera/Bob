@@ -20,12 +20,12 @@ print("Pi: " + toString(pi));
 var numbers = [1, 2, 3, 4, 5];
 var fruits = ["apple", "banana", "cherry"];
 
-print("Array length: " + len(numbers));
+print("Array length: " + numbers.len());
 print("First element: " + numbers[0]);
 
 numbers[2] = 99;  // Array assignment
-push(numbers, 6); // Add element
-var lastElement = pop(numbers); // Remove and get last element
+numbers.push(6); // Add element
+var lastElement = numbers.pop(); // Remove and get last element
 
 // Function definition
 func factorial(n) {

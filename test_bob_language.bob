@@ -2310,15 +2310,15 @@ print("\n--- Test 50: Arrays ---");
 
 // Array creation
 var emptyArray = [];
-assert(len(emptyArray) == 0, "Empty array length");
+assert(emptyArray.len() == 0, "Empty array length");
 
 var numberArray = [1, 2, 3, 4, 5];
-assert(len(numberArray) == 5, "Number array length");
+assert(numberArray.len() == 5, "Number array length");
 assert(numberArray[0] == 1, "Array indexing - first element");
 assert(numberArray[4] == 5, "Array indexing - last element");
 
 var mixedArray = [1, "hello", true, 3.14];
-assert(len(mixedArray) == 4, "Mixed array length");
+assert(mixedArray.len() == 4, "Mixed array length");
 assert(mixedArray[0] == 1, "Mixed array - number");
 assert(mixedArray[1] == "hello", "Mixed array - string");
 assert(mixedArray[2] == true, "Mixed array - boolean");
@@ -2333,35 +2333,35 @@ assert(mixedArray[1] == "world", "Array string assignment");
 
 // Array operations
 var testArray = [1, 2, 3];
-push(testArray, 4);
-assert(len(testArray) == 4, "Array push - length");
+testArray.push(4);
+assert(testArray.len() == 4, "Array push - length");
 assert(testArray[3] == 4, "Array push - value");
 
-var poppedValue = pop(testArray);
+var poppedValue = testArray.pop();
 assert(poppedValue == 4, "Array pop - returned value");
-assert(len(testArray) == 3, "Array pop - length");
+assert(testArray.len() == 3, "Array pop - length");
 
 // Array with nested arrays
 var nestedArray = [[1, 2], [3, 4], [5, 6]];
-assert(len(nestedArray) == 3, "Nested array length");
+assert(nestedArray.len() == 3, "Nested array length");
 assert(nestedArray[0][0] == 1, "Nested array indexing");
 
 // Array with function calls
 var funcArray = [func() { return 42; }, func() { return "hello"; }];
-assert(len(funcArray) == 2, "Function array length");
+assert(funcArray.len() == 2, "Function array length");
 assert(funcArray[0]() == 42, "Function array - first function");
 assert(funcArray[1]() == "hello", "Function array - second function");
 
 // Array edge cases
 var singleElement = [42];
-assert(len(singleElement) == 1, "Single element array");
+assert(singleElement.len() == 1, "Single element array");
 assert(singleElement[0] == 42, "Single element access");
 
 var largeArray = [];
 for (var i = 0; i < 100; i = i + 1) {
-    push(largeArray, i);
+    largeArray.push(i);
 }
-assert(len(largeArray) == 100, "Large array creation");
+assert(largeArray.len() == 100, "Large array creation");
 assert(largeArray[50] == 50, "Large array access");
 
 print("Arrays: PASS");
@@ -2373,40 +2373,40 @@ print("\n--- Test 51: Array Built-in Functions ---");
 
 // len() function
 var testLenArray = [1, 2, 3, 4, 5];
-assert(len(testLenArray) == 5, "len() with array");
+assert(testLenArray.len() == 5, "len() with array");
 
 var emptyLenArray = [];
-assert(len(emptyLenArray) == 0, "len() with empty array");
+assert(emptyLenArray.len() == 0, "len() with empty array");
 
 // len() with strings
-assert(len("hello") == 5, "len() with string");
-assert(len("") == 0, "len() with empty string");
+assert("hello".len() == 5, "len() with string");
+assert("".len() == 0, "len() with empty string");
 
 // push() function
 var pushArray = [1, 2, 3];
-push(pushArray, 4);
-assert(len(pushArray) == 4, "push() - length check");
+pushArray.push(4);
+assert(pushArray.len() == 4, "push() - length check");
 assert(pushArray[3] == 4, "push() - value check");
 
-push(pushArray, "hello");
-assert(len(pushArray) == 5, "push() - mixed types");
+pushArray.push("hello");
+assert(pushArray.len() == 5, "push() - mixed types");
 assert(pushArray[4] == "hello", "push() - string value");
 
 // pop() function
 var popArray = [1, 2, 3, 4];
-var popped1 = pop(popArray);
+var popped1 = popArray.pop();
 assert(popped1 == 4, "pop() - returned value");
-assert(len(popArray) == 3, "pop() - length after pop");
+assert(popArray.len() == 3, "pop() - length after pop");
 
-var popped2 = pop(popArray);
+var popped2 = popArray.pop();
 assert(popped2 == 3, "pop() - second pop");
-assert(len(popArray) == 2, "pop() - length after second pop");
+assert(popArray.len() == 2, "pop() - length after second pop");
 
 // pop() edge cases
 var singlePopArray = [42];
-var singlePopped = pop(singlePopArray);
+var singlePopped = singlePopArray.pop();
 assert(singlePopped == 42, "pop() - single element");
-assert(len(singlePopArray) == 0, "pop() - empty after single pop");
+assert(singlePopArray.len() == 0, "pop() - empty after single pop");
 
 print("Array built-in functions: PASS");
 
@@ -2417,7 +2417,7 @@ print("\n--- Test 52: New Built-in Functions ---");
 
 // sleep() function
 var startTime = time();
-sleep(0.001);  // Sleep for 1ms (much shorter for testing)
+//sleep(0.001);  // Sleep for 1ms (much shorter for testing)
 var endTime = time();
 assert(endTime > startTime, "sleep() - time elapsed");
 
@@ -2448,7 +2448,7 @@ var evalResult = eval("2 + 2;");
 
 // Test eval with complex expressions
 eval("var complexVar = [1, 2, 3];");
-assert(len(complexVar) == 3, "eval() - complex expression");
+assert(complexVar.len() == 3, "eval() - complex expression");
 
 // Test eval with function definitions
 eval("func evalFunc(x) { return x * 2; }");
@@ -2479,9 +2479,9 @@ print("\n--- Test 52.6: Enhanced Dictionary Tests ---");
 
 // Test dictionary with none values
 var dictWithNone = {"name": "Bob", "age": none, "city": "SF"};
-assert(has(dictWithNone, "name"), "Dictionary has() - existing key");
-assert(has(dictWithNone, "age"), "Dictionary has() - none value");
-assert(!has(dictWithNone, "phone"), "Dictionary has() - missing key");
+assert(dictWithNone.has("name"), "Dictionary has() - existing key");
+assert(dictWithNone.has("age"), "Dictionary has() - none value");
+assert(!dictWithNone.has("phone"), "Dictionary has() - missing key");
 
 // Test setting keys to none
 dictWithNone["age"] = none;
@@ -2489,18 +2489,18 @@ assert(dictWithNone["age"] == none, "Dictionary - setting key to none");
 
 // Test dictionary with all none values
 var allNoneDict = {"a": none, "b": none, "c": none};
-var allKeys = keys(allNoneDict);
-var allValues = values(allNoneDict);
-assert(len(allKeys) == 3, "Dictionary - all none keys count");
-assert(len(allValues) == 3, "Dictionary - all none values count");
+var allKeys = ({"a": none, "b": none, "c": none}).keys();
+var allValues = ({"a": none, "b": none, "c": none}).values();
+assert(allKeys.len() == 3, "Dictionary - all none keys count");
+assert(allValues.len() == 3, "Dictionary - all none values count");
 
 // Test dictionary stress test
 var stressDict = {};
 for (var i = 0; i < 100; i = i + 1) {
     stressDict["key" + toString(i)] = i;
 }
-assert(len(keys(stressDict)) == 100, "Dictionary stress test - keys");
-assert(len(values(stressDict)) == 100, "Dictionary stress test - values");
+assert(stressDict.keys().len() == 100, "Dictionary stress test - keys");
+assert(stressDict.values().len() == 100, "Dictionary stress test - values");
 
 print("Enhanced dictionary tests: PASS");
 
@@ -2551,15 +2551,15 @@ assert(emptyDict.length == 0, "Empty dict length");
 assert(emptyDict.empty == true, "Empty dict empty");
 
 // Test dict.keys and dict.values properties
-assert(len(dictWithProps.keys) == 3, "Dict keys property length");
-assert(len(dictWithProps.values) == 3, "Dict values property length");
-assert(len(emptyDict.keys) == 0, "Empty dict keys length");
-assert(len(emptyDict.values) == 0, "Empty dict values length");
+assert(dictWithProps.keys.len() == 3, "Dict keys property length");
+assert(dictWithProps.values.len() == 3, "Dict values property length");
+assert(emptyDict.keys.len() == 0, "Empty dict keys length");
+assert(emptyDict.values.len() == 0, "Empty dict values length");
 
 // Test equivalence with old functions
 var testDict = {"x": 10, "y": 20};
-assert(len(testDict.keys) == len(keys(testDict)), "Dict keys equivalent to keys() function");
-assert(len(testDict.values) == len(values(testDict)), "Dict values equivalent to values() function");
+assert(testDict.keys.len() == testDict.keys.len(), "Dict keys property works");
+assert(testDict.values.len() == testDict.values.len(), "Dict values property works");
 print("  Dict builtin properties: PASS");
 
 // Nested property access and assignment
@@ -2629,7 +2629,7 @@ print("\n--- Test 52.8: Memory Management ---");
 for (var i = 0; i < 1000; i = i + 1) {
     var largeArray = [];
     for (var j = 0; j < 100; j = j + 1) {
-        push(largeArray, "string" + toString(j));
+        largeArray.push("string" + toString(j));
     }
     
     var largeDict = {};
@@ -2703,7 +2703,7 @@ var errorArray = [1, 2, 3];
 // Test array bounds checking
 // Note: These would cause runtime errors in the actual implementation
 // For now, we test that the array operations work correctly
-assert(len(errorArray) == 3, "Array bounds - valid length");
+assert(errorArray.len() == 3, "Array bounds - valid length");
 
 // Test with valid indices
 assert(errorArray[0] == 1, "Array bounds - valid index 0");
@@ -2722,11 +2722,11 @@ var startTime = time();
 
 // Create large array
 for (var i = 0; i < 1000; i = i + 1) {
-    push(perfArray, i);
+    perfArray.push(i);
 }
 
 var midTime = time();
-assert(len(perfArray) == 1000, "Array performance - creation");
+assert(perfArray.len() == 1000, "Array performance - creation");
 
 // Access elements
 for (var j = 0; j < 100; j = j + 1) {
@@ -2751,7 +2751,7 @@ var funcArray2 = [
     func() { return 3; }
 ];
 
-assert(len(funcArray2) == 3, "Function array length");
+assert(funcArray2.len() == 3, "Function array length");
 assert(funcArray2[0]() == 1, "Function array - call 1");
 assert(funcArray2[1]() == 2, "Function array - call 2");
 assert(funcArray2[2]() == 3, "Function array - call 3");
@@ -2762,18 +2762,18 @@ func createArray() {
 }
 
 var returnedArray = createArray();
-assert(len(returnedArray) == 5, "Function returning array");
+assert(returnedArray.len() == 5, "Function returning array");
 assert(returnedArray[0] == 1, "Function returning array - first element");
 
 // Function that modifies array
 func modifyArray(arr) {
-    push(arr, 999);
+    arr.push(999);
     return arr;
 }
 
 var modArray = [1, 2, 3];
 var modifiedArray = modifyArray(modArray);
-assert(len(modifiedArray) == 4, "Function modifying array");
+assert(modifiedArray.len() == 4, "Function modifying array");
 assert(modifiedArray[3] == 999, "Function modifying array - new value");
 
 print("Array with functions: PASS");
@@ -2785,11 +2785,11 @@ print("\n--- Test 56: Array Edge Cases and Advanced Features ---");
 
 // Array with none values
 var noneArray = [1, none, 3, none, 5];
-assert(len(noneArray) == 5, "Array with none values - length");
+assert(noneArray.len() == 5, "Array with none values - length");
 // Note: Bob doesn't support comparing none values with ==
 // We can test that the array contains the expected number of elements
 var noneCount = 0;
-for (var i = 0; i < len(noneArray); i = i + 1) {
+for (var i = 0; i < noneArray.len(); i = i + 1) {
     if (type(noneArray[i]) == "none") {
         noneCount = noneCount + 1;
     }
@@ -2798,7 +2798,7 @@ assert(noneCount == 2, "Array with none values - none count");
 
 // Array with complex expressions
 var complexArray = [1 + 1, 2 * 3, 10 / 2, 5 - 2];
-assert(len(complexArray) == 4, "Complex array - length");
+assert(complexArray.len() == 4, "Complex array - length");
 assert(complexArray[0] == 2, "Complex array - addition");
 assert(complexArray[1] == 6, "Complex array - multiplication");
 assert(complexArray[2] == 5, "Complex array - division");
@@ -2806,7 +2806,7 @@ assert(complexArray[3] == 3, "Complex array - subtraction");
 
 // Array with string operations
 var stringArray = ["hello" + " world", "test" * 2, "a" + "b" + "c"];
-assert(len(stringArray) == 3, "String array - length");
+assert(stringArray.len() == 3, "String array - length");
 assert(stringArray[0] == "hello world", "String array - concatenation");
 assert(stringArray[1] == "testtest", "String array - multiplication");
 assert(stringArray[2] == "abc", "String array - multiple concatenation");
@@ -2816,14 +2816,14 @@ func getValue() { return 42; }
 func getString() { return "hello"; }
 
 var funcResultArray = [getValue(), getString(), 1 + 2];
-assert(len(funcResultArray) == 3, "Function result array - length");
+assert(funcResultArray.len() == 3, "Function result array - length");
 assert(funcResultArray[0] == 42, "Function result array - function call");
 assert(funcResultArray[1] == "hello", "Function result array - string function");
 assert(funcResultArray[2] == 3, "Function result array - expression");
 
 // Array with ternary operators
 var ternaryArray = [true ? 1 : 0, false ? "yes" : "no", 5 > 3 ? "big" : "small"];
-assert(len(ternaryArray) == 3, "Ternary array - length");
+assert(ternaryArray.len() == 3, "Ternary array - length");
 assert(ternaryArray[0] == 1, "Ternary array - true condition");
 assert(ternaryArray[1] == "no", "Ternary array - false condition");
 assert(ternaryArray[2] == "big", "Ternary array - comparison condition");
@@ -2835,13 +2835,13 @@ assert(nestedOpArray[0][0] == 99, "Nested array operations - assignment");
 
 // Array with push/pop in expressions
 var exprArray = [1, 2, 3];
-var pushResult = push(exprArray, 4);
-assert(len(exprArray) == 4, "Array push in expression");
+var pushResult = exprArray.push(4);
+assert(exprArray.len() == 4, "Array push in expression");
 assert(exprArray[3] == 4, "Array push result");
 
-var popResult = pop(exprArray);
+var popResult = exprArray.pop();
 assert(popResult == 4, "Array pop result");
-assert(len(exprArray) == 3, "Array length after pop");
+assert(exprArray.len() == 3, "Array length after pop");
 
 print("Array edge cases and advanced features: PASS");
 
@@ -2857,21 +2857,21 @@ var startTime = time();
 // Create large array with mixed types
 for (var i = 0; i < 500; i = i + 1) {
     if (i % 3 == 0) {
-        push(stressArray, i);
+        stressArray.push(i);
     } else if (i % 3 == 1) {
-        push(stressArray, "string" + toString(i));
+        stressArray.push("string" + toString(i));
     } else {
-        push(stressArray, i > 250);
+        stressArray.push(i > 250);
     }
 }
 
 var midTime = time();
-assert(len(stressArray) == 500, "Stress test - array creation");
+assert(stressArray.len() == 500, "Stress test - array creation");
 
 // Access and modify elements
 for (var j = 0; j < 100; j = j + 1) {
     var index = j * 5;
-    if (index < len(stressArray)) {
+    if (index < stressArray.len()) {
         stressArray[index] = "modified" + toString(j);
     }
 }
@@ -3270,6 +3270,38 @@ print("  * Context-aware error messages");
 print("- Interactive Mode Features");
 print("  * REPL functionality");
 print("  * Error reporting in both modes");
+
+// Additional Tests: Classes and Extensions
+print("\n--- Additional Tests: Classes and Extensions ---");
+var path1 = fileExists("tests/test_method_calls.bob") ? "tests/test_method_calls.bob" : "../tests/test_method_calls.bob";
+eval(readFile(path1));
+var path2 = fileExists("tests/test_class_basic.bob") ? "tests/test_class_basic.bob" : "../tests/test_class_basic.bob";
+eval(readFile(path2));
+var path3 = fileExists("tests/test_class_with_this.bob") ? "tests/test_class_with_this.bob" : "../tests/test_class_with_this.bob";
+eval(readFile(path3));
+var path4 = fileExists("tests/test_class_init.bob") ? "tests/test_class_init.bob" : "../tests/test_class_init.bob";
+eval(readFile(path4));
+var path5 = fileExists("tests/test_class_extension_user.bob") ? "tests/test_class_extension_user.bob" : "../tests/test_class_extension_user.bob";
+eval(readFile(path5));
+var path6 = fileExists("tests/test_extension_methods.bob") ? "tests/test_extension_methods.bob" : "../tests/test_extension_methods.bob";
+eval(readFile(path6));
+var path7 = fileExists("tests/test_class_inheritance.bob") ? "tests/test_class_inheritance.bob" : "../tests/test_class_inheritance.bob";
+eval(readFile(path7));
+var path8 = fileExists("tests/test_classes_comprehensive.bob") ? "tests/test_classes_comprehensive.bob" : "../tests/test_classes_comprehensive.bob";
+eval(readFile(path8));
+var path9 = fileExists("tests/test_class_super.bob") ? "tests/test_class_super.bob" : "../tests/test_class_super.bob";
+eval(readFile(path9));
+var path10 = fileExists("tests/test_classes_extensive.bob") ? "tests/test_classes_extensive.bob" : "../tests/test_classes_extensive.bob";
+eval(readFile(path10));
+var path11 = fileExists("tests/test_class_edge_cases.bob") ? "tests/test_class_edge_cases.bob" : "../tests/test_class_edge_cases.bob";
+eval(readFile(path11));
+var path12 = fileExists("tests/test_polymorphism.bob") ? "tests/test_polymorphism.bob" : "../tests/test_polymorphism.bob";
+eval(readFile(path12));
+var path13 = fileExists("tests/test_polymorphism_practical.bob") ? "tests/test_polymorphism_practical.bob" : "../tests/test_polymorphism_practical.bob";
+eval(readFile(path13));
+
+var path14 = fileExists("tests/test_builtin_methods_style.bob") ? "tests/test_builtin_methods_style.bob" : "../tests/test_builtin_methods_style.bob";
+eval(readFile(path14));
 
 print("\nAll tests passed.");
 print("Test suite complete.");

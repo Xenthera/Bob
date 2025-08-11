@@ -2,6 +2,7 @@
 #include "Evaluator.h"
 #include "Interpreter.h"
 #include "Environment.h"
+#include "Parser.h"
 #include "AssignmentUtils.h"
 #include <iostream>
 
@@ -215,5 +216,98 @@ void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, Exe
         interpreter->reportError(statement->op.line, statement->op.column, "Runtime Error",
                                  "Unknown assignment operator: " + statement->op.lexeme, "");
         throw;
+    }
+}
+
+void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, ExecutionContext* context) {
+    std::unordered_map<std::string, Value> classDict;
+    // If parent exists, copy parent's methods as defaults (single inheritance prototype copy)
+    if (statement->hasParent) {
+        interpreter->registerClass(statement->name.lexeme, statement->parentName.lexeme);
+    } else {
+        interpreter->registerClass(statement->name.lexeme, "");
+    }
+    // Predefine fields as none, keep initializers mapped
+    std::unordered_map<std::string, std::shared_ptr<Expr>> fieldInitializers;
+    for (const auto& f : statement->fields) {
+        classDict[f.name.lexeme] = NONE_VALUE;
+        fieldInitializers[f.name.lexeme] = f.initializer;
+    }
+
+    // Attach methods as functions closed over a prototype env
+    auto protoEnv = std::make_shared<Environment>(interpreter->getEnvironment());
+    protoEnv->pruneForClosureCapture();
+
+    for (const auto& method : statement->methods) {
+        std::vector<std::string> paramNames;
+        for (const Token& p : method->params) paramNames.push_back(p.lexeme);
+        auto fn = std::make_shared<Function>(method->name.lexeme, paramNames, method->body, protoEnv, statement->name.lexeme);
+        classDict[method->name.lexeme] = Value(fn);
+    }
+
+    // Save template to interpreter so instances can include inherited fields/methods
+    interpreter->setClassTemplate(statement->name.lexeme, classDict);
+
+    // Define a constructor function Name(...) that builds an instance dict
+    auto ctorName = statement->name.lexeme;
+    auto ctor = std::make_shared<BuiltinFunction>(ctorName, [runtime=interpreter, className=statement->name.lexeme, fieldInitializers](std::vector<Value> args, int line, int col) -> Value {
+        Value instance(std::unordered_map<std::string, Value>{});
+        auto& dictRef = instance.asDict();
+        // Merge class template including inherited members
+        std::unordered_map<std::string, Value> tmpl = runtime->buildMergedTemplate(className);
+        for (const auto& kv : tmpl) dictRef[kv.first] = kv.second;
+        // Tag instance with class name for extension lookup
+        dictRef["__class"] = Value(className);
+        // Evaluate field initializers with this bound
+        if (!fieldInitializers.empty()) {
+            auto saved = runtime->getEnvironment();
+            auto env = std::make_shared<Environment>(saved);
+            env->setErrorReporter(nullptr);
+            env->define("this", instance);
+            runtime->setEnvironment(env);
+            for (const auto& kv : fieldInitializers) {
+                if (kv.second) {
+                    Value v = runtime->evaluate(kv.second);
+                    dictRef[kv.first] = v;
+                }
+            }
+            runtime->setEnvironment(saved);
+        }
+        // Auto-call init if present: create call env with this and params
+        auto it = dictRef.find("init");
+        if (it != dictRef.end() && it->second.isFunction()) {
+            Function* fn = it->second.asFunction();
+            // New environment from closure
+            std::shared_ptr<Environment> newEnv = std::make_shared<Environment>(fn->closure);
+            newEnv->setErrorReporter(nullptr);
+            newEnv->define("this", instance);
+            // Bind params
+            size_t n = std::min(fn->params.size(), args.size());
+            for (size_t i = 0; i < n; ++i) {
+                newEnv->define(fn->params[i], args[i]);
+            }
+            // Execute body
+            auto envSaved = runtime->getEnvironment();
+            runtime->setEnvironment(newEnv);
+            ExecutionContext ctx; ctx.isFunctionBody = true;
+            for (const auto& stmt : fn->body) {
+                runtime->execute(stmt, &ctx);
+                if (ctx.hasReturn) break;
+            }
+            runtime->setEnvironment(envSaved);
+        }
+        return instance;
+    });
+
+    interpreter->getEnvironment()->define(statement->name.lexeme, Value(ctor));
+}
+
+void Executor::visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statement, ExecutionContext* context) {
+    auto target = statement->target.lexeme;
+    for (const auto& method : statement->methods) {
+        std::vector<std::string> params;
+        for (const Token& p : method->params) params.push_back(p.lexeme);
+        auto fn = std::make_shared<Function>(method->name.lexeme, params, method->body, interpreter->getEnvironment(), target);
+        interpreter->registerExtension(target, method->name.lexeme, fn);
     }
 }

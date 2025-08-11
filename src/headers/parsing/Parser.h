@@ -68,6 +68,8 @@ private:
     std::shared_ptr<Stmt> continueStatement();
 
     std::shared_ptr<Stmt> declaration();
+    std::shared_ptr<Stmt> classDeclaration();
+    std::shared_ptr<Stmt> extensionDeclaration();
 
     std::shared_ptr<Stmt> varDeclaration();
 

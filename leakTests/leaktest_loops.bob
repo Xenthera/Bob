@@ -10,16 +10,16 @@ var nestedData = [];
 for (var i = 0; i < 1000; i++) {
     var row = [];
     for (var j = 0; j < 1000; j++) {
-        push(row, {
+        row.push({
             "i": i,
             "j": j,
             "func": func() { return i * j; },
             "data": [i, j, i+j]
         });
     }
-    push(nestedData, row);
+    nestedData.push(row);
 }
-print("Created " + len(nestedData) + "x" + len(nestedData[0]) + " nested structure");
+print("Created " + nestedData.len() + "x" + nestedData[0].len() + " nested structure");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear nested data...");
 nestedData = none;
@@ -31,14 +31,14 @@ print("Test 2: While loop accumulation");
 var accumulator = [];
 var counter = 0;
 while (counter < 500000) {
-    push(accumulator, {
+    accumulator.push({
         "count": counter,
         "func": func() { return counter * 2; },
         "meta": ["item" + counter, counter % 100]
     });
     counter = counter + 1;
 }
-print("Accumulated " + len(accumulator) + " items in while loop");
+print("Accumulated " + accumulator.len() + " items in while loop");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear accumulator...");
 accumulator = [];
@@ -72,7 +72,7 @@ print("Test 4: Do-while function creation");
 var doWhileFuncs = [];
 var dwCounter = 0;
 do {
-    push(doWhileFuncs, func() {
+    doWhileFuncs.push(func() {
         var captured = dwCounter;
         return func() {
             return captured * captured;
@@ -80,7 +80,7 @@ do {
     });
     dwCounter = dwCounter + 1;
 } while (dwCounter < 100000);
-print("Created " + len(doWhileFuncs) + " functions in do-while");
+print("Created " + doWhileFuncs.len() + " functions in do-while");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear do-while functions...");
 doWhileFuncs = "cleared";
@@ -97,7 +97,7 @@ for (var i = 0; i < 500000; i++) {
     
     if (i > 400000 && i % 100 == 0) {
         // Create larger objects near the end
-        push(complexData, {
+        complexData.push({
             "large": [
                 func() { return i; },
                 [i, i+1, i+2, i+3],
@@ -105,14 +105,14 @@ for (var i = 0; i < 500000; i++) {
             ]
         });
     } else {
-        push(complexData, func() { return i; });
+        complexData.push(func() { return i; });
     }
     
-    if (i > 450000 && len(complexData) > 350000) {
+    if (i > 450000 && complexData.len() > 350000) {
         break; // Early exit
     }
 }
-print("Complex loop created " + len(complexData) + " items");
+print("Complex loop created " + complexData.len() + " items");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear complex data...");
 complexData = none;
@@ -126,7 +126,7 @@ for (var cycle = 0; cycle < 100; cycle++) {
     
     // Create lots of data
     for (var i = 0; i < 10000; i++) {
-        push(churnData, [
+        churnData.push([
             func() { return i + cycle; },
             {"cycle": cycle, "item": i}
         ]);

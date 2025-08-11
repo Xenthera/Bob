@@ -1,0 +1,12 @@
+class A {}
+class B extends A {}
+class C extends B {}
+
+extension A { func v() { return 1; } }
+extension B { func v() { return super.v() + 1; } }
+extension C { func v() { return super.v() + 1; } }
+
+var c = C();
+print(c.v());
+
+

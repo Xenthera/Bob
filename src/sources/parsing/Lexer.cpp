@@ -363,18 +363,14 @@ std::vector<Token> Lexer::Tokenize(std::string source){
 
                 }
                 if(!isNotation) {
-                    if (!src.empty() && src[0] == '.') {
-                        advance();
-                        if (!src.empty() && std::isdigit(src[0])) {
-                            num += '.';
-                            while (!src.empty() && std::isdigit(src[0])) {
-                                num += src[0];
-                                advance();
-                            }
-                        } else {
-                            throw std::runtime_error("LEXER: malformed number at: " + std::to_string(this->line));
+                    // Only treat '.' as part of the number if followed by a digit
+                    if (src.size() > 1 && src[0] == '.' && std::isdigit(src[1])) {
+                        advance(); // consume '.'
+                        num += '.';
+                        while (!src.empty() && std::isdigit(src[0])) {
+                            num += src[0];
+                            advance();
                         }
-
                     }
                 }
                 else

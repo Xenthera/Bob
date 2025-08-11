@@ -1,0 +1,15 @@
+print("\n--- Test: Class init auto-call with args ---");
+
+class Person {
+  var name;
+  var age;
+  func init(n, a) { this.name = n; this.age = a; }
+  func who() { return this.name + ":" + toString(this.age); }
+}
+
+var p = Person("Bob", 33);
+assert(p.who() == "Bob:33", "init should set fields from constructor args");
+
+print("Class init: PASS");
+
+

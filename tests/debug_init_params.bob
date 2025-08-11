@@ -1,0 +1,3 @@
+class P { func init(f,l) { print(f + ":" + l); } }
+var p = P("A","B");
+

@@ -16,11 +16,13 @@ struct Function
     const std::vector<std::string> params;
     const std::vector<std::shared_ptr<Stmt>> body;
     const std::shared_ptr<Environment> closure;
+    const std::string ownerClass; // empty for non-methods
 
     Function(std::string name, std::vector<std::string> params, 
              std::vector<std::shared_ptr<Stmt>> body, 
-             std::shared_ptr<Environment> closure)
-        : name(name), params(params), body(body), closure(closure) {}
+             std::shared_ptr<Environment> closure,
+             std::string ownerClass = "")
+        : name(name), params(params), body(body), closure(closure), ownerClass(ownerClass) {}
 };
 
 struct BuiltinFunction

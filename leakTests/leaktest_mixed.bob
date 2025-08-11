@@ -11,16 +11,16 @@ for (var i = 0; i < 50000; i++) {
     var capturedArray = [i, i+1, i+2, "data" + i];
     var capturedDict = {"id": i, "values": [i*2, i*3]};
     
-    push(funcWithCollections, func() {
+    funcWithCollections.push(func() {
         // Capture both collections
         var localArray = capturedArray;
         var localDict = capturedDict;
         return func() {
-            return len(localArray) + len(localDict);
+            return localArray.len() + localDict.len();
         };
     });
 }
-print("Created " + len(funcWithCollections) + " functions with collection captures");
+print("Created " + funcWithCollections.len() + " functions with collection captures");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear function collections...");
 funcWithCollections = [];
@@ -31,7 +31,7 @@ input("Cleared. Check memory usage...");
 print("Test 2: Collections with mixed content");
 var mixedContent = [];
 for (var i = 0; i < 30000; i++) {
-    push(mixedContent, [
+    mixedContent.push([
         func() { return i; },                    // Function
         [i, i+1, func() { return i*2; }],       // Array with function
         {"value": i, "func": func() { return i*3; }}, // Dict with function
@@ -40,7 +40,7 @@ for (var i = 0; i < 30000; i++) {
         i % 2 == 0                             // Boolean
     ]);
 }
-print("Created " + len(mixedContent) + " mixed content collections");
+print("Created " + mixedContent.len() + " mixed content collections");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear mixed content...");
 mixedContent = none;
@@ -58,9 +58,9 @@ for (var i = 0; i < 100000; i++) {
     obj["array"] = [1, 2, 3];
     obj["array"][0] = func() { return i * 2; };
     
-    push(propObjects, obj);
+    propObjects.push(obj);
 }
-print("Created " + len(propObjects) + " objects with dynamic properties");
+print("Created " + propObjects.len() + " objects with dynamic properties");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear property objects...");
 propObjects = "cleared";
@@ -71,20 +71,20 @@ input("Cleared. Check memory usage...");
 print("Test 4: Type reassignment chains");
 var typeChains = [];
 for (var i = 0; i < 200000; i++) {
-    push(typeChains, i);
+    typeChains.push(i);
 }
 print("Memory after number array: " + memoryUsage() + " MB");
 input("Created number array. Press Enter to convert to functions...");
 
 // Reassign all elements to functions
-for (var i = 0; i < len(typeChains); i++) {
+for (var i = 0; i < typeChains.len(); i++) {
     typeChains[i] = func() { return i; };
 }
 print("Memory after function conversion: " + memoryUsage() + " MB");
 input("Converted to functions. Press Enter to convert to dicts...");
 
 // Reassign all elements to dicts
-for (var i = 0; i < len(typeChains); i++) {
+for (var i = 0; i < typeChains.len(); i++) {
     typeChains[i] = {"id": i, "func": func() { return i; }};
 }
 print("Memory after dict conversion: " + memoryUsage() + " MB");
@@ -98,12 +98,12 @@ print("Test 5: Rapid allocation/deallocation");
 for (var round = 0; round < 10; round++) {
     var temp = [];
     for (var i = 0; i < 100000; i++) {
-        push(temp, [
+        temp.push([
             func() { return i; },
             {"data": [i, i+1, func() { return i*2; }]}
         ]);
     }
-    print("Round " + round + ": Created " + len(temp) + " items, Memory: " + memoryUsage() + " MB");
+    print("Round " + round + ": Created " + temp.len() + " items, Memory: " + memoryUsage() + " MB");
     temp = none; // Clear immediately
     if (round % 2 == 1) print("After clear round " + round + ": " + memoryUsage() + " MB");
 }

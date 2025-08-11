@@ -66,6 +66,11 @@ private:
     std::vector<std::shared_ptr<BuiltinFunction>> builtinFunctions;
     std::vector<std::shared_ptr<Function>> functions;
     std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
+    // Global extension registries
+    std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> classExtensions;
+    std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> builtinExtensions; // keys: "string","array","dict","any"
+    std::unordered_map<std::string, std::string> classParents; // child -> parent
+    std::unordered_map<std::string, std::unordered_map<std::string, Value>> classTemplates; // className -> template dict
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
     
@@ -103,6 +108,14 @@ public:
     void cleanupUnusedFunctions();
     void cleanupUnusedThunks();
     void forceCleanup();
+    // Extension APIs
+    void registerExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn);
+    std::shared_ptr<Function> lookupExtension(const std::string& targetName, const std::string& methodName);
+    void registerClass(const std::string& className, const std::string& parentName);
+    std::string getParentClass(const std::string& className) const;
+    void setClassTemplate(const std::string& className, const std::unordered_map<std::string, Value>& tmpl);
+    bool getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const;
+    std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
     void addStdLibFunctions();
     
     

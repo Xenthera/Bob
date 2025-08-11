@@ -1,0 +1,44 @@
+print("\n--- Test: Practical Polymorphism ---");
+
+// Example 1: Shapes - compute total area
+class Shape { func area() { return 0; } }
+class Rectangle extends Shape { func init(w, h) { this.w = w; this.h = h; } func area() { return this.w * this.h; } }
+class Triangle extends Shape { func init(b, h) { this.b = b; this.h = h; } func area() { return (this.b * this.h) / 2; } }
+
+var shapes = [ Rectangle(3, 4), Triangle(10, 2), Rectangle(5, 2) ];
+var total = 0;
+for (var i = 0; i < shapes.len(); i = i + 1) { total = total + shapes[i].area(); }
+assert(total == (3*4) + (10*2)/2 + (5*2), "shapes total area");
+
+// Example 2: Logger hierarchy - override behavior
+class Logger { func log(msg) { return "[LOG] " + msg; } }
+class ConsoleLogger extends Logger { func log(msg) { return "[CONSOLE] " + msg; } }
+class FileLogger extends Logger { func log(msg) { return "[FILE] " + msg; } }
+var loggers = [ Logger(), ConsoleLogger(), FileLogger() ];
+assert(loggers[0].log("ok") == "[LOG] ok", "base logger");
+assert(loggers[1].log("ok") == "[CONSOLE] ok", "console logger");
+assert(loggers[2].log("ok") == "[FILE] ok", "file logger");
+
+// Example 3: Notifier with extension-based specialization
+class Notifier { func send(msg) { return "sent:" + msg; } }
+class EmailNotifier extends Notifier {}
+class SmsNotifier extends Notifier {}
+extension EmailNotifier { func send(msg) { return super.send("EMAIL:" + msg); } }
+extension SmsNotifier { func send(msg) { return super.send("SMS:" + msg); } }
+var n = [ EmailNotifier(), SmsNotifier(), Notifier() ];
+assert(n[0].send("hello") == "sent:EMAIL:hello", "email notify");
+assert(n[1].send("hello") == "sent:SMS:hello", "sms notify");
+assert(n[2].send("hello") == "sent:hello", "base notify");
+
+// Example 4: Processor pipeline - same method name, different implementations
+class Processor { func process(x) { return x; } }
+class DoubleProc extends Processor { func process(x) { return x * 2; } }
+class IncProc extends Processor { func process(x) { return x + 1; } }
+var pipeline = [ DoubleProc(), IncProc(), DoubleProc() ]; // (((3*2)+1)*2) = 14
+var value = 3;
+for (var i = 0; i < pipeline.len(); i = i + 1) { value = pipeline[i].process(value); }
+assert(value == 14, "processor pipeline");
+
+print("Practical polymorphism: PASS");
+
+

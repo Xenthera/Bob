@@ -233,19 +233,26 @@ toBoolean(1);       // true
 type(42);           // "number"
 ```
 
-### Arrays & Strings
+### Arrays, Strings, and Dictionaries: Method style (preferred)
 ```go
-len([1, 2, 3]);     // 3
-len("hello");       // 5
-push(array, value); // Add to end
-pop(array);         // Remove from end
+[1, 2, 3].len();          // 3
+"hello".len();            // 5
+var a = [1, 2]; a.push(3); // a is now [1, 2, 3]
+var v = a.pop();           // v == 3
+
+var d = {"a": 1, "b": 2};
+d.len();                   // 2
+d.keys();                  // ["a", "b"]
+d.values();                // [1, 2]
+d.has("a");               // true
 ```
 
-### Dictionaries
+Note: Global forms like `len(x)`, `push(arr, ...)`, `pop(arr)`, `keys(dict)`, `values(dict)`, `has(dict, key)` have been removed. Use method style.
+
+### Numbers
 ```go
-keys(dict);         // Array of keys
-values(dict);       // Array of values
-has(dict, "key");   // Check if key exists
+toInt(3.9);        // 3 (global)
+(3.9).toInt();     // 3 (method on number)
 ```
 
 ### Utility
@@ -278,12 +285,12 @@ The following built-ins are available by default. Unless specified, functions th
 - toInt(n): truncates number to integer
 - toBoolean(x): converts to boolean using truthiness rules
 - type(x): returns the type name as string
-- len(x): length of array/string/dict
-- push(arr, ...values): appends values to array in place, returns arr
-- pop(arr): removes and returns last element
-- keys(dict): returns array of keys
-- values(dict): returns array of values
-- has(dict, key): returns true if key exists
+- len(x) / x.len(): length of array/string/dict
+- push(arr, ...values) / arr.push(...values): appends values to array in place, returns arr
+- pop(arr) / arr.pop(): removes and returns last element
+- keys(dict) / dict.keys(): returns array of keys
+- values(dict) / dict.values(): returns array of values
+- has(dict, key) / dict.has(key): returns true if key exists
 - readFile(path): returns entire file contents as string
 - writeFile(path, content): writes content to file
 - readLines(path): returns array of lines
@@ -297,8 +304,61 @@ The following built-ins are available by default. Unless specified, functions th
 Notes:
 - Arrays support properties: length, first, last, empty
 - Dicts support properties: length, empty, keys, values
+- Method-style builtins on arrays/strings/dicts are preferred; global forms remain for compatibility.
 
 ## Advanced Features
+
+### Classes (Phase 1)
+```go
+// Declare a class with fields and methods
+class Person {
+  var name;
+  var age;
+
+  // Methods can use implicit `this`
+  func setName(n) { this.name = n; }
+  func greet() { print("Hi, I'm " + this.name); }
+}
+
+// Construct via the class name
+var p = Person();
+p.setName("Bob");
+p.greet();
+
+// Fields are stored on the instance (a dictionary under the hood)
+p.age = 30;
+```
+
+Notes:
+- Instances are plain dictionaries; methods are shared functions placed on the instance.
+- On a property call like `obj.method(...)`, the interpreter injects `this = obj` into the call frame (no argument injection).
+- Taking a method reference and calling it later does not auto‑bind `this`; call via `obj.method(...)` when needed.
+
+### Extensions (Built‑ins and Classes)
+Extend existing types (including built‑ins) with new methods:
+
+```go
+extension array {
+  func sum() {
+    var i = 0; var s = 0;
+    while (i < len(this)) { s = s + this[i]; i = i + 1; }
+    return s;
+  }
+}
+
+extension dict { func size() { return len(this); } }
+extension string { func shout() { return toString(this) + "!"; } }
+extension any { func tag() { return "<" + type(this) + ">"; } }
+
+assert([1,2,3].sum() == 6);
+assert({"a":1,"b":2}.size() == 2);
+assert("hi".shout() == "hi!");
+assert(42.tag() == "<number>");
+```
+
+Notes:
+- Lookup order for `obj.method(...)`: instance dictionary → class extensions (for user classes) → built‑in extensions (string/array/dict) → `any`.
+- `this` is injected for property calls.
 
 ### String Interpolation
 ```go
@@ -381,7 +441,7 @@ var people = [
     {"name": "Bob", "age": 25}
 ];
 
-for (var i = 0; i < len(people); i = i + 1) {
+for (var i = 0; i < people.len(); i = i + 1) {
     var person = people[i];
     print(person["name"] + " is " + person["age"] + " years old");
 }
@@ -392,17 +452,17 @@ for (var i = 0; i < len(people); i = i + 1) {
 var lines = readLines("data.txt");
 var processed = [];
 
-for (var i = 0; i < len(lines); i = i + 1) {
+for (var i = 0; i < lines.len(); i = i + 1) {
     var line = lines[i];
-    if (len(line) > 0) {
-        push(processed, "Processed: " + line);
+    if (line.len() > 0) {
+        processed.push("Processed: " + line);
     }
 }
 
 var output = "";
-for (var i = 0; i < len(processed); i = i + 1) {
+for (var i = 0; i < processed.len(); i = i + 1) {
     output = output + processed[i];
-    if (i < len(processed) - 1) {
+    if (i < processed.len() - 1) {
         output = output + "\n";
     }
 }

@@ -1,0 +1,24 @@
+// Method-style builtins on arrays, strings, dicts, and numbers
+
+var a = [1, 2];
+assert(a.len() == 2, "array.len()");
+a.push(3, 4);
+assert(a.len() == 4, "array.push(...)");
+assert(a.pop() == 4, "array.pop() value");
+assert(a.len() == 3, "array.pop() length");
+assert(a[2] == 3, "array after push/pop");
+
+var s = "hello";
+assert(s.len() == 5, "string.len()");
+
+var d = {"x": 1, "y": 2};
+assert(d.len() == 2, "dict.len()");
+var ks = d.keys();
+var vs = d.values();
+assert(ks.len() == 2, "dict.keys().len()");
+assert(vs.len() == 2, "dict.values().len()");
+assert(d.has("x"), "dict.has(true)");
+assert(!d.has("z"), "dict.has(false)");
+
+var n = 3.9;
+assert(n.toInt() == 3, "number.toInt()");

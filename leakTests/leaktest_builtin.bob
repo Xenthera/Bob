@@ -9,14 +9,14 @@ print("Test 1: Heavy string operations");
 var stringData = [];
 for (var i = 0; i < 100000; i++) {
     var str = toString(i) + "_" + toString(i * 2) + "_" + toString(i * 3);
-    push(stringData, {
+    stringData.push({
         "original": str,
         "upper": str,  // Bob doesn't have toUpper, but test string storage
-        "length": len(str),
+        "length": str.len(),
         "type": type(str)
     });
 }
-print("Created " + len(stringData) + " string operation results");
+    print("Created " + stringData.len() + " string operation results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear string data...");
 stringData = none;
@@ -33,12 +33,12 @@ for (var i = 0; i < 200000; i++) {
     var intVal = toInt(num);
     var boolVal = toBoolean(i % 2);
     
-    push(conversions, [
+    conversions.push([
         num, str, backToNum, intVal, boolVal,
         type(num), type(str), type(backToNum), type(intVal), type(boolVal)
     ]);
 }
-print("Created " + len(conversions) + " type conversion results");
+    print("Created " + conversions.len() + " type conversion results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear conversions...");
 conversions = [];
@@ -53,15 +53,15 @@ for (var i = 0; i < 50000; i++) {
     var dict = {"a": i, "b": i+1, "c": i+2};
     
     // Use builtin functions heavily
-    var arrLen = len(arr);
-    push(arr, i+3);
-    var popped = pop(arr);
+    var arrLen = arr.len();
+    arr.push(i+3);
+    var popped = arr.pop();
     
-    var dictKeys = keys(dict);
-    var dictValues = values(dict);
-    var hasA = has(dict, "a");
+    var dictKeys = dict.keys();
+    var dictValues = dict.values();
+    var hasA = dict.has("a");
     
-    push(collections, {
+    collections.push({
         "array": arr,
         "dict": dict,
         "arrLen": arrLen,
@@ -71,7 +71,7 @@ for (var i = 0; i < 50000; i++) {
         "hasA": hasA
     });
 }
-print("Created " + len(collections) + " collection operation results");
+    print("Created " + collections.len() + " collection operation results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear collections...");
 collections = "cleared";
@@ -88,14 +88,14 @@ for (var i = 0; i < 10000; i++) {
     var funcExpr = "func() { return " + toString(i) + "; };";
     var evalFunc = eval(funcExpr);
     
-    push(evalResults, {
+    evalResults.push({
         "expr": expression,
         "result": result,
         "func": evalFunc,
         "funcResult": evalFunc()
     });
 }
-print("Created " + len(evalResults) + " eval results");
+    print("Created " + evalResults.len() + " eval results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear eval results...");
 evalResults = none;
@@ -121,15 +121,15 @@ for (var i = 0; i < 1000; i++) {
     var readContent = readFile(filename);
     var lines = readLines(filename);
     
-    push(fileData, {
+    fileData.push({
         "filename": filename,
         "exists": exists,
         "content": readContent,
         "lines": lines,
-        "lineCount": len(lines)
+        "lineCount": lines.len()
     });
 }
-print("Created " + len(fileData) + " file operation results");
+    print("Created " + fileData.len() + " file operation results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear file data...");
 fileData = [];
@@ -155,14 +155,14 @@ for (var i = 0; i < 200000; i++) {
     var rand2 = random();
     var sum = rand1 + rand2;
     
-    push(randomData, {
+    randomData.push({
         "rand1": rand1,
         "rand2": rand2,
         "sum": sum,
         "product": rand1 * rand2
     });
 }
-print("Created " + len(randomData) + " random number results");
+    print("Created " + randomData.len() + " random number results");
 print("Memory: " + memoryUsage() + " MB");
 input("Press Enter to clear random data...");
 randomData = none;

@@ -314,10 +314,127 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
     std::string propertyName = expr->name.lexeme;
     
     if (object.isDict()) {
-        return getDictProperty(object, propertyName);
+        Value v = getDictProperty(object, propertyName);
+        if (!v.isNone()) {
+            // If this is an inherited inline method, prefer a current-class extension override
+            if (v.isFunction()) {
+                const auto& d = object.asDict();
+                std::string curCls;
+                auto itc = d.find("__class");
+                if (itc != d.end() && itc->second.isString()) curCls = itc->second.asString();
+                Function* f = v.asFunction();
+                if (f && !curCls.empty() && !f->ownerClass.empty() && f->ownerClass != curCls) {
+                    if (auto ext = interpreter->lookupExtension(curCls, propertyName)) {
+                        return Value(ext);
+                    }
+                }
+            }
+            return v;
+        }
+        // Fallback to class extensions with inheritance walk
+        const auto& d = object.asDict();
+        std::string cls = "";
+        auto it = d.find("__class");
+        if (it != d.end() && it->second.isString()) cls = it->second.asString();
+        if (!cls.empty()) {
+            std::string cur = cls;
+            while (!cur.empty()) {
+                if (auto fn = interpreter->lookupExtension(cur, propertyName)) return Value(fn);
+                cur = interpreter->getParentClass(cur);
+            }
+        }
+        // Provide method-style builtins on dict
+        if (propertyName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.len", [object](std::vector<Value>, int, int){
+                return Value(static_cast<double>(object.asDict().size()));
+            });
+            return Value(bf);
+        } else if (propertyName == "keys") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.keys", [object](std::vector<Value>, int, int){
+                std::vector<Value> keys; const auto& m = object.asDict();
+                for (const auto& kv : m) keys.push_back(Value(kv.first));
+                return Value(keys);
+            });
+            return Value(bf);
+        } else if (propertyName == "values") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.values", [object](std::vector<Value>, int, int){
+                std::vector<Value> vals; const auto& m = object.asDict();
+                for (const auto& kv : m) vals.push_back(kv.second);
+                return Value(vals);
+            });
+            return Value(bf);
+        } else if (propertyName == "has") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.has", [object](std::vector<Value> args, int, int){
+                if (args.size() != 1 || !args[0].isString()) return Value(false);
+                const auto& m = object.asDict();
+                return Value(m.find(args[0].asString()) != m.end());
+            });
+            return Value(bf);
+        }
+        // Fallback to dict and any extensions
+        if (auto fn = interpreter->lookupExtension("dict", propertyName)) return Value(fn);
+        if (auto anyFn = interpreter->lookupExtension("any", propertyName)) return Value(anyFn);
+        return NONE_VALUE;
     } else if (object.isArray()) {
-        return getArrayProperty(object, propertyName);
+        Value v = getArrayProperty(object, propertyName);
+        if (!v.isNone()) return v;
+        // Provide method-style builtins on array
+        if (propertyName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("array.len", [object](std::vector<Value>, int, int){
+                return Value(static_cast<double>(object.asArray().size()));
+            });
+            return Value(bf);
+        } else if (propertyName == "push") {
+            auto bf = std::make_shared<BuiltinFunction>("array.push", [object](std::vector<Value> args, int, int){
+                std::vector<Value>& arr = const_cast<std::vector<Value>&>(object.asArray());
+                for (size_t i = 0; i < args.size(); ++i) arr.push_back(args[i]);
+                return object;
+            });
+            return Value(bf);
+        } else if (propertyName == "pop") {
+            auto bf = std::make_shared<BuiltinFunction>("array.pop", [object](std::vector<Value>, int, int){
+                std::vector<Value>& arr = const_cast<std::vector<Value>&>(object.asArray());
+                if (arr.empty()) return NONE_VALUE;
+                Value v = arr.back();
+                arr.pop_back();
+                return v;
+            });
+            return Value(bf);
+        }
+        // Fallback to array extensions
+        if (auto fn = interpreter->lookupExtension("array", propertyName)) return Value(fn);
+        if (auto anyFn = interpreter->lookupExtension("any", propertyName)) return Value(anyFn);
+        return NONE_VALUE;
     } else {
+        // Try extension dispatch for built-ins and any
+        std::string target;
+        if (object.isString()) target = "string";
+        else if (object.isNumber()) target = "number";
+        else if (object.isArray()) target = "array"; // handled above, but keep for completeness
+        else if (object.isDict()) target = "dict";   // handled above
+        else target = "any";
+
+        // Provide method-style builtins for string/number
+        if (object.isString() && propertyName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("string.len", [object](std::vector<Value>, int, int){
+                return Value(static_cast<double>(object.asString().length()));
+            });
+            return Value(bf);
+        }
+        if (object.isNumber() && propertyName == "toInt") {
+            auto bf = std::make_shared<BuiltinFunction>("number.toInt", [object](std::vector<Value>, int, int){
+                return Value(static_cast<double>(static_cast<long long>(object.asNumber())));
+            });
+            return Value(bf);
+        }
+
+        if (auto fn = interpreter->lookupExtension(target, propertyName)) {
+            return Value(fn);
+        }
+        if (auto anyFn = interpreter->lookupExtension("any", propertyName)) {
+            return Value(anyFn);
+        }
+
         interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
             "Cannot access property '" + propertyName + "' on this type", "");
         throw std::runtime_error("Cannot access property '" + propertyName + "' on this type");

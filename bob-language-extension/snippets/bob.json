@@ -53,6 +53,32 @@
     ],
     "description": "Declare a variable"
   },
+  "Class Declaration": {
+    "prefix": "class",
+    "body": [
+      "class ${1:ClassName} ${2:extends ${3:Parent}} {",
+      "  var ${4:field} = ${5:none};",
+      "  func init(${6:args}) {",
+      "    this.${4:field} = ${7:value};",
+      "  }",
+      "  func ${8:method}(${9:params}) {",
+      "    $0",
+      "  }",
+      "}"
+    ],
+    "description": "Create a class with optional extends, fields, init, and method"
+  },
+  "Extension Block": {
+    "prefix": "extension",
+    "body": [
+      "extension ${1:Target} {",
+      "  func ${2:method}(${3:params}) {",
+      "    $0",
+      "  }",
+      "}"
+    ],
+    "description": "Create an extension for a class or builtin (string, array, dict, number, any)"
+  }
   "Print Statement": {
     "prefix": "print",
     "body": [

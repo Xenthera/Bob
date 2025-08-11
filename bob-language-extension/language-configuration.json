@@ -23,7 +23,7 @@
     ["'", "'"]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "\\{[^}]*$|\\b(func|if|else|while|for)\\b.*$",
+    "increaseIndentPattern": "\\{[^}]*$|\\b(func|if|else|while|for|class|extension)\\b.*$",
     "decreaseIndentPattern": "^\\s*[})]"
   },
   "folding": {

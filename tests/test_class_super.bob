@@ -1,0 +1,21 @@
+print("\n--- Test: super calls ---");
+
+class A { }
+class B extends A { }
+class C extends B { }
+
+extension A { func v() { return 1; } }
+extension B { func v() { return super.v() + 1; } }
+extension C { func v() { return super.v() + 1; } }
+
+var a = A();
+var b = B();
+var c = C();
+
+assert(a.v() == 1, "A.v");
+assert(b.v() == 2, "B.v via super");
+assert(c.v() == 3, "C.v via super chain");
+
+print("super calls: PASS");
+
+

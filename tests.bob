@@ -1,53 +1,80 @@
-var a = [];
+// var a = [];
 
-for(var i = 0; i < 1000000; i++){
-    print(i);
+// for(var i = 0; i < 1000000; i++){
+//     print(i);
     
-    // Create nested structures with functions at different levels
-    if (i % 4 == 0) {
-        // Nested array with function
-        push(a, [
-            func(){print("Array nested func i=" + i); return i;},
-            [func(){return "Deep array func " + i;}],
-            i
-        ]);
-    } else if (i % 4 == 1) {
-        // Nested dict with function
-        push(a, {
-            "func": func(){print("Dict func i=" + i); return i;},
-            "nested": {"deepFunc": func(){return "Deep dict func " + i;}},
-            "value": i
-        });
-    } else if (i % 4 == 2) {
-        // Mixed nested array/dict with functions
-        push(a, [
-            {"arrayInDict": func(){return "Mixed " + i;}},
-            [func(){return "Array in array " + i;}, {"more": func(){return i;}}],
-            func(){print("Top level in mixed i=" + i); return i;}
-        ]);
-    } else {
-        // Simple function (original test case)
-        push(a, func(){print("Simple func i=" + i); return toString(i);});
+//     // Create nested structures with functions at different levels
+//     if (i % 4 == 0) {
+//         // Nested array with function
+//         push(a, [
+//             func(){print("Array nested func i=" + i); return i;},
+//             [func(){return "Deep array func " + i;}],
+//             i
+//         ]);
+//     } else if (i % 4 == 1) {
+//         // Nested dict with function
+//         push(a, {
+//             "func": func(){print("Dict func i=" + i); return i;},
+//             "nested": {"deepFunc": func(){return "Deep dict func " + i;}},
+//             "value": i
+//         });
+//     } else if (i % 4 == 2) {
+//         // Mixed nested array/dict with functions
+//         push(a, [
+//             {"arrayInDict": func(){return "Mixed " + i;}},
+//             [func(){return "Array in array " + i;}, {"more": func(){return i;}}],
+//             func(){print("Top level in mixed i=" + i); return i;}
+//         ]);
+//     } else {
+//         // Simple function (original test case)
+//         push(a, func(){print("Simple func i=" + i); return toString(i);});
+//     }
+// }
+
+// print("Before: " + len(a));
+// print("Memory usage: " + memoryUsage() + " MB");
+
+// // Test different types of nested function calls
+// a[3691](); // Simple function
+// if (len(a[3692]) > 0) {
+//     a[3692][0](); // Nested array function
+// }
+// if (a[3693]["func"]) {
+//     a[3693]["func"](); // Nested dict function
+// }
+// //print(a);
+// //writeFile("array_contents.txt", toString(a));
+// print("Array contents written to array_contents.txt");
+// print("Memory before cleanup: " + memoryUsage() + " MB");
+// input("Press any key to free memory");
+
+// a = none;
+// print("Memory after cleanup: " + memoryUsage() + " MB");
+// input("waiting...");
+
+
+class Test {
+    func init() {
+        print("Test init" + this.a);
+    }
+    
+    var a = 10;
+
+
+    func test() {
+        //print(a);
+
+        print(this.a);
     }
 }
 
-print("Before: " + len(a));
-print("Memory usage: " + memoryUsage() + " MB");
+var t = Test();
+t.test();
 
-// Test different types of nested function calls
-a[3691](); // Simple function
-if (len(a[3692]) > 0) {
-    a[3692][0](); // Nested array function
+extension number{
+    func negate(){
+        return -this;
+    }
 }
-if (a[3693]["func"]) {
-    a[3693]["func"](); // Nested dict function
-}
-//print(a);
-//writeFile("array_contents.txt", toString(a));
-print("Array contents written to array_contents.txt");
-print("Memory before cleanup: " + memoryUsage() + " MB");
-input("Press any key to free memory");
 
-a = none;
-print("Memory after cleanup: " + memoryUsage() + " MB");
-input("waiting...");
+print(69.negate());

@@ -1,0 +1,21 @@
+print("\n--- Test: User class extensions ---");
+
+class Box {
+  var v;
+  func init(x) { this.v = x; }
+  func get() { return this.v; }
+}
+
+extension Box {
+  func inc() { this.v = this.v + 1; }
+  func label(s) { return s + ":" + toString(this.v); }
+}
+
+var b = Box(10);
+b.inc();
+assert(b.get() == 11, "Box.inc should increment value");
+assert(b.label("val") == "val:11", "Box.label should return formatted string");
+
+print("User class extensions: PASS");
+
+

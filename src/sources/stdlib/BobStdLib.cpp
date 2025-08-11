@@ -76,104 +76,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(printRawFunc);
 
-    // Create a built-in len function for arrays and strings
-    auto lenFunc = std::make_shared<BuiltinFunction>("len", 
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (args[0].isArray()) {
-                return Value(static_cast<double>(args[0].asArray().size()));
-            } else if (args[0].isString()) {
-                return Value(static_cast<double>(args[0].asString().length()));
-            } else if (args[0].isDict()) {
-                return Value(static_cast<double>(args[0].asDict().size()));
-            } else {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "len() can only be used on arrays, strings, and dictionaries", "", true);
-                }
-                throw std::runtime_error("len() can only be used on arrays, strings, and dictionaries");
-            }
-        });
-    env->define("len", Value(lenFunc));
     
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(lenFunc);
-
-    // Create a built-in push function for arrays
-    auto pushFunc = std::make_shared<BuiltinFunction>("push", 
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() < 2) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected at least 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected at least 2 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isArray()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "First argument to push() must be an array", "", true);
-                }
-                throw std::runtime_error("First argument to push() must be an array");
-            }
-            
-            // Get the array and modify it in place
-            std::vector<Value>& arr = args[0].asArray();
-            
-            // Add all arguments except the first one (which is the array)
-            for (size_t i = 1; i < args.size(); i++) {
-                arr.push_back(args[i]);
-            }
-            
-            return args[0]; // Return the modified array
-        });
-    env->define("push", Value(pushFunc));
-    interpreter.addBuiltinFunction(pushFunc);
-
-    // Create a built-in pop function for arrays
-    auto popFunc = std::make_shared<BuiltinFunction>("pop", 
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isArray()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "pop() can only be used on arrays", "", true);
-                }
-                throw std::runtime_error("pop() can only be used on arrays");
-            }
-            
-            std::vector<Value>& arr = args[0].asArray();
-            if (arr.empty()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Cannot pop from empty array", "", true);
-                }
-                throw std::runtime_error("Cannot pop from empty array");
-            }
-            
-            // Get the last element and remove it from the array
-            Value lastElement = arr.back();
-            arr.pop_back();
-            
-            return lastElement; // Return the popped element
-        });
-    env->define("pop", Value(popFunc));
-    interpreter.addBuiltinFunction(popFunc);
 
     // Create a built-in assert function
     auto assertFunc = std::make_shared<BuiltinFunction>("assert",
@@ -216,7 +119,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(assertFunc);
 
-    // Create a built-in time function (returns microseconds since Unix epoch)
+    // Create a built-in time function (returns strictly increasing microseconds)
     auto timeFunc = std::make_shared<BuiltinFunction>("time",
         [errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 0) {
@@ -227,10 +130,14 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
             }
             
+            static long long lastReturnedMicros = 0;
             auto now = std::chrono::high_resolution_clock::now();
             auto duration = now.time_since_epoch();
-            auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-            
+            long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
+            if (microseconds <= lastReturnedMicros) {
+                microseconds = lastReturnedMicros + 1;
+            }
+            lastReturnedMicros = microseconds;
             return Value(static_cast<double>(microseconds));
         });
     env->define("time", Value(timeFunc));
@@ -541,102 +448,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(evalFunc);
 
-    // Create a built-in keys function for dictionaries
-    auto keysFunc = std::make_shared<BuiltinFunction>("keys",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isDict()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "keys() can only be used on dictionaries", "", true);
-                }
-                throw std::runtime_error("keys() can only be used on dictionaries");
-            }
-            
-            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
-            std::vector<Value> keys;
-            
-            for (const auto& pair : dict) {
-                keys.push_back(Value(pair.first));
-            }
-            
-            return Value(keys);
-        });
-    env->define("keys", Value(keysFunc));
-    interpreter.addBuiltinFunction(keysFunc);
-
-    // Create a built-in values function for dictionaries
-    auto valuesFunc = std::make_shared<BuiltinFunction>("values",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isDict()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "values() can only be used on dictionaries", "", true);
-                }
-                throw std::runtime_error("values() can only be used on dictionaries");
-            }
-            
-            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
-            std::vector<Value> values;
-            
-            for (const auto& pair : dict) {
-                values.push_back(pair.second);
-            }
-            
-            return Value(values);
-        });
-    env->define("values", Value(valuesFunc));
-    interpreter.addBuiltinFunction(valuesFunc);
-
-    // Create a built-in has function for dictionaries
-    auto hasFunc = std::make_shared<BuiltinFunction>("has",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 2) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 2 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isDict()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "First argument to has() must be a dictionary", "", true);
-                }
-                throw std::runtime_error("First argument to has() must be a dictionary");
-            }
-            
-            if (!args[1].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Second argument to has() must be a string", "", true);
-                }
-                throw std::runtime_error("Second argument to has() must be a string");
-            }
-            
-            const std::unordered_map<std::string, Value>& dict = args[0].asDict();
-            std::string key = args[1].asString();
-            
-            return Value(dict.find(key) != dict.end());
-        });
-    env->define("has", Value(hasFunc));
-    interpreter.addBuiltinFunction(hasFunc);
+    
 
     // Create a built-in readFile function
     auto readFileFunc = std::make_shared<BuiltinFunction>("readFile",

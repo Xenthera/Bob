@@ -1,0 +1,7 @@
+class Animal { var name; func init(n) { this.name = n; } }
+extension Animal { func speak() { return this.name + "?"; } }
+class Dog extends Animal { }
+var d = Dog("fido");
+print(d.speak());
+
+

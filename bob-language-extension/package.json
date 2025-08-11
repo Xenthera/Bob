@@ -2,7 +2,7 @@
   "name": "bob-language",
   "displayName": "Bob Language",
   "description": "Syntax highlighting and language support for the Bob programming language - featuring arrays, dictionaries, auto-truncating float indices, increment/decrement operators, cross-type comparisons, and comprehensive built-in functions",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "engines": {
     "vscode": "^1.60.0"
   },

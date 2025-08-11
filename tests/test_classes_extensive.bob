@@ -1,0 +1,92 @@
+print("\n--- Test: Classes Extensive ---");
+
+// Basic class with multiple fields, initializers, and methods
+class Person {
+  var first = "Bob";
+  var last = "Lucero";
+  var full = "Hello Bob Lucero";
+  func name() { return this.first + " " + this.last; }
+  func greet() { return "Hi " + this.name(); }
+}
+
+var p = Person();
+assert(p.first == "Bob", "default field");
+assert(p.last == "Lucero", "default field 2");
+assert(p.name() == "Bob Lucero", "method calling another method");
+assert(p.full == "Hello Bob Lucero", "field initializer");
+
+// Separate init param binding check
+class PInit { var a = ""; func init(x, y) { this.a = x + y; } }
+assert(PInit("Ada","L").a == "AdaL", "init binds parameters");
+
+// Inheritance: inline methods inherited and overridden; super to parent inline
+class Animal { var n; func init(n) { this.n = n; } func speak() { return this.n + ":..."; } }
+class Dog extends Animal { func speak() { return super.speak() + " woof"; } }
+class LoudDog extends Dog { func speak() { return super.speak() + "!"; } }
+
+var a = Animal("thing");
+var d = Dog("fido");
+var ld = LoudDog("rex");
+assert(a.speak() == "thing:...", "parent inline");
+assert(d.speak() == "fido:... woof", "override + super inline");
+assert(ld.speak() == "rex:... woof!", "super chain inline 3 levels");
+
+// Class extensions on parent and child, resolution order and super to extension
+class Base {}
+class Mid extends Base {}
+class Leaf extends Mid {}
+
+extension Base { func v() { return 1; } }
+extension Mid { func v() { return super.v() + 1; } }
+extension Leaf { func v() { return super.v() + 1; } }
+
+assert(Base().v() == 1, "base ext");
+assert(Mid().v() == 2, "mid super->base ext");
+assert(Leaf().v() == 3, "leaf super->mid->base ext");
+
+// Instance method shadows extension; super from child instance method to parent extension
+class C1 {}
+class C2 extends C1 { func m() { return super.m() + 10; } }
+extension C1 { func m() { return 5; } }
+assert(C2().m() == 15, "instance method super to parent extension");
+
+// User property shadows extension method
+class Shadow {}
+extension Shadow { func val() { return 42; } }
+var sh = Shadow(); sh.val = 7; assert(sh.val == 7, "property shadows extension");
+
+// Late extension attaches to existing instances
+class Later { var x = 2; }
+var l = Later();
+extension Later { func dbl() { return this.x * 2; } }
+assert(l.dbl() == 4, "late extension visible");
+
+// Polymorphism array: mixed classes share method name
+class PBase { func id() { return "base"; } }
+class PChild extends PBase { func id() { return "child"; } }
+class PLeaf extends PChild {}
+var poly = [PBase(), PChild(), PLeaf()];
+assert(poly[0].id() == "base", "poly base");
+assert(poly[1].id() == "child", "poly override");
+assert(poly[2].id() == "child", "poly inherited override");
+
+// any fallback not taken if class or parent provides method
+class AF {}
+extension any { func tag() { return "<" + toString(this) + ">"; } }
+extension AF { func tag() { return "af"; } }
+assert(AF().tag() == "af", "prefer class extension over any");
+
+// Built-in extensions still work
+extension number { func neg() { return -this; } }
+assert(5.neg() == -5, "number extension");
+
+// Method reference semantics: not auto-bound
+class Ref { var v = 9; func get() { return this.v; } }
+var r = Ref();
+var rf = r.get; // function reference
+assert(r.get() == 9, "call via property injects this");
+// Not calling rf() directly to avoid unbound-this error; contract is explicit injection via property call
+
+print("Classes extensive: PASS");
+
+

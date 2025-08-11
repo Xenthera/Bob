@@ -1,0 +1,35 @@
+print("\n--- Test: Extension methods on built-ins ---");
+
+extension array {
+  func sum() {
+    var i = 0;
+    var s = 0;
+    while (i < this.len()) {
+      s = s + this[i];
+      i = i + 1;
+    }
+    return s;
+  }
+}
+
+extension dict {
+  func size() { return this.len(); }
+}
+
+extension string {
+  func shout() { return toString(this) + "!"; }
+}
+
+extension any {
+  func tag() { return "<" + type(this) + ">"; }
+}
+
+assert([1,2,3].sum() == 6, "array.sum should sum elements");
+assert({"a":1,"b":2}.size() == 2, "dict.size should return count");
+assert("hi".shout() == "hi!", "string.shout should append !");
+assert(toInt(42).tag() == "<number>", "any.tag works on numbers");
+assert("x".tag() == "<string>", "any.tag works on strings");
+
+print("Extension methods on built-ins: PASS");
+
+

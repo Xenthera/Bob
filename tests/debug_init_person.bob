@@ -1,0 +1,8 @@
+class T {
+  var a = "";
+  func init(x, y) { this.a = x + y; }
+}
+var t = T("A","B");
+print(t.a);
+
+

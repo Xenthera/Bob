@@ -251,24 +251,37 @@ sptr(Expr) Parser::unary()
 sptr(Expr) Parser::postfix()
 {
     sptr(Expr) expr = primary();
-    
-    // Check for postfix increment/decrement
-    if (match({PLUS_PLUS, MINUS_MINUS})) {
-        Token oper = previous();
-        
-        // Ensure the expression is a variable or array indexing
-        if (!std::dynamic_pointer_cast<VarExpr>(expr) && 
-            !std::dynamic_pointer_cast<ArrayIndexExpr>(expr)) {
-            if (errorReporter) {
-                errorReporter->reportError(oper.line, oper.column, "Parse Error", 
-                    "Postfix increment/decrement can only be applied to variables or array elements", "");
-            }
-            throw std::runtime_error("Postfix increment/decrement can only be applied to variables or array elements.");
+
+    while (true) {
+        if (match({OPEN_PAREN})) {
+            expr = finishCall(expr);
+            continue;
         }
-        
-        return msptr(IncrementExpr)(expr, oper, false);  // false = postfix
+        if (match({OPEN_BRACKET})) {
+            expr = finishArrayIndex(expr);
+            continue;
+        }
+        if (match({DOT})) {
+            Token name = consume(IDENTIFIER, "Expected property name after '.'.");
+            expr = msptr(PropertyExpr)(expr, name);
+            continue;
+        }
+        if (match({PLUS_PLUS, MINUS_MINUS})) {
+            Token oper = previous();
+            if (!std::dynamic_pointer_cast<VarExpr>(expr) &&
+                !std::dynamic_pointer_cast<ArrayIndexExpr>(expr)) {
+                if (errorReporter) {
+                    errorReporter->reportError(oper.line, oper.column, "Parse Error",
+                        "Postfix increment/decrement can only be applied to variables or array elements", "");
+                }
+                throw std::runtime_error("Postfix increment/decrement can only be applied to variables or array elements.");
+            }
+            expr = msptr(IncrementExpr)(expr, oper, false);
+            continue;
+        }
+        break;
     }
-    
+
     return expr;
 }
 
@@ -281,8 +294,15 @@ sptr(Expr) Parser::primary()
     if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false, false);
     if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false, false);
 
-    if(match( {IDENTIFIER})) {
-        return call();
+    if(match( {IDENTIFIER, THIS, SUPER})) {
+        Token ident = previous();
+        if (ident.type == THIS) {
+            return msptr(VarExpr)(Token{IDENTIFIER, "this", ident.line, ident.column});
+        }
+        if (ident.type == SUPER) {
+            return msptr(VarExpr)(Token{IDENTIFIER, "super", ident.line, ident.column});
+        }
+        return msptr(VarExpr)(ident);
     }
 
     if(match({OPEN_PAREN}))
@@ -360,7 +380,13 @@ sptr(Expr) Parser::dictLiteral()
 
 sptr(Expr) Parser::call()
 {
-    sptr(Expr) expr = msptr(VarExpr)(previous());
+    Token ident = previous();
+    sptr(Expr) expr;
+    if (ident.type == THIS) {
+        expr = msptr(VarExpr)(Token{IDENTIFIER, "this", ident.line, ident.column});
+    } else {
+        expr = msptr(VarExpr)(ident);
+    }
     
     while (true) {
         if (match({OPEN_PAREN})) {
@@ -396,6 +422,8 @@ sptr(Stmt) Parser::declaration()
     try{
         if(match({VAR})) return varDeclaration();
         if(match({FUNCTION})) return functionDeclaration();
+        if(match({CLASS})) return classDeclaration();
+        if(match({EXTENSION})) return extensionDeclaration();
         return statement();
     }
     catch(std::runtime_error& e)
@@ -403,6 +431,86 @@ sptr(Stmt) Parser::declaration()
         sync();
         throw std::runtime_error(e.what());
     }
+}
+
+sptr(Stmt) Parser::classDeclaration() {
+    Token name = consume(IDENTIFIER, "Expected class name.");
+    bool hasParent = false;
+    Token parentName{};
+    if (match({EXTENDS})) {
+        hasParent = true;
+        parentName = consume(IDENTIFIER, "Expected parent class name after 'extends'.");
+    }
+    consume(OPEN_BRACE, "Expected '{' after class declaration.");
+
+    std::vector<ClassField> fields;
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
+
+    while (!check(CLOSE_BRACE) && !isAtEnd()) {
+        if (match({VAR})) {
+            Token fieldName = consume(IDENTIFIER, "Expected field name.");
+            std::shared_ptr<Expr> init = nullptr;
+            if (match({EQUAL})) {
+                init = expression();
+            }
+            consume(SEMICOLON, "Expected ';' after field declaration.");
+            fields.emplace_back(fieldName, init);
+        } else if (match({FUNCTION})) {
+            Token methodName = consume(IDENTIFIER, "Expected method name.");
+            consume(OPEN_PAREN, "Expected '(' after method name.");
+            std::vector<Token> parameters;
+            if (!check(CLOSE_PAREN)) {
+                do {
+                    parameters.push_back(consume(IDENTIFIER, "Expected parameter name."));
+                } while (match({COMMA}));
+            }
+            consume(CLOSE_PAREN, "Expected ')' after parameters.");
+            consume(OPEN_BRACE, "Expected '{' before method body.");
+            enterFunction();
+            std::vector<std::shared_ptr<Stmt>> body = block();
+            exitFunction();
+            methods.push_back(msptr(FunctionStmt)(methodName, parameters, body));
+        } else {
+            if (errorReporter) {
+                errorReporter->reportError(peek().line, peek().column, "Parse Error", "Expected 'var' or 'func' in class body", "");
+            }
+            throw std::runtime_error("Invalid class member");
+        }
+    }
+
+    consume(CLOSE_BRACE, "Expected '}' after class body.");
+    return msptr(ClassStmt)(name, hasParent, parentName, fields, methods);
+}
+
+sptr(Stmt) Parser::extensionDeclaration() {
+    Token target = consume(IDENTIFIER, "Expected extension target (class/builtin/any).");
+    consume(OPEN_BRACE, "Expected '{' after extension target.");
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
+    while (!check(CLOSE_BRACE) && !isAtEnd()) {
+        if (match({FUNCTION})) {
+            Token methodName = consume(IDENTIFIER, "Expected method name.");
+            consume(OPEN_PAREN, "Expected '(' after method name.");
+            std::vector<Token> parameters;
+            if (!check(CLOSE_PAREN)) {
+                do {
+                    parameters.push_back(consume(IDENTIFIER, "Expected parameter name."));
+                } while (match({COMMA}));
+            }
+            consume(CLOSE_PAREN, "Expected ')' after parameters.");
+            consume(OPEN_BRACE, "Expected '{' before method body.");
+            enterFunction();
+            std::vector<std::shared_ptr<Stmt>> body = block();
+            exitFunction();
+            methods.push_back(msptr(FunctionStmt)(methodName, parameters, body));
+        } else {
+            if (errorReporter) {
+                errorReporter->reportError(peek().line, peek().column, "Parse Error", "Expected 'func' in extension body", "");
+            }
+            throw std::runtime_error("Invalid extension member");
+        }
+    }
+    consume(CLOSE_BRACE, "Expected '}' after extension body.");
+    return msptr(ExtensionStmt)(target, methods);
 }
 
 sptr(Stmt) Parser::varDeclaration()
@@ -486,7 +594,7 @@ sptr(Stmt) Parser::statement()
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
     
     // Check for assignment statement - simplified approach
-    if(check(IDENTIFIER)) {
+    if(check(IDENTIFIER) || check(THIS)) {
         // Try to parse as assignment expression first
         int currentPos = current;
         try {

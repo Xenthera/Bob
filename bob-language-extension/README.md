@@ -17,11 +17,14 @@ This extension provides syntax highlighting and language support for the Bob pro
 - Control flow: `if`, `else`, `while`, `for`, `break`, `continue`, `return`
 - Variable declaration: `var`
 - Function declaration: `func`
+- Classes and OOP: `class`, `extends`, `extension`, `this`, `super`
 - Logical operators: `and`, `or`, `not`
 
 ### Built-in Functions
-- `print()`, `assert()`, `input()`, `type()`, `toString()`, `toNumber()`, `time()`
-- `sleep()`, `printRaw()`, `len()`, `push()`, `pop()`, `random()`, `eval()`
+- `print()`, `assert()`, `input()`, `type()`, `toString()`, `toNumber()`, `toInt()`, `time()`, `sleep()`, `printRaw()`
+- Arrays/Dictionaries (preferred method style): `arr.len()`, `arr.push(...)`, `arr.pop()`, `dict.len()`, `dict.keys()`, `dict.values()`, `dict.has()`
+- Global forms still available: `len(x)`, `push(arr, ...)`, `pop(arr)`, `keys(dict)`, `values(dict)`, `has(dict, key)`
+- Misc: `random()`, `eval()`
 
 ### Data Types
 - Numbers (integers, floats, binary `0b1010`, hex `0xFF`)
@@ -92,9 +95,11 @@ Files with the `.bob` extension will automatically be recognized as Bob language
 var message = "Hello, Bob!";
 print(message);
 
-// Array operations
+// Array operations (method style)
 var numbers = [1, 2, 3, 4, 5];
-print("Array length: " + len(numbers));
+print("Array length: " + numbers.len());
+numbers.push(6);
+print("Popped: " + numbers.pop());
 print("First element: " + numbers[0]);
 
 // Function with ternary operator

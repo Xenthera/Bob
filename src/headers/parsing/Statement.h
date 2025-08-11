@@ -17,6 +17,8 @@ struct ForStmt;
 struct BreakStmt;
 struct ContinueStmt;
 struct AssignStmt;
+struct ClassStmt;
+struct ExtensionStmt;
 
 #include "ExecutionContext.h"
 
@@ -34,6 +36,8 @@ struct StmtVisitor
     virtual void visitBreakStmt(const std::shared_ptr<BreakStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitContinueStmt(const std::shared_ptr<ContinueStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitAssignStmt(const std::shared_ptr<AssignStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitClassStmt(const std::shared_ptr<ClassStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& stmt, ExecutionContext* context = nullptr) = 0;
 };
 
 struct Stmt : public std::enable_shared_from_this<Stmt>
@@ -41,6 +45,39 @@ struct Stmt : public std::enable_shared_from_this<Stmt>
     std::shared_ptr<Expr> expression;
     virtual void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) = 0;
     virtual ~Stmt(){};
+};
+
+struct ClassField {
+    Token name;
+    std::shared_ptr<Expr> initializer; // may be null
+    ClassField(Token name, std::shared_ptr<Expr> init) : name(name), initializer(init) {}
+};
+
+struct ClassStmt : Stmt {
+    const Token name;
+    bool hasParent;
+    Token parentName; // valid only if hasParent
+    std::vector<ClassField> fields;
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
+
+    ClassStmt(Token name, bool hasParent, Token parentName, std::vector<ClassField> fields, std::vector<std::shared_ptr<FunctionStmt>> methods)
+        : name(name), hasParent(hasParent), parentName(parentName), fields(std::move(fields)), methods(std::move(methods)) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitClassStmt(std::static_pointer_cast<ClassStmt>(shared_from_this()), context);
+    }
+};
+
+struct ExtensionStmt : Stmt {
+    const Token target;
+    std::vector<std::shared_ptr<FunctionStmt>> methods;
+
+    ExtensionStmt(Token target, std::vector<std::shared_ptr<FunctionStmt>> methods)
+        : target(target), methods(std::move(methods)) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitExtensionStmt(std::static_pointer_cast<ExtensionStmt>(shared_from_this()), context);
+    }
 };
 
 struct BlockStmt : Stmt

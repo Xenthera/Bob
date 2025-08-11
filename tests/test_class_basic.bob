@@ -1,0 +1,20 @@
+print("\n--- Test: Basic Class (no init, no this) ---");
+
+class Foo {
+  var x;
+  func ping() { print("ping"); }
+}
+
+var a = Foo();
+a.ping();
+
+// Field default should be none
+assert(type(a.x) == "none", "default field value should be none");
+
+// Property assignment on instance
+a.x = 42;
+assert(a.x == 42, "instance property set/get should work");
+
+print("Basic class: PASS");
+
+

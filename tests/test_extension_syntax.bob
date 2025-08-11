@@ -1,0 +1,10 @@
+print("\n--- Test: Extension Syntax (spec only) ---");
+
+// Parsing should fail until extension is implemented; keep as spec placeholder
+// extension Foo {
+//   func hello() { print("hello"); }
+// }
+
+print("Extension syntax spec placeholder.");
+
+
