@@ -1,0 +1,34 @@
+print("\n--- Test: try/catch runtime errors ---");
+
+// Division by zero
+var caught = "";
+try { var x = 10 / 0; }
+catch (e) { caught = e.type + ":" + e.message; }
+assert(type(caught) == "string", "caught is string");
+
+// Undefined variable
+var c2 = "";
+try { var y = missingVar + 1; }
+catch (e) { c2 = e.type; }
+assert(c2 == "RuntimeError", "undefined variable caught");
+
+// Array out-of-bounds
+var c3 = "";
+try { var a = [1,2]; var z = a[5]; }
+catch (e) { c3 = e.type; }
+assert(c3 == "RuntimeError", "array oob caught");
+
+// Dict key type error
+var c4 = "";
+try { var d = {"x":1}; var z = d[1]; }
+catch (e) { c4 = e.type; }
+assert(c4 == "RuntimeError", "dict key type caught");
+
+// Non-array/dict index
+var c5 = "";
+try { var z = 42[0]; }
+catch (e) { c5 = e.type; }
+assert(c5 == "RuntimeError", "non-array index caught");
+
+print("try/catch runtime errors: PASS");
+

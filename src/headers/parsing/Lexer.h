@@ -26,6 +26,7 @@ enum TokenType{
 
     AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
     WHILE, DO, VAR, CLASS, EXTENDS, EXTENSION, SUPER, THIS, NONE, RETURN, BREAK, CONTINUE,
+    TRY, CATCH, FINALLY, THROW,
 
     // Compound assignment operators
     PLUS_EQUAL, MINUS_EQUAL, STAR_EQUAL, SLASH_EQUAL, PERCENT_EQUAL,
@@ -55,6 +56,7 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
 
                            "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
                            "WHILE", "DO", "VAR", "CLASS", "EXTENDS", "EXTENSION", "SUPER", "THIS", "NONE", "RETURN", "BREAK", "CONTINUE",
+                           "TRY", "CATCH", "FINALLY", "THROW",
 
                            // Compound assignment operators
                            "PLUS_EQUAL", "MINUS_EQUAL", "STAR_EQUAL", "SLASH_EQUAL", "PERCENT_EQUAL",
@@ -85,6 +87,10 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"return", RETURN},
         {"break", BREAK},
         {"continue", CONTINUE},
+        {"try", TRY},
+        {"catch", CATCH},
+        {"finally", FINALLY},
+        {"throw", THROW},
 };
 
 struct Token

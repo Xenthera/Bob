@@ -3303,5 +3303,8 @@ eval(readFile(path13));
 var path14 = fileExists("tests/test_builtin_methods_style.bob") ? "tests/test_builtin_methods_style.bob" : "../tests/test_builtin_methods_style.bob";
 eval(readFile(path14));
 
+var path15 = fileExists("tests/test_try_catch.bob") ? "tests/test_try_catch.bob" : "../tests/test_try_catch.bob";
+eval(readFile(path15));
+
 print("\nAll tests passed.");
 print("Test suite complete.");

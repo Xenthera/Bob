@@ -13,7 +13,9 @@ void Environment::assign(const Token& name, const Value& value) {
         return;
     }
     
+    // Report only if not within a try; otherwise let try/catch handle
     if (errorReporter) {
+        // We cannot check tryDepth here directly; rely on Executor to suppress double-reporting
         errorReporter->reportError(name.line, name.column, "Runtime Error", 
             "Undefined variable '" + name.lexeme + "'", "");
     }

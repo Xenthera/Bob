@@ -75,8 +75,9 @@ void Bob::run(std::string source)
     }
     catch(std::exception &e)
     {
-        // Only suppress errors that have already been reported by the error reporter
-        if (errorReporter.hasReportedError()) {
+        // Only suppress errors that have already been reported inline/top-level
+        if (errorReporter.hasReportedError() || (interpreter && (interpreter->hasReportedError() || interpreter->hasInlineErrorReported()))) {
+            if (interpreter) interpreter->clearInlineErrorReported();
             return;
         }
         

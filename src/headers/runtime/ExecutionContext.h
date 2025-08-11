@@ -7,4 +7,6 @@ struct ExecutionContext {
     Value returnValue = NONE_VALUE;
     bool shouldBreak = false;
     bool shouldContinue = false;
+    bool hasThrow = false;
+    Value thrownValue = NONE_VALUE;
 };

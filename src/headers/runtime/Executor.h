@@ -40,6 +40,8 @@ public:
     void visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitClassStmt(const std::shared_ptr<ClassStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitTryStmt(const std::shared_ptr<TryStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitThrowStmt(const std::shared_ptr<ThrowStmt>& statement, ExecutionContext* context = nullptr) override;
 
 private:
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context);

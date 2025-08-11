@@ -68,13 +68,21 @@ class Test {
     }
 }
 
-var t = Test();
-t.test();
+var arr = [];
+for(var i = 0; i < 100; i++){
+    arr.push(i);
+}   
 
-extension number{
-    func negate(){
-        return -this;
+var counter = 0;
+
+//try{
+    while(true){
+        print(arr[counter]);
+        counter++;
+        sleep(0.01);
     }
-}
+//}catch(e){
+    
+//}
 
-print(69.negate());
+print("done");

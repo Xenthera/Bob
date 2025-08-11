@@ -269,7 +269,8 @@ sptr(Expr) Parser::postfix()
         if (match({PLUS_PLUS, MINUS_MINUS})) {
             Token oper = previous();
             if (!std::dynamic_pointer_cast<VarExpr>(expr) &&
-                !std::dynamic_pointer_cast<ArrayIndexExpr>(expr)) {
+                !std::dynamic_pointer_cast<ArrayIndexExpr>(expr) &&
+                !std::dynamic_pointer_cast<PropertyExpr>(expr)) {
                 if (errorReporter) {
                     errorReporter->reportError(oper.line, oper.column, "Parse Error",
                         "Postfix increment/decrement can only be applied to variables or array elements", "");
@@ -585,6 +586,8 @@ std::shared_ptr<Expr> Parser::functionExpression() {
 sptr(Stmt) Parser::statement()
 {
     if(match({RETURN})) return returnStatement();
+    if(match({TRY})) return tryStatement();
+    if(match({THROW})) return throwStatement();
     if(match({IF})) return ifStatement();
     if(match({DO})) return doWhileStatement();
     if(match({WHILE})) return whileStatement();
@@ -782,6 +785,32 @@ std::vector<sptr(Stmt)> Parser::block()
 
     consume(CLOSE_BRACE, "Expected '}' after block.");
     return statements;
+}
+
+std::shared_ptr<Stmt> Parser::tryStatement() {
+    // try { ... } (catch (e) { ... })? (finally { ... })?
+    auto tryBlock = statement();
+    Token catchVar{IDENTIFIER, "", previous().line, previous().column};
+    std::shared_ptr<Stmt> catchBlock = nullptr;
+    std::shared_ptr<Stmt> finallyBlock = nullptr;
+    if (match({CATCH})) {
+        consume(OPEN_PAREN, "Expected '(' after 'catch'.");
+        Token var = consume(IDENTIFIER, "Expected identifier for catch variable.");
+        catchVar = var;
+        consume(CLOSE_PAREN, "Expected ')' after catch variable.");
+        catchBlock = statement();
+    }
+    if (match({FINALLY})) {
+        finallyBlock = statement();
+    }
+    return msptr(TryStmt)(tryBlock, catchVar, catchBlock, finallyBlock);
+}
+
+std::shared_ptr<Stmt> Parser::throwStatement() {
+    Token kw = previous();
+    auto val = expression();
+    consume(SEMICOLON, "Expected ';' after throw expression.");
+    return msptr(ThrowStmt)(kw, val);
 }
 
 sptr(Expr) Parser::finishCall(sptr(Expr) callee) {

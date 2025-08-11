@@ -70,6 +70,8 @@ private:
     std::shared_ptr<Stmt> declaration();
     std::shared_ptr<Stmt> classDeclaration();
     std::shared_ptr<Stmt> extensionDeclaration();
+    std::shared_ptr<Stmt> tryStatement();
+    std::shared_ptr<Stmt> throwStatement();
 
     std::shared_ptr<Stmt> varDeclaration();
 

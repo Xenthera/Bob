@@ -1,0 +1,29 @@
+print("\n--- Test: try/catch/finally (basic) ---");
+
+// Basic: catch handles, finally always runs
+var steps = [];
+try { steps.push("try"); throw {"message":"boom"}; }
+catch (e) { steps.push("catch:" + e.message); }
+finally { steps.push("finally"); }
+assert(steps[0] == "try" && steps[1] == "catch:boom" && steps[2] == "finally", "basic order");
+
+// Nested: no inner catch, outer catches, finally still runs
+var seen = [];
+try {
+  try { throw {"message":"x"}; } finally { seen.push("innerFinally"); }
+}
+catch (e) { seen.push("outer:" + e.message); }
+assert(seen[0] == "innerFinally" && seen[1] == "outer:x", "nested propagation");
+
+// Finally overrides return
+func r() { try { return 1; } finally { return 2; } }
+assert(r() == 2, "finally overrides return");
+
+// Throw non-dict
+var info = "";
+try { throw "oops"; } catch (e) { info = type(e) + ":" + e; }
+assert(info == "string:oops", "non-dict throw");
+
+print("try/catch/finally basic: PASS");
+
+

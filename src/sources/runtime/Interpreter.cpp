@@ -36,6 +36,10 @@ Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
     return runTrampoline(result);
 }
 
+bool Interpreter::hasReportedError() const {
+    return inlineErrorReported;
+}
+
 Value Interpreter::runTrampoline(Value initialResult) {
     Value current = initialResult;
     while (current.isThunk()) {
@@ -429,6 +433,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
             
                 for (const auto& stmt : function->body) {
                     stmt->accept(executor.get(), &context);
+                    if (context.hasThrow) { setPendingThrow(context.thrownValue); return NONE_VALUE; }
                     if (context.hasReturn) {
                         return context.returnValue;
                     }
@@ -467,9 +472,8 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         
         for (const auto& stmt : function->body) {
             stmt->accept(executor.get(), &context);
-            if (context.hasReturn) {
-                return context.returnValue;
-            }
+            if (context.hasThrow) { setPendingThrow(context.thrownValue); return NONE_VALUE; }
+            if (context.hasReturn) { return context.returnValue; }
         }
         
         return context.returnValue;

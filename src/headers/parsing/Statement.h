@@ -38,6 +38,8 @@ struct StmtVisitor
     virtual void visitAssignStmt(const std::shared_ptr<AssignStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitClassStmt(const std::shared_ptr<ClassStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitTryStmt(const std::shared_ptr<struct TryStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitThrowStmt(const std::shared_ptr<struct ThrowStmt>& stmt, ExecutionContext* context = nullptr) = 0;
 };
 
 struct Stmt : public std::enable_shared_from_this<Stmt>
@@ -245,5 +247,28 @@ struct AssignStmt : Stmt
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
     {
         visitor->visitAssignStmt(std::static_pointer_cast<AssignStmt>(shared_from_this()), context);
+    }
+};
+
+struct TryStmt : Stmt {
+    std::shared_ptr<Stmt> tryBlock;
+    Token catchVar; // IDENTIFIER or empty token if no catch
+    std::shared_ptr<Stmt> catchBlock; // may be null
+    std::shared_ptr<Stmt> finallyBlock; // may be null
+
+    TryStmt(std::shared_ptr<Stmt> t, Token cvar, std::shared_ptr<Stmt> cblk, std::shared_ptr<Stmt> fblk)
+        : tryBlock(t), catchVar(cvar), catchBlock(cblk), finallyBlock(fblk) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitTryStmt(std::static_pointer_cast<TryStmt>(shared_from_this()), context);
+    }
+};
+
+struct ThrowStmt : Stmt {
+    const Token keyword;
+    std::shared_ptr<Expr> value;
+    ThrowStmt(Token kw, std::shared_ptr<Expr> v) : keyword(kw), value(v) {}
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitThrowStmt(std::static_pointer_cast<ThrowStmt>(shared_from_this()), context);
     }
 };

@@ -81,6 +81,11 @@ private:
     RuntimeDiagnostics diagnostics;  // Utility functions for runtime operations
     std::unique_ptr<Evaluator> evaluator;
     std::unique_ptr<Executor> executor;
+    // Pending throw propagation from expression evaluation
+    bool hasPendingThrow = false;
+    Value pendingThrow = NONE_VALUE;
+    int tryDepth = 0;
+    bool inlineErrorReported = false;
     
 public:
     explicit Interpreter(bool isInteractive);
@@ -117,6 +122,17 @@ public:
     bool getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const;
     std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
     void addStdLibFunctions();
+     // Throw propagation helpers
+     void setPendingThrow(const Value& v) { hasPendingThrow = true; pendingThrow = v; }
+     bool consumePendingThrow(Value& out) { if (!hasPendingThrow) return false; out = pendingThrow; hasPendingThrow = false; pendingThrow = NONE_VALUE; return true; }
+     // Try tracking
+     void enterTry() { tryDepth++; }
+     void exitTry() { if (tryDepth > 0) tryDepth--; }
+     bool isInTry() const { return tryDepth > 0; }
+     void markInlineErrorReported() { inlineErrorReported = true; }
+     bool hasInlineErrorReported() const { return inlineErrorReported; }
+     void clearInlineErrorReported() { inlineErrorReported = false; }
+     bool hasReportedError() const;
     
     
 

@@ -1,0 +1,14 @@
+print("\n--- Test: property increment/decrement ---");
+
+var o = {"v": 10};
+o.v++;
+assert(o.v == 11, "postfix inc on prop");
++o.v;
+assert(o.v == 12, "prefix inc on prop");
+o.v--;
+assert(o.v == 11, "postfix dec on prop");
+--o.v;
+assert(o.v == 10, "prefix dec on prop");
+
+print("property inc/dec: PASS");
+

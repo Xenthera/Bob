@@ -37,8 +37,6 @@ Value Evaluator::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
     switch (expression->oper.type) {
         case MINUS:
             if (!right.isNumber()) {
-                interpreter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                    "Operand must be a number when using: " + expression->oper.lexeme, expression->oper.lexeme);
                 throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
             }
             return Value(-right.asNumber());
@@ -48,8 +46,6 @@ Value Evaluator::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 
         case BIN_NOT:
             if (!right.isNumber()) {
-                interpreter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-                    "Operand must be a number when using: " + expression->oper.lexeme, expression->oper.lexeme);
                 throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
             }
             return Value(static_cast<double>(~(static_cast<long>(right.asNumber()))));
@@ -106,8 +102,6 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             default: break; // Unreachable
         }
         
-        interpreter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-            ErrorUtils::makeOperatorError(opName, left.getType(), right.getType()), opName);
         throw std::runtime_error(ErrorUtils::makeOperatorError(opName, left.getType(), right.getType()));
     }
 
@@ -130,10 +124,7 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
                 throw std::runtime_error("Unknown operator: " + expression->oper.lexeme);
         }
     } catch (const std::runtime_error& e) {
-        // The Value operators provide good error messages, just add context
-        interpreter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
-            e.what(), expression->oper.lexeme);
-        throw;
+        throw; // Propagate to statement driver (try/catch) without reporting here
     }
 }
 
@@ -166,7 +157,7 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
         throw std::runtime_error("Invalid increment/decrement operator.");
     }
     
-    // Update the variable or array element
+    // Update the variable, array element, or object property
     if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(expression->operand)) {
         interpreter->getEnvironment()->assign(varExpr->name, Value(newValue));
     } else if (auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expression->operand)) {
@@ -197,6 +188,14 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
         
         // Update the array element
         arr[idx] = Value(newValue);
+    } else if (auto propExpr = std::dynamic_pointer_cast<PropertyExpr>(expression->operand)) {
+        // obj.prop++ / obj.prop--
+        Value object = interpreter->evaluate(propExpr->object);
+        if (!object.isDict()) {
+            throw std::runtime_error("Can only increment/decrement properties on objects");
+        }
+        std::unordered_map<std::string, Value>& dict = object.asDict();
+        dict[propExpr->name.lexeme] = Value(newValue);
     } else {
         interpreter->reportError(expression->oper.line, expression->oper.column, 
             "Runtime Error", "Increment/decrement can only be applied to variables or array elements.", "");
@@ -268,8 +267,11 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
     if (array.isArray()) {
         // Handle array indexing
         if (!index.isNumber()) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index must be a number", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index must be a number", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Array index must be a number");
         }
         
@@ -277,8 +279,11 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         const std::vector<Value>& arr = array.asArray();
         
         if (idx < 0 || idx >= static_cast<int>(arr.size())) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index out of bounds", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index out of bounds", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Array index out of bounds");
         }
         
@@ -287,8 +292,11 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
     } else if (array.isDict()) {
         // Handle dictionary indexing
         if (!index.isString()) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Dictionary key must be a string", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Dictionary key must be a string", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Dictionary key must be a string");
         }
         
@@ -303,8 +311,11 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         }
         
     } else {
-        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-            "Can only index arrays and dictionaries", "");
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Can only index arrays and dictionaries", "");
+            interpreter->markInlineErrorReported();
+        }
         throw std::runtime_error("Can only index arrays and dictionaries");
     }
 }
@@ -435,8 +446,11 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
             return Value(anyFn);
         }
 
-        interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
-            "Cannot access property '" + propertyName + "' on this type", "");
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
+                "Cannot access property '" + propertyName + "' on this type", "");
+            interpreter->markInlineErrorReported();
+        }
         throw std::runtime_error("Cannot access property '" + propertyName + "' on this type");
     }
 }
@@ -449,8 +463,11 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
     if (array.isArray()) {
         // Handle array assignment
         if (!index.isNumber()) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index must be a number", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index must be a number", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Array index must be a number");
         }
         
@@ -458,8 +475,11 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
         std::vector<Value>& arr = array.asArray();
         
         if (idx < 0 || idx >= static_cast<int>(arr.size())) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Array index out of bounds", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Array index out of bounds", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Array index out of bounds");
         }
         
@@ -469,8 +489,11 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
     } else if (array.isDict()) {
         // Handle dictionary assignment
         if (!index.isString()) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Dictionary key must be a string", "");
+            if (!interpreter->isInTry()) {
+                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                    "Dictionary key must be a string", "");
+                interpreter->markInlineErrorReported();
+            }
             throw std::runtime_error("Dictionary key must be a string");
         }
         
@@ -481,8 +504,11 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
         return value;
         
     } else {
-        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-            "Can only assign to array or dictionary elements", "");
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Can only assign to array or dictionary elements", "");
+            interpreter->markInlineErrorReported();
+        }
         throw std::runtime_error("Can only assign to array or dictionary elements");
     }
 }
@@ -510,8 +536,11 @@ Value Evaluator::visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExp
         dict[propertyName] = value;
         return value;  // Return the assigned value
     } else {
-        interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
-            "Cannot assign property '" + propertyName + "' on non-object", "");
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
+                "Cannot assign property '" + propertyName + "' on non-object", "");
+            interpreter->markInlineErrorReported();
+        }
         throw std::runtime_error("Cannot assign property '" + propertyName + "' on non-object");
     }
 }

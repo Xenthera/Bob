@@ -1,0 +1,95 @@
+print("\n--- Test: try/catch/finally (extensive) ---");
+
+// 1) Basic catch and finally order
+var steps = [];
+try { steps.push("A"); throw {"message":"err"}; } catch (e) { steps.push("B:" + e.message); } finally { steps.push("C"); }
+assert(steps.len() == 3, "basic order length");
+assert(steps[0] == "A", "order A");
+assert(steps[1] == "B:err", "order B");
+assert(steps[2] == "C", "order C");
+
+// 2) No catch; finally runs; thrown propagates
+var caughtOuter = false; var fin = [];
+try {
+  try { fin.push("try"); throw {"message":"up"}; } finally { fin.push("finally"); }
+} catch (e) { caughtOuter = (e.message == "up"); }
+assert(caughtOuter == true, "outer caught propagated throw");
+assert(fin.len() == 2 && fin[1] == "finally", "finally executed without catch");
+
+// 3) Rethrow from catch
+caughtOuter = false;
+try {
+  try { throw {"message":"boom"}; }
+  catch (e) { throw e; }
+} catch (e) { caughtOuter = (e.message == "boom"); }
+assert(caughtOuter == true, "rethrow works");
+
+// 4) finally overriding return
+func f() {
+  try { return 1; } finally { return 2; }
+}
+assert(f() == 2, "finally overrides return");
+
+// 5) finally overriding throw
+func g() {
+  try { throw {"message":"x"}; } finally { return 3; }
+}
+assert(g() == 3, "finally overrides throw with return");
+
+// 6) Loop with continue/break inside finally
+var i = 0; var seq = [];
+while (i < 3) {
+  try { i = i + 1; seq.push(i); }
+  finally {
+    if (i < 3) continue;
+  }
+}
+assert(i == 3 && seq.len() == 3, "finally continue in loop");
+
+i = 0; seq = [];
+while (true) {
+  try { i = i + 1; seq.push(i); if (i == 2) throw {"message":"stop"}; }
+  catch (e) { seq.push("caught:" + e.message); }
+  finally {
+    if (i >= 2) break;
+  }
+}
+assert(seq.len() == 3 && seq[2] == "caught:stop", "finally break in loop");
+
+// 7) Throw from method and catch in caller
+class T { func f(x) { if (x < 0) throw {"message":"neg"}; return x; } }
+var t = T();
+var ok = 0;
+try { ok = t.f(5); } catch (e) { ok = -1; }
+var got = "";
+try { t.f(-1); } catch (e) { got = e.message; }
+assert(ok == 5 && got == "neg", "throw from method");
+
+// 8) Throw non-dict value
+var t = "";
+try { throw "oops"; } catch (e) { t = type(e) + ":" + e; }
+assert(t == "string:oops", "throw non-dict");
+
+// 9) Nested try with inner catch consuming error
+var mark = [];
+try {
+  try { throw {"message":"inner"}; }
+  catch (e) { mark.push(e.message); }
+} catch (e) { mark.push("outer:" + e.message); }
+assert(mark.len() == 1 && mark[0] == "inner", "inner catch consumes");
+
+// 10) Method/extension throws and is caught
+class P { func bad() { throw {"message":"m"}; } }
+var p = P();
+var mmsg = "";
+try { p.bad(); } catch (e) { mmsg = e.message; }
+assert(mmsg == "m", "method throw caught");
+
+extension array { func thrower() { throw {"message":"arr"}; } }
+var a = [1]; var amsg = "";
+try { a.thrower(); } catch (e) { amsg = e.message; }
+assert(amsg == "arr", "extension throw caught");
+
+print("try/catch/finally extensive: PASS");
+
+
