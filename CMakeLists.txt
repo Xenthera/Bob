@@ -45,11 +45,11 @@ elseif(MSVC)
 endif()
 
 # Collect source files
-file(GLOB_RECURSE BOB_RUNTIME_SOURCES "src/sources/runtime/*.cpp")
-file(GLOB_RECURSE BOB_PARSING_SOURCES "src/sources/parsing/*.cpp")
-file(GLOB_RECURSE BOB_STDLIB_SOURCES "src/sources/stdlib/*.cpp")
-file(GLOB_RECURSE BOB_BUILTIN_SOURCES "src/sources/builtinModules/*.cpp")
-file(GLOB_RECURSE BOB_CLI_SOURCES "src/sources/cli/*.cpp")
+file(GLOB_RECURSE BOB_RUNTIME_SOURCES CONFIGURE_DEPENDS "src/sources/runtime/*.cpp")
+file(GLOB_RECURSE BOB_PARSING_SOURCES CONFIGURE_DEPENDS "src/sources/parsing/*.cpp")
+file(GLOB_RECURSE BOB_STDLIB_SOURCES CONFIGURE_DEPENDS "src/sources/stdlib/*.cpp")
+file(GLOB_RECURSE BOB_BUILTIN_SOURCES CONFIGURE_DEPENDS "src/sources/builtinModules/*.cpp")
+file(GLOB_RECURSE BOB_CLI_SOURCES CONFIGURE_DEPENDS "src/sources/cli/*.cpp")
 
 # All source files
 set(BOB_ALL_SOURCES

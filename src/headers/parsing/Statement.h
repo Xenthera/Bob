@@ -291,11 +291,14 @@ struct ImportStmt : Stmt {
 // from module import name [as alias], name2 ...
 struct FromImportStmt : Stmt {
     Token fromToken;   // FROM
-    Token moduleName;  // IDENTIFIER
+    Token moduleName;  // IDENTIFIER or STRING
     struct ImportItem { Token name; bool hasAlias; Token alias; };
     std::vector<ImportItem> items;
+    bool importAll = false; // true for: from module import *;
     FromImportStmt(Token kw, Token mod, std::vector<ImportItem> it)
-        : fromToken(kw), moduleName(mod), items(std::move(it)) {}
+        : fromToken(kw), moduleName(mod), items(std::move(it)), importAll(false) {}
+    FromImportStmt(Token kw, Token mod, bool all)
+        : fromToken(kw), moduleName(mod), importAll(all) {}
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
         visitor->visitFromImportStmt(std::static_pointer_cast<FromImportStmt>(shared_from_this()), context);
     }

@@ -1,0 +1,29 @@
+print("\n--- Test: os basic ---");
+
+import os;
+
+var cwd = os.getcwd();
+assert(type(cwd) == "string", "getcwd returns string");
+
+var pid = os.getpid();
+assert(type(pid) == "number", "getpid returns number");
+
+var nm = os.name();
+assert(type(nm) == "string", "name returns string");
+
+var sep = os.sep();
+var psep = os.pathsep();
+var lsep = os.linesep();
+assert(type(sep) == "string" && type(psep) == "string" && type(lsep) == "string", "separators are strings");
+
+// listdir should return array
+var listing = os.listdir(".");
+assert(type(listing) == "array", "listdir returns array");
+
+// exists/isdir should be true for current dir
+assert(os.exists(".") == true, "exists(.) is true");
+assert(os.isdir(".") == true, "isdir(.) is true");
+
+print("os basic: PASS");
+
+

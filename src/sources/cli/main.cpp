@@ -6,20 +6,23 @@
 
 int main(int argc, char* argv[]){
     Bob bobLang;
-    // Example: host can register a custom module via Bob bridge (applied on first use)
-    bobLang.registerModule("demo", [](ModuleRegistry::ModuleBuilder& m) {
-        m.fn("hello", [](std::vector<Value> a, int, int) -> Value {
-            std::string who = (a.size() >= 1 && a[0].isString()) ? a[0].asString() : std::string("world");
-            return Value(std::string("hello ") + who);
-        });
-        m.val("meaning", Value(42.0));
-    });
-    //bobLang.setBuiltinModuleDenyList({"sys"});
+    // Enable open preset (all builtins, file imports allowed)
+    bobLang.setSafetyPreset("open");
+   
 
     if(argc > 1) {
+        // Seed argv/executable for sys module
+        std::vector<std::string> args; for (int i = 2; i < argc; ++i) args.emplace_back(argv[i]);
+        bobLang.registerModule("__configure_sys_argv__", [args, execPath = std::string(argv[0])](ModuleRegistry::ModuleBuilder& m){
+            m.interpreterRef.setArgv(args, execPath);
+        });
         bobLang.runFile(argv[1]);
     } else {
-        // For REPL, use interactive mode
+        // For REPL, use interactive mode and seed empty argv
+        std::vector<std::string> args;
+        bobLang.registerModule("__configure_sys_argv__", [args, execPath = std::string(argv[0])](ModuleRegistry::ModuleBuilder& m){
+            m.interpreterRef.setArgv(args, execPath);
+        });
         bobLang.runPrompt();
     }
 

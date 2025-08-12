@@ -89,18 +89,8 @@
 
 // print("done");
 
-from bobby import A as fart;
-import bobby;
-var a = fart();
-var b = bobby.A();
-a.test();
-b.test();
-print(bobby);
-
-
-
-
-
-
+// Modules: basic imports suite
+var pathMods = fileExists("tests/test_imports_basic.bob") ? "tests/test_imports_basic.bob" : "../tests/test_imports_basic.bob";
+evalFile(pathMods);
 
 print("done");

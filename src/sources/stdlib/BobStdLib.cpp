@@ -119,31 +119,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(assertFunc);
 
-    // Create a built-in time function (returns strictly increasing microseconds)
-    auto timeFunc = std::make_shared<BuiltinFunction>("time",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 0) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            static long long lastReturnedMicros = 0;
-            auto now = std::chrono::high_resolution_clock::now();
-            auto duration = now.time_since_epoch();
-            long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-            if (microseconds <= lastReturnedMicros) {
-                microseconds = lastReturnedMicros + 1;
-            }
-            lastReturnedMicros = microseconds;
-            return Value(static_cast<double>(microseconds));
-        });
-    env->define("time", Value(timeFunc));
-    
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(timeFunc);
+    // time-related globals moved into builtin time module
 
     // Create a built-in input function
     auto inputFunc = std::make_shared<BuiltinFunction>("input",
@@ -333,44 +309,49 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(exitFunc);
 
-    // Create a built-in sleep function for animations and timing
-    auto sleepFunc = std::make_shared<BuiltinFunction>("sleep",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+    // sleep moved into builtin time module
+
+    // Introspection: dir(obj) and functions(obj)
+    auto dirFunc = std::make_shared<BuiltinFunction>("dir",
+        [](std::vector<Value> args, int, int) -> Value {
+            if (args.size() != 1) return Value(std::vector<Value>{});
+            Value obj = args[0];
+            std::vector<Value> out;
+            if (obj.isModule()) {
+                auto* mod = obj.asModule();
+                if (mod && mod->exports) {
+                    for (const auto& kv : *mod->exports) out.push_back(Value(kv.first));
                 }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            } else if (obj.isDict()) {
+                const auto& d = obj.asDict();
+                for (const auto& kv : d) out.push_back(Value(kv.first));
             }
-            
-            if (!args[0].isNumber()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "sleep() argument must be a number", "", true);
-                }
-                throw std::runtime_error("sleep() argument must be a number");
-            }
-            
-            double seconds = args[0].asNumber();
-            if (seconds < 0) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "sleep() argument cannot be negative", "", true);
-                }
-                throw std::runtime_error("sleep() argument cannot be negative");
-            }
-            
-            // Convert to milliseconds and sleep
-            int milliseconds = static_cast<int>(seconds * 1000);
-            std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-            
-            return NONE_VALUE;
+            return Value(out);
         });
-    env->define("sleep", Value(sleepFunc));
-    
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(sleepFunc);
+    env->define("dir", Value(dirFunc));
+    interpreter.addBuiltinFunction(dirFunc);
+
+    auto functionsFunc = std::make_shared<BuiltinFunction>("functions",
+        [](std::vector<Value> args, int, int) -> Value {
+            if (args.size() != 1) return Value(std::vector<Value>{});
+            Value obj = args[0];
+            std::vector<Value> out;
+            auto pushIfFn = [&out](const std::pair<const std::string, Value>& kv){
+                if (kv.second.isFunction() || kv.second.isBuiltinFunction()) out.push_back(Value(kv.first));
+            };
+            if (obj.isModule()) {
+                auto* mod = obj.asModule();
+                if (mod && mod->exports) {
+                    for (const auto& kv : *mod->exports) pushIfFn(kv);
+                }
+            } else if (obj.isDict()) {
+                const auto& d = obj.asDict();
+                for (const auto& kv : d) pushIfFn(kv);
+            }
+            return Value(out);
+        });
+    env->define("functions", Value(functionsFunc));
+    interpreter.addBuiltinFunction(functionsFunc);
 
     // Create a built-in random function
     auto randomFunc = std::make_shared<BuiltinFunction>("random",
@@ -397,231 +378,11 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(randomFunc);
 
-    // Create a built-in eval function (like Python's eval)
-    auto evalFunc = std::make_shared<BuiltinFunction>("eval",
-        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "Invalid Arguments", 
-                        "eval expects exactly 1 argument (string)", "eval");
-                }
-                throw std::runtime_error("eval expects exactly 1 argument");
-            }
-            
-            if (!args[0].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "Invalid Type", 
-                        "eval argument must be a string", "eval");
-                }
-                throw std::runtime_error("eval argument must be a string");
-            }
-            
-            std::string code = args[0].asString();
-            std::string evalName = "<eval>";
-            
-            try {
-                // Push eval source for correct error context
-                if (errorReporter) {
-                    errorReporter->pushSource(code, evalName);
-                }
-                // Create a new lexer for the code string
-                Lexer lexer;
-                lexer.setErrorReporter(errorReporter);
-                std::vector<Token> tokens = lexer.Tokenize(code);
-                
-                // Create a new parser
-                Parser parser(tokens);
-                parser.setErrorReporter(errorReporter);
-                std::vector<std::shared_ptr<Stmt>> statements = parser.parse();
-                
-                // Execute the statements in the current environment
-                // Note: This runs in the current scope, so variables are shared
-                interpreter.interpret(statements);
-                
-                // For now, return NONE_VALUE since we don't have a way to get the last expression value
-                // In a more sophisticated implementation, we'd track the last expression result
-                return NONE_VALUE;
-                
-            } catch (const std::exception& e) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "Eval Error", 
-                        "Failed to evaluate code: " + std::string(e.what()), code);
-                }
-                throw std::runtime_error("eval failed: " + std::string(e.what()));
-            } catch (...) {
-                if (errorReporter) {
-                    errorReporter->popSource();
-                }
-                throw;
-            }
-            if (errorReporter) {
-                errorReporter->popSource();
-            }
-        });
-    env->define("eval", Value(evalFunc));
-    
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(evalFunc);
+    // (eval and evalFile moved to eval module)
 
     
 
-    // Create a built-in readFile function
-    auto readFileFunc = std::make_shared<BuiltinFunction>("readFile",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "readFile() argument must be a string", "", true);
-                }
-                throw std::runtime_error("readFile() argument must be a string");
-            }
-            
-            std::string filename = args[0].asString();
-            std::ifstream file(filename);
-            
-            if (!file.is_open()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Could not open file: " + filename, "", true);
-                }
-                throw std::runtime_error("Could not open file: " + filename);
-            }
-            
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            file.close();
-            
-            return Value(buffer.str());
-        });
-    env->define("readFile", Value(readFileFunc));
-    interpreter.addBuiltinFunction(readFileFunc);
-
-    // Create a built-in writeFile function
-    auto writeFileFunc = std::make_shared<BuiltinFunction>("writeFile",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 2) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 2 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 2 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "First argument to writeFile() must be a string", "", true);
-                }
-                throw std::runtime_error("First argument to writeFile() must be a string");
-            }
-            
-            if (!args[1].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Second argument to writeFile() must be a string", "", true);
-                }
-                throw std::runtime_error("Second argument to writeFile() must be a string");
-            }
-            
-            std::string filename = args[0].asString();
-            std::string content = args[1].asString();
-            
-            std::ofstream file(filename);
-            if (!file.is_open()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Could not create file: " + filename, "", true);
-                }
-                throw std::runtime_error("Could not create file: " + filename);
-            }
-            
-            file << content;
-            file.close();
-            
-            return NONE_VALUE;
-        });
-    env->define("writeFile", Value(writeFileFunc));
-    interpreter.addBuiltinFunction(writeFileFunc);
-
-    // Create a built-in readLines function
-    auto readLinesFunc = std::make_shared<BuiltinFunction>("readLines",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "readLines() argument must be a string", "", true);
-                }
-                throw std::runtime_error("readLines() argument must be a string");
-            }
-            
-            std::string filename = args[0].asString();
-            std::ifstream file(filename);
-            
-            if (!file.is_open()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Could not open file: " + filename, "", true);
-                }
-                throw std::runtime_error("Could not open file: " + filename);
-            }
-            
-            std::vector<Value> lines;
-            std::string line_content;
-            
-            while (std::getline(file, line_content)) {
-                lines.push_back(Value(line_content));
-            }
-            
-            file.close();
-            return Value(lines);
-        });
-    env->define("readLines", Value(readLinesFunc));
-    interpreter.addBuiltinFunction(readLinesFunc);
-
-    // Create a built-in fileExists function
-    auto fileExistsFunc = std::make_shared<BuiltinFunction>("fileExists",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
-            }
-            
-            if (!args[0].isString()) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "fileExists() argument must be a string", "", true);
-                }
-                throw std::runtime_error("fileExists() argument must be a string");
-            }
-            
-            std::string filename = args[0].asString();
-            std::ifstream file(filename);
-            bool exists = file.good();
-            file.close();
-            
-            return Value(exists);
-        });
-    env->define("fileExists", Value(fileExistsFunc));
-    interpreter.addBuiltinFunction(fileExistsFunc);
+    // (file I/O moved to io module)
 
     // Create a built-in memoryUsage function (platform-specific, best effort)
     auto memoryUsageFunc = std::make_shared<BuiltinFunction>("memoryUsage",

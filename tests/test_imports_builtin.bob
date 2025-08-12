@@ -3,39 +3,18 @@ print("\n--- Test: builtin imports ---");
 import sys;
 assert(type(sys) == "module", "sys is module");
 
-from sys import memoryUsage as mem;
+from sys import memoryUsage as mem, platform, version;
 var m = mem();
 assert(type(m) == "number" || type(m) == "none", "memoryUsage returns number or none");
-
-from sys import cwd, platform, getenv, pid, chdir, homeDir, tempDir, pathSep, dirSep, execPath, env, setenv, unsetenv;
-var dir = cwd();
-assert(type(dir) == "string" || type(dir) == "none", "cwd returns string/none");
 var plat = platform();
 assert(type(plat) == "string", "platform returns string");
-var home = getenv("HOME");
-assert(type(home) == "string" || type(home) == "none", "getenv returns string/none");
-var p = pid();
-assert(type(p) == "number", "pid returns number");
+var ver = version();
+assert(type(ver) == "string", "version returns string");
 
-var hs = homeDir();
-assert(type(hs) == "string" || type(hs) == "none", "homeDir returns string/none");
-var td = tempDir();
-assert(type(td) == "string", "tempDir returns string");
-var ps = pathSep();
-assert(type(ps) == "string", "pathSep is string");
-var ds = dirSep();
-assert(type(ds) == "string", "dirSep is string");
-var exe = execPath();
-assert(type(exe) == "string" || type(exe) == "none", "execPath returns string/none");
-
-var e = env();
-assert(type(e) == "dict", "env returns dict");
-var okset = setenv("BOB_TEST_ENV", "xyz");
-assert(okset == true || okset == false, "setenv returns bool");
-var gv = getenv("BOB_TEST_ENV");
-assert(type(gv) == "string" || type(gv) == "none", "getenv after setenv");
-var okunset = unsetenv("BOB_TEST_ENV");
-assert(okunset == true || okunset == false, "unsetenv returns bool");
+// OS functions are in os module now
+import os;
+var dir = os.getcwd();
+assert(type(dir) == "string" || type(dir) == "none", "getcwd returns string/none");
 
 print("builtin imports: PASS");
 

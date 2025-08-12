@@ -49,6 +49,70 @@ public:
     bool evalFile(const std::string& path);
     bool evalString(const std::string& code, const std::string& filename = "<eval>");
 
+    // Safety policy helpers (public API)
+    // Set all safety-related policies at once
+    void setSafetyPolicy(
+        bool allowBuiltins,
+        const std::vector<std::string>& allowList,
+        const std::vector<std::string>& denyList,
+        bool allowFileImports,
+        bool preferFileOverBuiltin,
+        const std::vector<std::string>& searchPaths
+    ) {
+        if (interpreter) {
+            interpreter->setBuiltinModulePolicy(allowBuiltins);
+            interpreter->setBuiltinModuleAllowList(allowList);
+            interpreter->setBuiltinModuleDenyList(denyList);
+            interpreter->setModulePolicy(allowFileImports, preferFileOverBuiltin, searchPaths);
+        } else {
+            pendingConfigurators.push_back([=](Interpreter& I){
+                I.setBuiltinModulePolicy(allowBuiltins);
+                I.setBuiltinModuleAllowList(allowList);
+                I.setBuiltinModuleDenyList(denyList);
+                I.setModulePolicy(allowFileImports, preferFileOverBuiltin, searchPaths);
+            });
+        }
+    }
+
+    // Simple presets: "open", "safe", "locked"
+    void setSafetyPreset(const std::string& preset) {
+        if (preset == "open") {
+            setSafetyPolicy(
+                true, /* allowBuiltins */
+                {},   /* allowList -> empty means allow all */
+                {},
+                true, /* allowFileImports */
+                true, /* preferFileOverBuiltin */
+                {}    /* searchPaths */
+            );
+        } else if (preset == "safe") {
+            // Allow only pure/harmless modules by default
+            setSafetyPolicy(
+                true,
+                std::vector<std::string>{
+                    "sys", "time", "rand", "math", "path", "base64"
+                },
+                std::vector<std::string>{ /* denyList empty when allowList is used */ },
+                false, /* disallow file-based imports */
+                true,
+                {}
+            );
+        } else if (preset == "locked") {
+            // No builtins visible; no file imports
+            setSafetyPolicy(
+                false,
+                {},
+                {},
+                false,
+                true,
+                {}
+            );
+        } else {
+            // Default to safe
+            setSafetyPreset("safe");
+        }
+    }
+
 private:
     void ensureInterpreter(bool interactive);
     void applyPendingConfigs() {

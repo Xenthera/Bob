@@ -3274,54 +3274,57 @@ print("  * Error reporting in both modes");
 // Additional Tests: Classes and Extensions
 print("\n--- Additional Tests: Classes and Extensions ---");
 var path1 = fileExists("tests/test_method_calls.bob") ? "tests/test_method_calls.bob" : "../tests/test_method_calls.bob";
-eval(readFile(path1));
+evalFile(path1);
 var path2 = fileExists("tests/test_class_basic.bob") ? "tests/test_class_basic.bob" : "../tests/test_class_basic.bob";
-eval(readFile(path2));
+evalFile(path2);
 var path3 = fileExists("tests/test_class_with_this.bob") ? "tests/test_class_with_this.bob" : "../tests/test_class_with_this.bob";
-eval(readFile(path3));
+evalFile(path3);
 var path4 = fileExists("tests/test_class_init.bob") ? "tests/test_class_init.bob" : "../tests/test_class_init.bob";
-eval(readFile(path4));
+evalFile(path4);
 var path5 = fileExists("tests/test_class_extension_user.bob") ? "tests/test_class_extension_user.bob" : "../tests/test_class_extension_user.bob";
-eval(readFile(path5));
+evalFile(path5);
 var path6 = fileExists("tests/test_extension_methods.bob") ? "tests/test_extension_methods.bob" : "../tests/test_extension_methods.bob";
-eval(readFile(path6));
+evalFile(path6);
 var path7 = fileExists("tests/test_class_inheritance.bob") ? "tests/test_class_inheritance.bob" : "../tests/test_class_inheritance.bob";
-eval(readFile(path7));
+evalFile(path7);
 var path8 = fileExists("tests/test_classes_comprehensive.bob") ? "tests/test_classes_comprehensive.bob" : "../tests/test_classes_comprehensive.bob";
-eval(readFile(path8));
+evalFile(path8);
 var path9 = fileExists("tests/test_class_super.bob") ? "tests/test_class_super.bob" : "../tests/test_class_super.bob";
-eval(readFile(path9));
+evalFile(path9);
 var path10 = fileExists("tests/test_classes_extensive.bob") ? "tests/test_classes_extensive.bob" : "../tests/test_classes_extensive.bob";
-eval(readFile(path10));
+evalFile(path10);
 var path11 = fileExists("tests/test_class_edge_cases.bob") ? "tests/test_class_edge_cases.bob" : "../tests/test_class_edge_cases.bob";
-eval(readFile(path11));
+evalFile(path11);
 var path12 = fileExists("tests/test_polymorphism.bob") ? "tests/test_polymorphism.bob" : "../tests/test_polymorphism.bob";
-eval(readFile(path12));
+evalFile(path12);
 var path13 = fileExists("tests/test_polymorphism_practical.bob") ? "tests/test_polymorphism_practical.bob" : "../tests/test_polymorphism_practical.bob";
-eval(readFile(path13));
+evalFile(path13);
 
 var path14 = fileExists("tests/test_builtin_methods_style.bob") ? "tests/test_builtin_methods_style.bob" : "../tests/test_builtin_methods_style.bob";
-eval(readFile(path14));
+evalFile(path14);
 
 var path15 = fileExists("tests/test_try_catch.bob") ? "tests/test_try_catch.bob" : "../tests/test_try_catch.bob";
-eval(readFile(path15));
+evalFile(path15);
 var path15a = fileExists("tests/test_try_catch_runtime.bob") ? "tests/test_try_catch_runtime.bob" : "../tests/test_try_catch_runtime.bob";
-eval(readFile(path15a));
+evalFile(path15a);
 var path15b = fileExists("tests/test_try_catch_extensive.bob") ? "tests/test_try_catch_extensive.bob" : "../tests/test_try_catch_extensive.bob";
-eval(readFile(path15b));
+evalFile(path15b);
 var path15c = fileExists("tests/test_try_catch_edge_cases2.bob") ? "tests/test_try_catch_edge_cases2.bob" : "../tests/test_try_catch_edge_cases2.bob";
-eval(readFile(path15c));
+evalFile(path15c);
 var path15d = fileExists("tests/test_try_catch_cross_function.bob") ? "tests/test_try_catch_cross_function.bob" : "../tests/test_try_catch_cross_function.bob";
-eval(readFile(path15d));
+evalFile(path15d);
 var path15e = fileExists("tests/test_try_catch_loop_interactions.bob") ? "tests/test_try_catch_loop_interactions.bob" : "../tests/test_try_catch_loop_interactions.bob";
-eval(readFile(path15e));
+evalFile(path15e);
 
 // Modules: basic imports suite
 var pathMods = fileExists("tests/test_imports_basic.bob") ? "tests/test_imports_basic.bob" : "../tests/test_imports_basic.bob";
-eval(readFile(pathMods));
+evalFile(pathMods);
 
 var pathModsB = fileExists("tests/test_imports_builtin.bob") ? "tests/test_imports_builtin.bob" : "../tests/test_imports_builtin.bob";
-eval(readFile(pathModsB));
+evalFile(pathModsB);
+
+var pathOs = fileExists("tests/test_os_basic.bob") ? "tests/test_os_basic.bob" : "../tests/test_os_basic.bob";
+evalFile(pathOs);
 
 print("\nAll tests passed.");
 print("Test suite complete.");

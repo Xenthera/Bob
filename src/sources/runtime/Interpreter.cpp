@@ -124,13 +124,9 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
     // Cache key resolution
     std::string key = spec;
     std::string baseDir = "";
-    if (errorReporter) {
-        // Try to use current file from reporter; else cwd
-        if (!errorReporter->getCurrentFileName().empty()) {
-            std::filesystem::path p(errorReporter->getCurrentFileName());
-            baseDir = p.has_parent_path() ? p.parent_path().string() : baseDir;
-        }
-        if (baseDir.empty()) { char buf[4096]; if (getcwd(buf, sizeof(buf))) baseDir = std::string(buf); }
+    if (errorReporter && !errorReporter->getCurrentFileName().empty()) {
+        std::filesystem::path p(errorReporter->getCurrentFileName());
+        baseDir = p.has_parent_path() ? p.parent_path().string() : baseDir;
     }
     if (looksPath) {
         if (!allowFileImports) {
@@ -222,7 +218,6 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
     // Restore env and reporter
     setEnvironment(saved);
     if (errorReporter) errorReporter->popSource();
-
     return moduleVal;
 }
 

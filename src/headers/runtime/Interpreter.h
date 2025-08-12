@@ -172,9 +172,19 @@ public:
      void setLastErrorSite(int line, int column) { lastErrorLine = line; lastErrorColumn = column; }
      int getLastErrorLine() const { return lastErrorLine; }
      int getLastErrorColumn() const { return lastErrorColumn; }
+
+    // Process/host metadata (for sys module)
+    void setArgv(const std::vector<std::string>& args, const std::string& executablePath) { argvData = args; executableFile = executablePath; }
+    std::vector<std::string> getArgv() const { return argvData; }
+    std::string getExecutablePath() const { return executableFile; }
+    std::unordered_map<std::string, Value> getModuleCacheSnapshot() const { return moduleCache; }
+
     
     
 
 private:
     Value runTrampoline(Value initialResult);
+    // Stored argv/executable for sys module
+    std::vector<std::string> argvData;
+    std::string executableFile;
 };

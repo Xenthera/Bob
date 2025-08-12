@@ -336,6 +336,20 @@ void Executor::visitImportStmt(const std::shared_ptr<ImportStmt>& statement, Exe
 
 void Executor::visitFromImportStmt(const std::shared_ptr<FromImportStmt>& statement, ExecutionContext* context) {
     std::string spec = statement->moduleName.lexeme; // already STRING with .bob from parser if name-based
+    // Star-import case
+    if (statement->importAll) {
+        // Import the module and bind all public exports into current environment
+        Value mod = interpreter->importModule(spec, statement->fromToken.line, statement->fromToken.column);
+        const std::unordered_map<std::string, Value>* src = nullptr;
+        if (mod.isModule()) src = mod.asModule()->exports.get(); else if (mod.isDict()) src = &mod.asDict();
+        if (!src) { throw std::runtime_error("from-import * on non-module"); }
+        for (const auto& kv : *src) {
+            const std::string& name = kv.first;
+            if (!name.empty() && name[0] == '_') continue; // skip private
+            interpreter->getEnvironment()->define(name, kv.second);
+        }
+        return;
+    }
     // Build item list name->alias
     std::vector<std::pair<std::string,std::string>> items;
     for (const auto& it : statement->items) {

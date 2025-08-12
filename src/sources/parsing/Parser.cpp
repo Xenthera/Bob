@@ -648,6 +648,11 @@ std::shared_ptr<Stmt> Parser::fromImportStatement() {
     Token mod = isString ? advance() : consume(IDENTIFIER, "Expected module name or path string after 'from'.");
     // Keep IDENTIFIER for name-based from-imports
     consume(IMPORT, "Expected 'import' after module name.");
+    // Support star-import: from module import *;
+    if (match({STAR})) {
+        consume(SEMICOLON, "Expected ';' after from-import statement.");
+        return msptr(FromImportStmt)(fromTok, mod, true);
+    }
     std::vector<FromImportStmt::ImportItem> items;
     do {
         Token name = consume(IDENTIFIER, "Expected name to import.");

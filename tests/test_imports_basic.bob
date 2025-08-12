@@ -28,7 +28,7 @@ var after = mod_hello.X;
 assert(before == after, "module executed once (cached)");
 
 // Cross-file visibility in same interpreter: eval user file after importing here
-eval(readFile("tests/import_user_of_mod_hello.bob"));
+evalFile("tests/import_user_of_mod_hello.bob");
 
 // Immutability: cannot reassign module binding
 var immFail = false;
