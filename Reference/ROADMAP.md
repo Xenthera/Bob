@@ -56,7 +56,7 @@ Bob is a mature, working programming language with a modern architecture and com
 - **Type System**: `type()`, `toString()`, `toNumber()`, `toInt()`, `toBoolean()`
 - **Testing**: `assert()` with custom error messages
 - **Timing**: `time()` (microsecond precision), `sleep()`
-- **Utility**: `random()` (properly seeded), `eval()`, `exit()`
+- **Utility**: `rand.random()` (properly seeded), `eval.eval()`, `sys.exit()`
 - **Data Structure**: `len()`, `push()`, `pop()`, `keys()`, `values()`, `has()`
 - **File I/O**: `readFile()`, `writeFile()`, `readLines()`, `fileExists()`
 

@@ -300,7 +300,7 @@
   "Random Number": {
     "prefix": "random",
     "body": [
-      "var randomValue = random();"
+      "import rand; var randomValue = rand.random();"
     ],
     "description": "Generate random number"
   },

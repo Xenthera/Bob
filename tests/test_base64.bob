@@ -1,0 +1,11 @@
+print("\n--- Test: base64 module ---");
+import base64;
+
+var s = "hello world";
+var enc = base64.encode(s);
+assert(enc == "aGVsbG8gd29ybGQ=", "base64.encode");
+var dec = base64.decode(enc);
+assert(dec == s, "base64.decode roundtrip");
+print("base64: PASS");
+
+

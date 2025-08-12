@@ -151,8 +151,9 @@ input("File data cleared. Check memory usage...");
 print("Test 6: Random number stress");
 var randomData = [];
 for (var i = 0; i < 200000; i++) {
-    var rand1 = random();
-    var rand2 = random();
+    import rand as RLeak;
+    var rand1 = RLeak.random();
+    var rand2 = RLeak.random();
     var sum = rand1 + rand2;
     
     randomData.push({

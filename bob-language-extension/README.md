@@ -24,7 +24,7 @@ This extension provides syntax highlighting and language support for the Bob pro
 - `print()`, `assert()`, `input()`, `type()`, `toString()`, `toNumber()`, `toInt()`, `time()`, `sleep()`, `printRaw()`
 - Arrays/Dictionaries (preferred method style): `arr.len()`, `arr.push(...)`, `arr.pop()`, `dict.len()`, `dict.keys()`, `dict.values()`, `dict.has()`
 - Global forms still available: `len(x)`, `push(arr, ...)`, `pop(arr)`, `keys(dict)`, `values(dict)`, `has(dict, key)`
-- Misc: `random()`, `eval()`
+- Misc: `rand.random()`, `eval.eval()`
 
 ### Data Types
 - Numbers (integers, floats, binary `0b1010`, hex `0xFF`)

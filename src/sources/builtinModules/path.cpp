@@ -27,7 +27,9 @@ void registerPathModule(Interpreter& interpreter) {
         m.fn("splitext", [](std::vector<Value> a, int, int) -> Value {
             if (a.size()!=1 || !a[0].isString()) return NONE_VALUE;
             fs::path p(a[0].asString());
-            return Value(std::vector<Value>{ Value(p.replace_extension("").generic_string()), Value(p.extension().generic_string()) });
+            std::string ext = p.has_extension() ? p.extension().generic_string() : std::string("");
+            fs::path basePath = p.has_extension() ? (p.parent_path() / p.stem()) : p;
+            return Value(std::vector<Value>{ Value(basePath.generic_string()), Value(ext) });
         });
         m.fn("normalize", [](std::vector<Value> a, int, int) -> Value {
             if (a.size()!=1 || !a[0].isString()) return NONE_VALUE;

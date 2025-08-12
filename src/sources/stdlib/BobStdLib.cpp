@@ -290,24 +290,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.addBuiltinFunction(toBooleanFunc);
 
-    // Create a built-in exit function to terminate the program
-    auto exitFunc = std::make_shared<BuiltinFunction>("exit",
-        [](std::vector<Value> args, int line, int column) -> Value {
-            int exitCode = 0;  // Default exit code
-            
-            if (args.size() > 0) {
-                if (args[0].isNumber()) {
-                    exitCode = static_cast<int>(args[0].asNumber());
-                }
-                // If not a number, just use default exit code 0
-            }
-            
-            std::exit(exitCode);
-        });
-    env->define("exit", Value(exitFunc));
-    
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(exitFunc);
+    // exit moved to sys module
 
     // sleep moved into builtin time module
 
@@ -353,30 +336,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("functions", Value(functionsFunc));
     interpreter.addBuiltinFunction(functionsFunc);
 
-    // Create a built-in random function
-    auto randomFunc = std::make_shared<BuiltinFunction>("random",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 0) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            // Seed the random number generator if not already done
-            static bool seeded = false;
-            if (!seeded) {
-                srand(static_cast<unsigned int>(time(nullptr)));
-                seeded = true;
-            }
-            
-            return Value(static_cast<double>(rand()) / RAND_MAX);
-        });
-    env->define("random", Value(randomFunc));
-    
-    // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(randomFunc);
+    // random moved to rand module
 
     // (eval and evalFile moved to eval module)
 
@@ -384,53 +344,6 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // (file I/O moved to io module)
 
-    // Create a built-in memoryUsage function (platform-specific, best effort)
-    auto memoryUsageFunc = std::make_shared<BuiltinFunction>("memoryUsage",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 0) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 0 arguments but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 0 arguments but got " + std::to_string(args.size()) + ".");
-            }
-            
-            // Platform-specific memory usage detection
-            size_t memoryBytes = 0;
-            
-#if defined(__APPLE__) && defined(__MACH__)
-            // macOS
-            struct mach_task_basic_info info;
-            mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
-            if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount) == KERN_SUCCESS) {
-                memoryBytes = info.resident_size;
-            }
-#elif defined(__linux__)
-            // Linux - read from /proc/self/status
-            std::ifstream statusFile("/proc/self/status");
-            std::string line;
-            while (std::getline(statusFile, line)) {
-                if (line.substr(0, 6) == "VmRSS:") {
-                    std::istringstream iss(line);
-                    std::string label, value, unit;
-                    iss >> label >> value >> unit;
-                    memoryBytes = std::stoull(value) * 1024; // Convert KB to bytes
-                    break;
-                }
-            }
-#elif defined(_WIN32)
-            // Windows
-            PROCESS_MEMORY_COUNTERS pmc;
-            if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
-                memoryBytes = pmc.WorkingSetSize;
-            }
-#endif
-            
-            // Return memory usage in MB for readability
-            double memoryMB = static_cast<double>(memoryBytes) / (1024.0 * 1024.0);
-            return Value(memoryMB);
-        });
-    env->define("memoryUsage", Value(memoryUsageFunc));
-    interpreter.addBuiltinFunction(memoryUsageFunc);
+    // memoryUsage moved to sys module
 
 } 

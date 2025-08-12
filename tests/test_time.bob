@@ -1,0 +1,14 @@
+print("\n--- Test: time module ---");
+import time;
+
+var t1 = time.now();
+var t2 = time.now();
+assert(t2 >= t1, "time.now monotonic-ish");
+
+var m1 = time.monotonic();
+time.sleep(0.01);
+var m2 = time.monotonic();
+assert(m2 > m1, "time.monotonic increases");
+print("time: PASS");
+
+

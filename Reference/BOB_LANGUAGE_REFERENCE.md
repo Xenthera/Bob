@@ -260,7 +260,7 @@ toInt(3.9);        // 3 (global)
 assert(condition, "message");  // Testing
 time();                        // Current time in microseconds
 sleep(1.5);                   // Sleep for 1.5 seconds
-random();                     // Random number 0-1
+rand.random();                // Random number 0-1
 eval("print('Hello');");     // Execute string as code
 exit(0);                     // Exit program
 ```
@@ -297,7 +297,7 @@ The following built-ins are available by default. Unless specified, functions th
 - fileExists(path): boolean
 - time(): microseconds since Unix epoch
 - sleep(seconds): pauses execution
-- random(): float in [0,1)
+- rand.random(): float in [0,1)
 - eval(code): executes code string in current environment
 - exit(code?): terminates the program
 

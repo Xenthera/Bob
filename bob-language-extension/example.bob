@@ -91,7 +91,7 @@ value *= 2;
 value -= 3;
 
 // New built-in functions
-var randomValue = random();
+import rand; var randomValue = rand.random();
 sleep(100);  // Sleep for 100ms
 printRaw("No newline here");
 eval("print('Dynamic code execution!');");

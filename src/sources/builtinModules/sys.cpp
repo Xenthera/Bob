@@ -8,6 +8,18 @@
 #include <cstring>
 #include <vector>
 
+// Platform-specific includes for memoryUsage()
+#if defined(__APPLE__) && defined(__MACH__)
+#include <mach/mach.h>
+#elif defined(__linux__)
+#include <fstream>
+#include <sstream>
+#elif defined(_WIN32)
+#define NOMINMAX
+#include <windows.h>
+#include <psapi.h>
+#endif
+
 void registerSysModule(Interpreter& interpreter) {
     interpreter.registerModule("sys", [](Interpreter::ModuleBuilder& m) {
         Interpreter& I = m.interpreterRef;
@@ -36,6 +48,40 @@ void registerSysModule(Interpreter& interpreter) {
             Value dictVal = Value(std::unordered_map<std::string, Value>{});
             auto snapshot = I.getModuleCacheSnapshot();
             return Value(snapshot);
+        });
+        // memoryUsage(): process RSS in MB (best effort per-platform)
+        m.fn("memoryUsage", [](std::vector<Value> a, int, int) -> Value {
+            if (!a.empty()) return NONE_VALUE;
+            size_t memoryBytes = 0;
+#if defined(__APPLE__) && defined(__MACH__)
+            // macOS
+            struct mach_task_basic_info info;
+            mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+            if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &infoCount) == KERN_SUCCESS) {
+                memoryBytes = info.resident_size;
+            }
+#elif defined(__linux__)
+            // Linux
+            std::ifstream statusFile("/proc/self/status");
+            std::string line;
+            while (std::getline(statusFile, line)) {
+                if (line.substr(0, 6) == "VmRSS:") {
+                    std::istringstream iss(line);
+                    std::string label, value, unit;
+                    iss >> label >> value >> unit;
+                    memoryBytes = std::stoull(value) * 1024; // KB -> bytes
+                    break;
+                }
+            }
+#elif defined(_WIN32)
+            // Windows
+            PROCESS_MEMORY_COUNTERS pmc;
+            if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+                memoryBytes = pmc.WorkingSetSize;
+            }
+#endif
+            double memoryMB = static_cast<double>(memoryBytes) / (1024.0 * 1024.0);
+            return Value(memoryMB);
         });
         m.fn("exit", [](std::vector<Value> a, int, int) -> Value {
             int code = 0; if (!a.empty() && a[0].isNumber()) code = static_cast<int>(a[0].asNumber());

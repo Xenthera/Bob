@@ -786,9 +786,9 @@ print("Comprehensive number tests: PASS");
 // TEST 29: TIME FUNCTION
 // ========================================
 print("\n--- Test 29: Time Function ---");
-
-var start_time = time();
-var end_time = time();
+import time;
+var start_time = time.now();
+var end_time = time.now();
 var duration = end_time - start_time;
 assert(start_time > 0, "Start time should be positive");
 assert(end_time >= start_time, "End time should be >= start time");
@@ -2416,15 +2416,17 @@ print("Array built-in functions: PASS");
 print("\n--- Test 52: New Built-in Functions ---");
 
 // sleep() function
-var startTime = time();
-//sleep(0.001);  // Sleep for 1ms (much shorter for testing)
-var endTime = time();
+import time as T;
+var startTime = T.now();
+T.sleep(0.01);  // Sleep briefly to ensure elapsed time
+var endTime = T.now();
 assert(endTime > startTime, "sleep() - time elapsed");
 
 // random() function - test proper seeding
-var random1 = random();
-var random2 = random();
-var random3 = random();
+import rand as R;
+var random1 = R.random();
+var random2 = R.random();
+var random3 = R.random();
 assert(random1 >= 0 && random1 <= 1, "random() - range check 1");
 assert(random2 >= 0 && random2 <= 1, "random() - range check 2");
 assert(random3 >= 0 && random3 <= 1, "random() - range check 3");
@@ -2432,29 +2434,43 @@ assert(random3 >= 0 && random3 <= 1, "random() - range check 3");
 assert(random1 != random2 || random2 != random3 || random1 != random3, "random() - different values");
 
 // Test random number generation in different ranges
-var randomRange1 = random() * 10;
-var randomRange2 = random() * 100;
+var randomRange1 = R.random() * 10;
+var randomRange2 = R.random() * 100;
 assert(randomRange1 >= 0 && randomRange1 <= 10, "random() - range 0-10");
 assert(randomRange2 >= 0 && randomRange2 <= 100, "random() - range 0-100");
 
-// eval() function
-eval("var evalVar = 42;");
+// eval() function (now via eval module)
+import eval as E;
+E.eval("var evalVar = 42;");
 assert(evalVar == 42, "eval() - variable creation");
 
-eval("print(\"eval test\");");  // Should print "eval test"
+E.eval("print(\"eval test\");");  // Should print "eval test"
 
-var evalResult = eval("2 + 2;");
+var evalResult = E.eval("2 + 2;");
 // eval() currently returns none, so we just test it doesn't crash
 
 // Test eval with complex expressions
-eval("var complexVar = [1, 2, 3];");
+E.eval("var complexVar = [1, 2, 3];");
 assert(complexVar.len() == 3, "eval() - complex expression");
 
 // Test eval with function definitions
-eval("func evalFunc(x) { return x * 2; }");
+E.eval("func evalFunc(x) { return x * 2; }");
 assert(evalFunc(5) == 10, "eval() - function definition");
 
 print("New built-in functions: PASS");
+
+// Module tests
+import io as IO;
+var p1 = IO.exists("tests/test_path.bob") ? "tests/test_path.bob" : "../tests/test_path.bob";
+E.evalFile(p1);
+var p2 = IO.exists("tests/test_base64.bob") ? "tests/test_base64.bob" : "../tests/test_base64.bob";
+E.evalFile(p2);
+var p3 = IO.exists("tests/test_math.bob") ? "tests/test_math.bob" : "../tests/test_math.bob";
+E.evalFile(p3);
+var p4 = IO.exists("tests/test_rand.bob") ? "tests/test_rand.bob" : "../tests/test_rand.bob";
+E.evalFile(p4);
+var p5 = IO.exists("tests/test_time.bob") ? "tests/test_time.bob" : "../tests/test_time.bob";
+E.evalFile(p5);
 
 // ========================================
 // TEST 52.5: EXIT FUNCTION
@@ -2718,14 +2734,14 @@ print("\n--- Test 54: Array Performance ---");
 
 // Test large array operations
 var perfArray = [];
-var startTime = time();
+import time as T; var startTime = T.now();
 
 // Create large array
 for (var i = 0; i < 1000; i = i + 1) {
     perfArray.push(i);
 }
 
-var midTime = time();
+var midTime = T.now();
 assert(perfArray.len() == 1000, "Array performance - creation");
 
 // Access elements
@@ -2734,7 +2750,7 @@ for (var j = 0; j < 100; j = j + 1) {
     assert(value == j * 10, "Array performance - access");
 }
 
-var endTime = time();
+var endTime = T.now();
 assert(endTime > startTime, "Array performance - time check");
 
 print("Array performance: PASS");
@@ -2852,7 +2868,7 @@ print("\n--- Test 57: Array Stress Testing ---");
 
 // Large array creation and manipulation
 var stressArray = [];
-var startTime = time();
+import time as T2; var startTime = T2.now();
 
 // Create large array with mixed types
 for (var i = 0; i < 500; i = i + 1) {
@@ -2865,7 +2881,7 @@ for (var i = 0; i < 500; i = i + 1) {
     }
 }
 
-var midTime = time();
+var midTime = T2.now();
 assert(stressArray.len() == 500, "Stress test - array creation");
 
 // Access and modify elements
@@ -2876,7 +2892,7 @@ for (var j = 0; j < 100; j = j + 1) {
     }
 }
 
-var endTime = time();
+var endTime = T2.now();
 assert(endTime > startTime, "Stress test - time validation");
 
 // Verify modifications
@@ -2992,7 +3008,8 @@ assert(toInt(-0.0) == 0, "toInt(-0.0) should be 0");
 
 // Test with random numbers
 for(var i = 0; i < 5; i++) {
-    var randomFloat = random() * 10;
+    import rand as Rn;
+    var randomFloat = Rn.random() * 10;
     var randomInt = toInt(randomFloat);
     assert(randomInt >= 0 && randomInt <= 9, "toInt(random) should be in range 0-9");
 }
@@ -3273,58 +3290,59 @@ print("  * Error reporting in both modes");
 
 // Additional Tests: Classes and Extensions
 print("\n--- Additional Tests: Classes and Extensions ---");
-var path1 = fileExists("tests/test_method_calls.bob") ? "tests/test_method_calls.bob" : "../tests/test_method_calls.bob";
-evalFile(path1);
-var path2 = fileExists("tests/test_class_basic.bob") ? "tests/test_class_basic.bob" : "../tests/test_class_basic.bob";
-evalFile(path2);
-var path3 = fileExists("tests/test_class_with_this.bob") ? "tests/test_class_with_this.bob" : "../tests/test_class_with_this.bob";
-evalFile(path3);
-var path4 = fileExists("tests/test_class_init.bob") ? "tests/test_class_init.bob" : "../tests/test_class_init.bob";
-evalFile(path4);
-var path5 = fileExists("tests/test_class_extension_user.bob") ? "tests/test_class_extension_user.bob" : "../tests/test_class_extension_user.bob";
-evalFile(path5);
-var path6 = fileExists("tests/test_extension_methods.bob") ? "tests/test_extension_methods.bob" : "../tests/test_extension_methods.bob";
-evalFile(path6);
-var path7 = fileExists("tests/test_class_inheritance.bob") ? "tests/test_class_inheritance.bob" : "../tests/test_class_inheritance.bob";
-evalFile(path7);
-var path8 = fileExists("tests/test_classes_comprehensive.bob") ? "tests/test_classes_comprehensive.bob" : "../tests/test_classes_comprehensive.bob";
-evalFile(path8);
-var path9 = fileExists("tests/test_class_super.bob") ? "tests/test_class_super.bob" : "../tests/test_class_super.bob";
-evalFile(path9);
-var path10 = fileExists("tests/test_classes_extensive.bob") ? "tests/test_classes_extensive.bob" : "../tests/test_classes_extensive.bob";
-evalFile(path10);
-var path11 = fileExists("tests/test_class_edge_cases.bob") ? "tests/test_class_edge_cases.bob" : "../tests/test_class_edge_cases.bob";
-evalFile(path11);
-var path12 = fileExists("tests/test_polymorphism.bob") ? "tests/test_polymorphism.bob" : "../tests/test_polymorphism.bob";
-evalFile(path12);
-var path13 = fileExists("tests/test_polymorphism_practical.bob") ? "tests/test_polymorphism_practical.bob" : "../tests/test_polymorphism_practical.bob";
-evalFile(path13);
+import io as IO; // for file existence checks
+var path1 = IO.exists("tests/test_method_calls.bob") ? "tests/test_method_calls.bob" : "../tests/test_method_calls.bob";
+E.evalFile(path1);
+var path2 = IO.exists("tests/test_class_basic.bob") ? "tests/test_class_basic.bob" : "../tests/test_class_basic.bob";
+E.evalFile(path2);
+var path3 = IO.exists("tests/test_class_with_this.bob") ? "tests/test_class_with_this.bob" : "../tests/test_class_with_this.bob";
+E.evalFile(path3);
+var path4 = IO.exists("tests/test_class_init.bob") ? "tests/test_class_init.bob" : "../tests/test_class_init.bob";
+E.evalFile(path4);
+var path5 = IO.exists("tests/test_class_extension_user.bob") ? "tests/test_class_extension_user.bob" : "../tests/test_class_extension_user.bob";
+E.evalFile(path5);
+var path6 = IO.exists("tests/test_extension_methods.bob") ? "tests/test_extension_methods.bob" : "../tests/test_extension_methods.bob";
+E.evalFile(path6);
+var path7 = IO.exists("tests/test_class_inheritance.bob") ? "tests/test_class_inheritance.bob" : "../tests/test_class_inheritance.bob";
+E.evalFile(path7);
+var path8 = IO.exists("tests/test_classes_comprehensive.bob") ? "tests/test_classes_comprehensive.bob" : "../tests/test_classes_comprehensive.bob";
+E.evalFile(path8);
+var path9 = IO.exists("tests/test_class_super.bob") ? "tests/test_class_super.bob" : "../tests/test_class_super.bob";
+E.evalFile(path9);
+var path10 = IO.exists("tests/test_classes_extensive.bob") ? "tests/test_classes_extensive.bob" : "../tests/test_classes_extensive.bob";
+E.evalFile(path10);
+var path11 = IO.exists("tests/test_class_edge_cases.bob") ? "tests/test_class_edge_cases.bob" : "../tests/test_class_edge_cases.bob";
+E.evalFile(path11);
+var path12 = IO.exists("tests/test_polymorphism.bob") ? "tests/test_polymorphism.bob" : "../tests/test_polymorphism.bob";
+E.evalFile(path12);
+var path13 = IO.exists("tests/test_polymorphism_practical.bob") ? "tests/test_polymorphism_practical.bob" : "../tests/test_polymorphism_practical.bob";
+E.evalFile(path13);
 
-var path14 = fileExists("tests/test_builtin_methods_style.bob") ? "tests/test_builtin_methods_style.bob" : "../tests/test_builtin_methods_style.bob";
-evalFile(path14);
+var path14 = IO.exists("tests/test_builtin_methods_style.bob") ? "tests/test_builtin_methods_style.bob" : "../tests/test_builtin_methods_style.bob";
+E.evalFile(path14);
 
-var path15 = fileExists("tests/test_try_catch.bob") ? "tests/test_try_catch.bob" : "../tests/test_try_catch.bob";
-evalFile(path15);
-var path15a = fileExists("tests/test_try_catch_runtime.bob") ? "tests/test_try_catch_runtime.bob" : "../tests/test_try_catch_runtime.bob";
-evalFile(path15a);
-var path15b = fileExists("tests/test_try_catch_extensive.bob") ? "tests/test_try_catch_extensive.bob" : "../tests/test_try_catch_extensive.bob";
-evalFile(path15b);
-var path15c = fileExists("tests/test_try_catch_edge_cases2.bob") ? "tests/test_try_catch_edge_cases2.bob" : "../tests/test_try_catch_edge_cases2.bob";
-evalFile(path15c);
-var path15d = fileExists("tests/test_try_catch_cross_function.bob") ? "tests/test_try_catch_cross_function.bob" : "../tests/test_try_catch_cross_function.bob";
-evalFile(path15d);
-var path15e = fileExists("tests/test_try_catch_loop_interactions.bob") ? "tests/test_try_catch_loop_interactions.bob" : "../tests/test_try_catch_loop_interactions.bob";
-evalFile(path15e);
+var path15 = IO.exists("tests/test_try_catch.bob") ? "tests/test_try_catch.bob" : "../tests/test_try_catch.bob";
+E.evalFile(path15);
+var path15a = IO.exists("tests/test_try_catch_runtime.bob") ? "tests/test_try_catch_runtime.bob" : "../tests/test_try_catch_runtime.bob";
+E.evalFile(path15a);
+var path15b = IO.exists("tests/test_try_catch_extensive.bob") ? "tests/test_try_catch_extensive.bob" : "../tests/test_try_catch_extensive.bob";
+E.evalFile(path15b);
+var path15c = IO.exists("tests/test_try_catch_edge_cases2.bob") ? "tests/test_try_catch_edge_cases2.bob" : "../tests/test_try_catch_edge_cases2.bob";
+E.evalFile(path15c);
+var path15d = IO.exists("tests/test_try_catch_cross_function.bob") ? "tests/test_try_catch_cross_function.bob" : "../tests/test_try_catch_cross_function.bob";
+E.evalFile(path15d);
+var path15e = IO.exists("tests/test_try_catch_loop_interactions.bob") ? "tests/test_try_catch_loop_interactions.bob" : "../tests/test_try_catch_loop_interactions.bob";
+E.evalFile(path15e);
 
 // Modules: basic imports suite
-var pathMods = fileExists("tests/test_imports_basic.bob") ? "tests/test_imports_basic.bob" : "../tests/test_imports_basic.bob";
-evalFile(pathMods);
+var pathMods = IO.exists("tests/test_imports_basic.bob") ? "tests/test_imports_basic.bob" : "../tests/test_imports_basic.bob";
+E.evalFile(pathMods);
 
-var pathModsB = fileExists("tests/test_imports_builtin.bob") ? "tests/test_imports_builtin.bob" : "../tests/test_imports_builtin.bob";
-evalFile(pathModsB);
+var pathModsB = IO.exists("tests/test_imports_builtin.bob") ? "tests/test_imports_builtin.bob" : "../tests/test_imports_builtin.bob";
+E.evalFile(pathModsB);
 
-var pathOs = fileExists("tests/test_os_basic.bob") ? "tests/test_os_basic.bob" : "../tests/test_os_basic.bob";
-evalFile(pathOs);
+var pathOs = IO.exists("tests/test_os_basic.bob") ? "tests/test_os_basic.bob" : "../tests/test_os_basic.bob";
+E.evalFile(pathOs);
 
 print("\nAll tests passed.");
 print("Test suite complete.");

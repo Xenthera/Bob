@@ -1,0 +1,15 @@
+print("\n--- Test: path module ---");
+import path;
+
+assert(path.join("a","b","c.txt") == "a/b/c.txt", "path.join");
+assert(path.dirname("/a/b/c.txt") == "/a/b", "path.dirname");
+assert(path.basename("/a/b/c.txt") == "c.txt", "path.basename");
+var sp = path.splitext("c.txt");
+assert(sp[0] == "c" && sp[1] == ".txt", "path.splitext");
+assert(path.normalize("a/./b/../c") == "a/c", "path.normalize");
+assert(path.isabs("/a/b") == true, "path.isabs");
+var rp = path.relpath("/a/b/c", "/a");
+assert(rp == "b/c" || rp == "../a/b/c", "path.relpath platform tolerance");
+print("path: PASS");
+
+
