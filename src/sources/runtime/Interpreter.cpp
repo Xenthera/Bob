@@ -1,10 +1,15 @@
 #include "Interpreter.h"
+#include "register.h"
 #include "Evaluator.h"
 #include "Executor.h"
 #include "BobStdLib.h"
 #include "ErrorReporter.h"
 #include "Environment.h"
 #include "Expression.h"
+#include "Parser.h"
+#include <filesystem>
+#include <unistd.h>
+#include <fstream>
 #include <iostream>
 
 Interpreter::Interpreter(bool isInteractive) 
@@ -12,6 +17,11 @@ Interpreter::Interpreter(bool isInteractive)
     evaluator = std::make_unique<Evaluator>(this);
     executor = std::make_unique<Executor>(this, evaluator.get());
     environment = std::make_shared<Environment>();
+    // Default module search paths: current dir and tests
+    moduleSearchPaths = { ".", "tests" };
+
+    // Register all builtin modules via aggregator
+    registerAllBuiltinModules(*this);
 }
 
 Interpreter::~Interpreter() = default;
@@ -34,6 +44,21 @@ Value Interpreter::evaluate(const std::shared_ptr<Expr>& expr) {
         return result;
     }
     return runTrampoline(result);
+}
+bool Interpreter::defineGlobalVar(const std::string& name, const Value& value) {
+    if (!environment) return false;
+    try {
+        environment->define(name, value);
+        return true;
+    } catch (...) { return false; }
+}
+
+bool Interpreter::tryGetGlobalVar(const std::string& name, Value& out) const {
+    if (!environment) return false;
+    try {
+        out = environment->get(Token{IDENTIFIER, name, 0, 0});
+        return true;
+    } catch (...) { return false; }
 }
 
 bool Interpreter::hasReportedError() const {
@@ -62,6 +87,168 @@ std::string Interpreter::stringify(Value object) {
 
 void Interpreter::addStdLibFunctions() {
     BobStdLib::addToEnvironment(environment, *this, errorReporter);
+}
+void Interpreter::setModulePolicy(bool allowFiles, bool preferFiles, const std::vector<std::string>& searchPaths) {
+    allowFileImports = allowFiles;
+    preferFileOverBuiltin = preferFiles;
+    moduleSearchPaths = searchPaths;
+}
+
+static std::string joinPath(const std::string& baseDir, const std::string& rel) {
+    namespace fs = std::filesystem;
+    fs::path p = fs::path(baseDir) / fs::path(rel);
+    return fs::path(p).lexically_normal().string();
+}
+
+static std::string locateModuleFile(const std::string& baseDir, const std::vector<std::string>& searchPaths, const std::string& nameDotBob) {
+    namespace fs = std::filesystem;
+    // Only search relative to the importing file's directory
+    // 1) baseDir/name.bob
+    if (!baseDir.empty()) {
+        std::string p = joinPath(baseDir, nameDotBob);
+        if (fs::exists(fs::path(p))) return p;
+    }
+    // 2) baseDir/searchPath/name.bob (search paths are relative to baseDir)
+    for (const auto& sp : searchPaths) {
+        if (!baseDir.empty()) {
+            std::string pb = joinPath(baseDir, joinPath(sp, nameDotBob));
+            if (fs::exists(fs::path(pb))) return pb;
+        }
+    }
+    return "";
+}
+
+Value Interpreter::importModule(const std::string& spec, int line, int column) {
+    // Determine if spec is a path string (heuristic: contains '/' or ends with .bob)
+    bool looksPath = spec.find('/') != std::string::npos || (spec.size() >= 4 && spec.rfind(".bob") == spec.size() - 4) || spec.find("..") != std::string::npos;
+    // Cache key resolution
+    std::string key = spec;
+    std::string baseDir = "";
+    if (errorReporter) {
+        // Try to use current file from reporter; else cwd
+        if (!errorReporter->getCurrentFileName().empty()) {
+            std::filesystem::path p(errorReporter->getCurrentFileName());
+            baseDir = p.has_parent_path() ? p.parent_path().string() : baseDir;
+        }
+        if (baseDir.empty()) { char buf[4096]; if (getcwd(buf, sizeof(buf))) baseDir = std::string(buf); }
+    }
+    if (looksPath) {
+        if (!allowFileImports) {
+            reportError(line, column, "Import Error", "File imports are disabled by policy", spec);
+            throw std::runtime_error("File imports disabled");
+        }
+        // Resolve STRING path specs:
+        // - Absolute: use as-is
+        // - Starts with ./ or ../: resolve relative to the importing file directory (baseDir)
+        // - Otherwise: resolve relative to current working directory
+        if (!spec.empty() && spec[0] == '/') {
+            key = spec;
+        } else if (spec.rfind("./", 0) == 0 || spec.rfind("../", 0) == 0) {
+            key = joinPath(baseDir, spec);
+        } else {
+            // Resolve all non-absolute paths relative to the importing file directory only
+            key = joinPath(baseDir, spec);
+        }
+    } else {
+        // Name import: try file in baseDir or search paths; else builtin
+        if (preferFileOverBuiltin && allowFileImports) {
+            std::string found = locateModuleFile(baseDir, moduleSearchPaths, spec + ".bob");
+            if (!found.empty()) { key = found; looksPath = true; }
+        }
+        if (!looksPath && allowBuiltinImports && builtinModules.has(spec)) {
+            key = std::string("builtin:") + spec;
+        }
+    }
+    // Return from cache
+    auto it = moduleCache.find(key);
+    if (it != moduleCache.end()) return it->second;
+
+    // If still not a path, it must be builtin or missing
+    if (!looksPath) {
+        if (!builtinModules.has(spec)) {
+            reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
+            throw std::runtime_error("Module not found");
+        }
+        // Builtin: return from cache or construct and cache
+        auto itc = moduleCache.find(key);
+        if (itc != moduleCache.end()) return itc->second;
+        Value v = builtinModules.create(spec, *this);
+        if (v.isNone()) { // cloaked by policy
+            reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
+            throw std::runtime_error("Module not found");
+        }
+        moduleCache[key] = v;
+        return v;
+    }
+
+    // File module: read and execute in isolated env
+    std::ifstream file(key);
+    if (!file.is_open()) {
+        reportError(line, column, "Import Error", "Could not open module file: " + key, spec);
+        throw std::runtime_error("Module file open failed");
+    }
+    std::string code((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    file.close();
+
+    // Prepare reporter with module source
+    if (errorReporter) errorReporter->pushSource(code, key);
+
+    // New lexer and parser
+    Lexer lx; if (errorReporter) lx.setErrorReporter(errorReporter);
+    std::vector<Token> toks = lx.Tokenize(code);
+    Parser p(toks); if (errorReporter) p.setErrorReporter(errorReporter);
+    std::vector<std::shared_ptr<Stmt>> stmts = p.parse();
+
+    // Isolated environment
+    auto saved = getEnvironment();
+    auto modEnv = std::make_shared<Environment>(saved);
+    modEnv->setErrorReporter(errorReporter);
+    setEnvironment(modEnv);
+
+    // Execute
+    executor->interpret(stmts);
+
+    // Build module object from env
+    std::unordered_map<std::string, Value> exported = modEnv->getAll();
+    // Derive module name from key basename
+    std::string modName = key;
+    size_t pos = modName.find_last_of("/\\"); if (pos != std::string::npos) modName = modName.substr(pos+1);
+    if (modName.size() > 4 && modName.substr(modName.size()-4) == ".bob") modName = modName.substr(0, modName.size()-4);
+    auto m = std::make_shared<Module>(modName, exported);
+    Value moduleVal(m);
+    // Cache
+    moduleCache[key] = moduleVal;
+
+    // Restore env and reporter
+    setEnvironment(saved);
+    if (errorReporter) errorReporter->popSource();
+
+    return moduleVal;
+}
+
+bool Interpreter::fromImport(const std::string& spec, const std::vector<std::pair<std::string, std::string>>& items, int line, int column) {
+    Value mod = importModule(spec, line, column);
+    if (!(mod.isModule() || mod.isDict())) {
+        reportError(line, column, "Import Error", "Module did not evaluate to a module", spec);
+        return false;
+    }
+    std::unordered_map<std::string, Value> const* src = nullptr;
+    std::unordered_map<std::string, Value> temp;
+    if (mod.isModule()) {
+        // Module exports
+        src = mod.asModule()->exports.get();
+    } else {
+        src = &mod.asDict();
+    }
+    for (const auto& [name, alias] : items) {
+        auto it = src->find(name);
+        if (it == src->end()) {
+            reportError(line, column, "Import Error", "Name not found in module: " + name, spec);
+            return false;
+        }
+        environment->define(alias, it->second);
+    }
+    return true;
 }
 
 void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {

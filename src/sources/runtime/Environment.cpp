@@ -2,6 +2,15 @@
 #include "ErrorReporter.h"
 
 void Environment::assign(const Token& name, const Value& value) {
+    // Disallow reassignment of module bindings (immutability of module variable)
+    auto itv = variables.find(name.lexeme);
+    if (itv != variables.end() && itv->second.isModule()) {
+        if (errorReporter) {
+            errorReporter->reportError(name.line, name.column, "Import Error",
+                "Cannot reassign module binding '" + name.lexeme + "'", "");
+        }
+        throw std::runtime_error("Cannot reassign module binding '" + name.lexeme + "'");
+    }
     auto it = variables.find(name.lexeme);
     if (it != variables.end()) {
         it->second = value;

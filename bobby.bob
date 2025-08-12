@@ -1,0 +1,13 @@
+class A {
+    var inner = 10;
+
+    func test(){
+        print(this.inner);
+    }
+}
+
+
+func hello(){
+    print("hello");
+}
+

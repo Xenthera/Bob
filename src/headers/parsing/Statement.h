@@ -40,6 +40,8 @@ struct StmtVisitor
     virtual void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitTryStmt(const std::shared_ptr<struct TryStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitThrowStmt(const std::shared_ptr<struct ThrowStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitImportStmt(const std::shared_ptr<struct ImportStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitFromImportStmt(const std::shared_ptr<struct FromImportStmt>& stmt, ExecutionContext* context = nullptr) = 0;
 };
 
 struct Stmt : public std::enable_shared_from_this<Stmt>
@@ -270,5 +272,31 @@ struct ThrowStmt : Stmt {
     ThrowStmt(Token kw, std::shared_ptr<Expr> v) : keyword(kw), value(v) {}
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
         visitor->visitThrowStmt(std::static_pointer_cast<ThrowStmt>(shared_from_this()), context);
+    }
+};
+
+// import module [as alias]
+struct ImportStmt : Stmt {
+    Token importToken; // IMPORT
+    Token moduleName;  // IDENTIFIER
+    bool hasAlias = false;
+    Token alias;       // IDENTIFIER if hasAlias
+    ImportStmt(Token kw, Token mod, bool ha, Token al)
+        : importToken(kw), moduleName(mod), hasAlias(ha), alias(al) {}
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitImportStmt(std::static_pointer_cast<ImportStmt>(shared_from_this()), context);
+    }
+};
+
+// from module import name [as alias], name2 ...
+struct FromImportStmt : Stmt {
+    Token fromToken;   // FROM
+    Token moduleName;  // IDENTIFIER
+    struct ImportItem { Token name; bool hasAlias; Token alias; };
+    std::vector<ImportItem> items;
+    FromImportStmt(Token kw, Token mod, std::vector<ImportItem> it)
+        : fromToken(kw), moduleName(mod), items(std::move(it)) {}
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override {
+        visitor->visitFromImportStmt(std::static_pointer_cast<FromImportStmt>(shared_from_this()), context);
     }
 };

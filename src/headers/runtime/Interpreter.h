@@ -7,7 +7,10 @@
 #include <functional>
 
 #include "Value.h"
+#include "TypeWrapper.h"
 #include "RuntimeDiagnostics.h"
+#include "ModuleRegistry.h"
+#include <unordered_set>
 
 struct Expr;
 struct Stmt;
@@ -81,6 +84,15 @@ private:
     RuntimeDiagnostics diagnostics;  // Utility functions for runtime operations
     std::unique_ptr<Evaluator> evaluator;
     std::unique_ptr<Executor> executor;
+    // Module cache: module key -> module dict value
+    std::unordered_map<std::string, Value> moduleCache;
+    // Builtin module registry
+    ModuleRegistry builtinModules;
+    // Import policy flags
+    bool allowFileImports = true;
+    bool preferFileOverBuiltin = true;
+    bool allowBuiltinImports = true;
+    std::vector<std::string> moduleSearchPaths; // e.g., BOBPATH
     // Pending throw propagation from expression evaluation
      bool hasPendingThrow = false;
      Value pendingThrow = NONE_VALUE;
@@ -127,6 +139,24 @@ public:
     bool getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const;
     std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
     void addStdLibFunctions();
+    // Module APIs
+    Value importModule(const std::string& spec, int line, int column); // returns module dict
+    bool fromImport(const std::string& spec, const std::vector<std::pair<std::string, std::string>>& items, int line, int column); // name->alias
+    void setModulePolicy(bool allowFiles, bool preferFiles, const std::vector<std::string>& searchPaths);
+    void setBuiltinModulePolicy(bool allowBuiltins) { allowBuiltinImports = allowBuiltins; builtinModules.setPolicy(allowBuiltins); }
+    void setBuiltinModuleAllowList(const std::vector<std::string>& allowed) { builtinModules.setAllowList(allowed); }
+    void setBuiltinModuleDenyList(const std::vector<std::string>& denied) { builtinModules.setDenyList(denied); }
+    void registerBuiltinModule(const std::string& name, std::function<Value(Interpreter&)> factory) { builtinModules.registerFactory(name, std::move(factory)); }
+    
+    // Simple module registration API
+    using ModuleBuilder = ModuleRegistry::ModuleBuilder;
+
+    void registerModule(const std::string& name, std::function<void(ModuleBuilder&)> init) {
+        builtinModules.registerModule(name, std::move(init));
+    }
+    // Global environment helpers
+    bool defineGlobalVar(const std::string& name, const Value& value);
+    bool tryGetGlobalVar(const std::string& name, Value& out) const;
      // Throw propagation helpers
      void setPendingThrow(const Value& v, int line = 0, int column = 0) { hasPendingThrow = true; pendingThrow = v; pendingThrowLine = line; pendingThrowColumn = column; }
      bool consumePendingThrow(Value& out, int* lineOut = nullptr, int* colOut = nullptr) { if (!hasPendingThrow) return false; out = pendingThrow; if (lineOut) *lineOut = pendingThrowLine; if (colOut) *colOut = pendingThrowColumn; hasPendingThrow = false; pendingThrow = NONE_VALUE; pendingThrowLine = 0; pendingThrowColumn = 0; return true; }

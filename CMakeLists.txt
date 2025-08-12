@@ -48,6 +48,7 @@ endif()
 file(GLOB_RECURSE BOB_RUNTIME_SOURCES "src/sources/runtime/*.cpp")
 file(GLOB_RECURSE BOB_PARSING_SOURCES "src/sources/parsing/*.cpp")
 file(GLOB_RECURSE BOB_STDLIB_SOURCES "src/sources/stdlib/*.cpp")
+file(GLOB_RECURSE BOB_BUILTIN_SOURCES "src/sources/builtinModules/*.cpp")
 file(GLOB_RECURSE BOB_CLI_SOURCES "src/sources/cli/*.cpp")
 
 # All source files
@@ -55,6 +56,7 @@ set(BOB_ALL_SOURCES
     ${BOB_RUNTIME_SOURCES}
     ${BOB_PARSING_SOURCES}
     ${BOB_STDLIB_SOURCES}
+    ${BOB_BUILTIN_SOURCES}
     ${BOB_CLI_SOURCES}
 )
 
@@ -66,6 +68,7 @@ target_include_directories(bob PRIVATE
     src/headers/runtime
     src/headers/parsing
     src/headers/stdlib
+    src/headers/builtinModules
     src/headers/cli
     src/headers/common
 )

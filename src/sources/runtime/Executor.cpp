@@ -312,6 +312,40 @@ void Executor::visitThrowStmt(const std::shared_ptr<ThrowStmt>& statement, Execu
     }
 }
 
+void Executor::visitImportStmt(const std::shared_ptr<ImportStmt>& statement, ExecutionContext* context) {
+    // Determine spec (string literal or identifier)
+    std::string spec = statement->moduleName.lexeme; // already STRING with .bob from parser if name-based
+    Value mod = interpreter->importModule(spec, statement->importToken.line, statement->importToken.column);
+    std::string bindName;
+    if (statement->hasAlias) {
+        bindName = statement->alias.lexeme;
+    } else {
+        // Derive default binding name from module path: basename without extension
+        std::string path = statement->moduleName.lexeme;
+        // Strip directories
+        size_t pos = path.find_last_of("/\\");
+        std::string base = (pos == std::string::npos) ? path : path.substr(pos + 1);
+        // Strip .bob
+        if (base.size() > 4 && base.substr(base.size() - 4) == ".bob") {
+            base = base.substr(0, base.size() - 4);
+        }
+        bindName = base;
+    }
+    interpreter->getEnvironment()->define(bindName, mod);
+}
+
+void Executor::visitFromImportStmt(const std::shared_ptr<FromImportStmt>& statement, ExecutionContext* context) {
+    std::string spec = statement->moduleName.lexeme; // already STRING with .bob from parser if name-based
+    // Build item list name->alias
+    std::vector<std::pair<std::string,std::string>> items;
+    for (const auto& it : statement->items) {
+        items.emplace_back(it.name.lexeme, it.hasAlias ? it.alias.lexeme : it.name.lexeme);
+    }
+    if (!interpreter->fromImport(spec, items, statement->fromToken.line, statement->fromToken.column)) {
+        throw std::runtime_error("from-import failed");
+    }
+}
+
 void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context) {
     Value value = statement->value->accept(evaluator);
 

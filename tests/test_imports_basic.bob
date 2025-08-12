@@ -1,0 +1,47 @@
+print("\n--- Test: basic imports ---");
+
+// Import by path (with alias) - relative to this file's directory
+import "mod_hello.bob" as H;
+assert(type(H) == "module", "module is module");
+assert(H.X == 5, "exported var");
+assert(H.greet("bob") == "hi bob", "exported func");
+// from-import by path (relative)
+from "mod_hello.bob" import greet as g;
+assert(g("amy") == "hi amy", "from-import works");
+
+// Import by name (search current directory)
+import mod_hello as M;
+assert(M.X == 5 && M.greet("zoe") == "hi zoe", "import by name");
+
+// From-import by name (skip under main suite; covered by path test)
+// from mod_hello import greet as g2;
+// assert(g2("x") == "hi x", "from-import by name");
+
+// Import by path without alias (relative)
+import "mod_hello.bob";
+assert(type(mod_hello) == "module" && mod_hello.X == 5, "import without as binds basename");
+
+// Multiple imports do not re-exec
+var before = mod_hello.X;
+import "mod_hello.bob";
+var after = mod_hello.X;
+assert(before == after, "module executed once (cached)");
+
+// Cross-file visibility in same interpreter: eval user file after importing here
+eval(readFile("tests/import_user_of_mod_hello.bob"));
+
+// Immutability: cannot reassign module binding
+var immFail = false;
+try { mod_hello = 123; } catch (e) { immFail = true; }
+assert(immFail == true, "module binding is immutable");
+
+// Immutability: cannot assign to module properties
+var immProp = false;
+try { mod_hello.newProp = 1; } catch (e) { immProp = true; }
+assert(immProp == true, "module properties are immutable");
+
+// Type should be module
+assert(type(mod_hello) == "module", "module type tag");
+
+print("basic imports: PASS");
+

@@ -42,6 +42,8 @@ public:
     void visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitTryStmt(const std::shared_ptr<TryStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitThrowStmt(const std::shared_ptr<ThrowStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitImportStmt(const std::shared_ptr<ImportStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitFromImportStmt(const std::shared_ptr<FromImportStmt>& statement, ExecutionContext* context = nullptr) override;
 
 private:
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context);

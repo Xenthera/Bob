@@ -586,6 +586,11 @@ std::shared_ptr<Expr> Parser::functionExpression() {
 sptr(Stmt) Parser::statement()
 {
     if(match({RETURN})) return returnStatement();
+    if(match({IMPORT})) return importStatement();
+    // Fallback if lexer didn't classify keyword: detect by lexeme
+    if (check(IDENTIFIER) && peek().lexeme == "import") { advance(); return importStatement(); }
+    if(match({FROM})) return fromImportStatement();
+    if (check(IDENTIFIER) && peek().lexeme == "from") { advance(); return fromImportStatement(); }
     if(match({TRY})) return tryStatement();
     if(match({THROW})) return throwStatement();
     if(match({IF})) return ifStatement();
@@ -620,6 +625,38 @@ sptr(Stmt) Parser::statement()
     }
     
     return expressionStatement();
+}
+
+std::shared_ptr<Stmt> Parser::importStatement() {
+    Token importTok = previous();
+    // import Name [as Alias] | import "path"
+    bool isString = check(STRING);
+    Token mod = isString ? advance() : consume(IDENTIFIER, "Expected module name or path string after 'import'.");
+    // Keep IDENTIFIER for name-based imports; resolver will try file and then builtin
+    bool hasAlias = false; Token alias;
+    if (match({AS})) {
+        hasAlias = true;
+        alias = consume(IDENTIFIER, "Expected alias identifier after 'as'.");
+    }
+    consume(SEMICOLON, "Expected ';' after import statement.");
+    return msptr(ImportStmt)(importTok, mod, hasAlias, alias);
+}
+
+std::shared_ptr<Stmt> Parser::fromImportStatement() {
+    Token fromTok = previous();
+    bool isString = check(STRING);
+    Token mod = isString ? advance() : consume(IDENTIFIER, "Expected module name or path string after 'from'.");
+    // Keep IDENTIFIER for name-based from-imports
+    consume(IMPORT, "Expected 'import' after module name.");
+    std::vector<FromImportStmt::ImportItem> items;
+    do {
+        Token name = consume(IDENTIFIER, "Expected name to import.");
+        bool hasAlias = false; Token alias;
+        if (match({AS})) { hasAlias = true; alias = consume(IDENTIFIER, "Expected alias identifier after 'as'."); }
+        items.push_back({name, hasAlias, alias});
+    } while (match({COMMA}));
+    consume(SEMICOLON, "Expected ';' after from-import statement.");
+    return msptr(FromImportStmt)(fromTok, mod, items);
 }
 
 sptr(Stmt) Parser::assignmentStatement()

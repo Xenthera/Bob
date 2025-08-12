@@ -200,6 +200,8 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 typeName = "array";
             } else if (args[0].isDict()) {
                 typeName = "dict";
+            } else if (args[0].isModule()) {
+                typeName = "module";
             } else {
                 typeName = "unknown";
             }

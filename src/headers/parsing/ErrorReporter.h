@@ -64,6 +64,7 @@ public:
     // Source push/pop for eval
     void pushSource(const std::string& source, const std::string& fileName);
     void popSource();
+    const std::string& getCurrentFileName() const { return currentFileName; }
 
 private:
     void displaySourceContext(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_ = "", bool showArrow = true);

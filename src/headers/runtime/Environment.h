@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <string>
 #include <memory>
+#include <unordered_set>
 #include "Value.h"
 #include "Lexer.h"
 
@@ -46,11 +47,14 @@ public:
     void pruneForClosureCapture();
     
     std::shared_ptr<Environment> getParent() const { return parent; }
+    // Export all variables (shallow copy) for module namespace
+    std::unordered_map<std::string, Value> getAll() const { return variables; }
     
 
 private:
     std::unordered_map<std::string, Value> variables;
     std::shared_ptr<Environment> parent;
     ErrorReporter* errorReporter;
+    std::unordered_set<std::string> constBindings;
 };
 

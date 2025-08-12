@@ -316,7 +316,15 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
     Value object = expr->object->accept(this);
     std::string propertyName = expr->name.lexeme;
     
-    if (object.isDict()) {
+    if (object.isModule()) {
+        // Forward to module exports
+        auto* mod = object.asModule();
+        if (mod && mod->exports) {
+            auto it = mod->exports->find(propertyName);
+            if (it != mod->exports->end()) return it->second;
+        }
+        return NONE_VALUE;
+    } else if (object.isDict()) {
         Value v = getDictProperty(object, propertyName);
         if (!v.isNone()) {
             // If this is an inherited inline method, prefer a current-class extension override
@@ -415,7 +423,7 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
         else if (object.isNumber()) target = "number";
         else if (object.isArray()) target = "array"; // handled above, but keep for completeness
         else if (object.isDict()) target = "dict";   // handled above
-        else target = "any";
+        else target = object.isModule() ? "any" : "any";
 
         // Provide method-style builtins for string/number
         if (object.isString() && propertyName == "len") {
@@ -431,9 +439,12 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
             return Value(bf);
         }
 
-        if (auto fn = interpreter->lookupExtension(target, propertyName)) {
-            return Value(fn);
+        if (object.isModule()) {
+            // Modules are immutable and have no dynamic methods
+            return NONE_VALUE;
         }
+        auto fn = interpreter->lookupExtension(target, propertyName);
+        if (!object.isModule() && fn) { return Value(fn); }
         if (auto anyFn = interpreter->lookupExtension("any", propertyName)) {
             return Value(anyFn);
         }
@@ -520,7 +531,15 @@ Value Evaluator::visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExp
     Value value = expr->value->accept(this);
     std::string propertyName = expr->name.lexeme;
     
-    if (object.isDict()) {
+    if (object.isModule()) {
+        // Modules are immutable: disallow setting properties
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->name.line, expr->name.column, "Import Error",
+                "Cannot assign property '" + propertyName + "' on module (immutable)", "");
+            interpreter->markInlineErrorReported();
+        }
+        throw std::runtime_error("Cannot assign property on module (immutable)");
+    } else if (object.isDict()) {
         // Modify the dictionary in place
         std::unordered_map<std::string, Value>& dict = object.asDict();
         dict[propertyName] = value;

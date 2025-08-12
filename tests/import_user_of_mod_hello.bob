@@ -1,0 +1,5 @@
+// uses mod_hello without importing it here; relies on prior import in same interpreter
+var ok1 = (mod_hello.greet("Z") == "hi Z");
+assert(ok1, "imported module binding visible across eval files in same interpreter");
+print("import user: PASS");
+

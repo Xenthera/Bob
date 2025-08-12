@@ -13,6 +13,7 @@ struct Environment;
 struct Function;
 struct BuiltinFunction;
 struct Thunk;
+struct Module;
 
 // Type tags for the Value union
 enum ValueType {
@@ -24,8 +25,11 @@ enum ValueType {
     VAL_BUILTIN_FUNCTION,
     VAL_THUNK,
     VAL_ARRAY,
-    VAL_DICT
+    VAL_DICT,
+    VAL_MODULE
 };
+
+// (moved below Value)
 
 // Tagged value system (like Lua) - no heap allocation for simple values
 struct Value {
@@ -37,6 +41,7 @@ struct Value {
     std::string string_value; // Store strings outside the union for safety
     std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
     std::shared_ptr<std::unordered_map<std::string, Value> > dict_value; // Store dictionaries as shared_ptr for mutability
+    std::shared_ptr<Module> module_value; // Module object
     
     // Store functions as shared_ptr for proper reference counting
     std::shared_ptr<Function> function;
@@ -58,6 +63,7 @@ struct Value {
     Value(std::vector<Value>&& arr) : type(ValueType::VAL_ARRAY), array_value(std::make_shared<std::vector<Value> >(std::move(arr))) {}
     Value(const std::unordered_map<std::string, Value>& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(dict)) {}
     Value(std::unordered_map<std::string, Value>&& dict) : type(ValueType::VAL_DICT), dict_value(std::make_shared<std::unordered_map<std::string, Value> >(std::move(dict))) {}
+    Value(std::shared_ptr<Module> m) : type(ValueType::VAL_MODULE), module_value(std::move(m)) {}
     
     // Destructor to clean up functions and thunks
     ~Value() {
@@ -70,7 +76,7 @@ struct Value {
     // Move constructor
     Value(Value&& other) noexcept 
         : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)),
-          function(std::move(other.function)), builtin_function(std::move(other.builtin_function)), thunk(std::move(other.thunk)) {
+          function(std::move(other.function)), builtin_function(std::move(other.builtin_function)), thunk(std::move(other.thunk)), module_value(std::move(other.module_value)) {
         if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT && 
             type != ValueType::VAL_FUNCTION && type != ValueType::VAL_BUILTIN_FUNCTION && type != ValueType::VAL_THUNK) {
             number = other.number; // Copy the union
@@ -94,6 +100,8 @@ struct Value {
                 builtin_function = std::move(other.builtin_function);
             } else if (type == ValueType::VAL_THUNK) {
                 thunk = std::move(other.thunk);
+            } else if (type == ValueType::VAL_MODULE) {
+                module_value = std::move(other.module_value);
             } else {
                 number = other.number;
             }
@@ -117,6 +125,8 @@ struct Value {
             builtin_function = other.builtin_function; // shared_ptr automatically handles sharing
         } else if (type == ValueType::VAL_THUNK) {
             thunk = other.thunk; // shared_ptr automatically handles sharing
+        } else if (type == ValueType::VAL_MODULE) {
+            module_value = other.module_value; // shared module
         } else {
             number = other.number;
         }
@@ -146,6 +156,8 @@ struct Value {
                 builtin_function = other.builtin_function; // shared_ptr automatically handles sharing
             } else if (type == ValueType::VAL_THUNK) {
                 thunk = other.thunk; // shared_ptr automatically handles sharing
+            } else if (type == ValueType::VAL_MODULE) {
+                module_value = other.module_value;
             } else {
                 number = other.number;
             }
@@ -161,6 +173,7 @@ struct Value {
     inline bool isBuiltinFunction() const { return type == ValueType::VAL_BUILTIN_FUNCTION; }
     inline bool isArray() const { return type == ValueType::VAL_ARRAY; }
     inline bool isDict() const { return type == ValueType::VAL_DICT; }
+    inline bool isModule() const { return type == ValueType::VAL_MODULE; }
     inline bool isThunk() const { return type == ValueType::VAL_THUNK; }
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
 
@@ -176,6 +189,7 @@ struct Value {
             case ValueType::VAL_THUNK: return "thunk";
             case ValueType::VAL_ARRAY: return "array";
             case ValueType::VAL_DICT: return "dict";
+            case ValueType::VAL_MODULE: return "module";
             default: return "unknown";
         }
     }
@@ -198,6 +212,7 @@ struct Value {
     inline std::unordered_map<std::string, Value>& asDict() { 
         return *dict_value; 
     }
+    inline Module* asModule() const { return isModule() ? module_value.get() : nullptr; }
     inline Function* asFunction() const { return isFunction() ? function.get() : nullptr; }
     inline BuiltinFunction* asBuiltinFunction() const { return isBuiltinFunction() ? builtin_function.get() : nullptr; }
     inline Thunk* asThunk() const { return isThunk() ? thunk.get() : nullptr; }
@@ -214,6 +229,7 @@ struct Value {
             case ValueType::VAL_THUNK: return thunk != nullptr;
             case ValueType::VAL_ARRAY: return !array_value->empty();
             case ValueType::VAL_DICT: return !dict_value->empty();
+            case ValueType::VAL_MODULE: return module_value != nullptr;
             default: return false;
         }
     }
@@ -295,6 +311,12 @@ struct Value {
                 
                 result += "}";
                 return result;
+            }
+            case ValueType::VAL_MODULE: {
+                // Avoid accessing Module fields when it's still an incomplete type in some TUs.
+                // Delegate formatting to a small helper defined out-of-line in Value.cpp.
+                extern std::string formatModuleForToString(const std::shared_ptr<Module>&);
+                return formatModuleForToString(module_value);
             }
             default: return "unknown";
         }
@@ -418,6 +440,15 @@ struct Value {
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError(">>", getType(), other.getType()));
     }
+};
+
+// Define Module after Value so it can hold Value in exports without incomplete type issues
+struct Module {
+    std::string name;
+    std::shared_ptr<std::unordered_map<std::string, Value>> exports;
+    Module() = default;
+    Module(const std::string& n, const std::unordered_map<std::string, Value>& dict)
+        : name(n), exports(std::make_shared<std::unordered_map<std::string, Value>>(dict)) {}
 };
 
 // Global constants for common values

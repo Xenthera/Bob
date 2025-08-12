@@ -3316,5 +3316,12 @@ eval(readFile(path15d));
 var path15e = fileExists("tests/test_try_catch_loop_interactions.bob") ? "tests/test_try_catch_loop_interactions.bob" : "../tests/test_try_catch_loop_interactions.bob";
 eval(readFile(path15e));
 
+// Modules: basic imports suite
+var pathMods = fileExists("tests/test_imports_basic.bob") ? "tests/test_imports_basic.bob" : "../tests/test_imports_basic.bob";
+eval(readFile(pathMods));
+
+var pathModsB = fileExists("tests/test_imports_builtin.bob") ? "tests/test_imports_builtin.bob" : "../tests/test_imports_builtin.bob";
+eval(readFile(pathModsB));
+
 print("\nAll tests passed.");
 print("Test suite complete.");

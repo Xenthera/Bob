@@ -72,6 +72,8 @@ private:
     std::shared_ptr<Stmt> extensionDeclaration();
     std::shared_ptr<Stmt> tryStatement();
     std::shared_ptr<Stmt> throwStatement();
+    std::shared_ptr<Stmt> importStatement();
+    std::shared_ptr<Stmt> fromImportStatement();
 
     std::shared_ptr<Stmt> varDeclaration();
 
