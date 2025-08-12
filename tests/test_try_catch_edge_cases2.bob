@@ -1,0 +1,66 @@
+print("\n--- Test: try/catch/finally (edge cases 2) ---");
+
+// 1) finally throw overrides try return
+func h1() {
+  try { return 1; }
+  finally { throw "f1"; }
+}
+var msg1 = "";
+try { h1(); } catch (e) { msg1 = e; }
+assert(msg1 == "f1", "finally throw overrides return");
+
+// 2) finally return overrides catch rethrow
+func h2() {
+  try { throw {"message":"boom"}; }
+  catch (e) { throw e; }
+  finally { return 7; }
+}
+assert(h2() == 7, "finally return overrides catch rethrow");
+
+// 3) finally throw overrides catch handling
+var outer = "";
+try {
+  try { throw {"message":"inner"}; }
+  catch (e) { /* handled */ }
+  finally { throw "outer"; }
+} catch (e) { outer = e; }
+assert(outer == "outer", "finally throw overrides catch");
+
+// 4) rethrow with new error from catch
+var out4 = "";
+try {
+  try { throw {"message":"x"}; }
+  catch (e) { throw {"message":"y"}; }
+} catch (e) { out4 = e.message; }
+assert(out4 == "y", "rethrow new error");
+
+// 5) catch variable scoping (not visible outside catch block)
+var scopeMark = "";
+try { var z = e; } catch (err) { scopeMark = "scoped"; }
+assert(scopeMark == "scoped", "catch var e is scoped to catch block");
+
+// 6) throw non-dict: number
+var tnum = 0; var ttype = "";
+try { throw 42; } catch (e) { tnum = e; ttype = type(e); }
+assert(tnum == 42 && ttype == "number", "throw number");
+
+// 7) throw from finally with no try error propagates
+var msg7 = "";
+try {
+  try { var x = 1; }
+  finally { throw "F"; }
+} catch (e) { msg7 = e; }
+assert(msg7 == "F", "finally throw with no prior error propagates");
+
+// 8) try inside finally is handled locally
+var log8 = [];
+try {
+  // body
+} finally {
+  try { throw "inner"; } catch (e) { log8.push("handled:" + e); }
+}
+assert(log8.len() == 1 && log8[0] == "handled:inner", "try/catch inside finally");
+
+print("try/catch/finally edge cases 2: PASS");
+
+

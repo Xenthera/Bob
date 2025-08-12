@@ -267,11 +267,9 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
     if (array.isArray()) {
         // Handle array indexing
         if (!index.isNumber()) {
-            if (!interpreter->isInTry()) {
-                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                    "Array index must be a number", "");
-                interpreter->markInlineErrorReported();
-            }
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "Array index must be a number", "");
+        interpreter->markInlineErrorReported();
             throw std::runtime_error("Array index must be a number");
         }
         
@@ -279,11 +277,9 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         const std::vector<Value>& arr = array.asArray();
         
         if (idx < 0 || idx >= static_cast<int>(arr.size())) {
-            if (!interpreter->isInTry()) {
-                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                    "Array index out of bounds", "");
-                interpreter->markInlineErrorReported();
-            }
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "Array index out of bounds", "");
+        interpreter->markInlineErrorReported();
             throw std::runtime_error("Array index out of bounds");
         }
         
@@ -292,11 +288,9 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
     } else if (array.isDict()) {
         // Handle dictionary indexing
         if (!index.isString()) {
-            if (!interpreter->isInTry()) {
-                interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                    "Dictionary key must be a string", "");
-                interpreter->markInlineErrorReported();
-            }
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "Dictionary key must be a string", "");
+        interpreter->markInlineErrorReported();
             throw std::runtime_error("Dictionary key must be a string");
         }
         
@@ -311,11 +305,9 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         }
         
     } else {
-        if (!interpreter->isInTry()) {
-            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-                "Can only index arrays and dictionaries", "");
-            interpreter->markInlineErrorReported();
-        }
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "Can only index arrays and dictionaries", "");
+        interpreter->markInlineErrorReported();
         throw std::runtime_error("Can only index arrays and dictionaries");
     }
 }
@@ -446,11 +438,9 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
             return Value(anyFn);
         }
 
-        if (!interpreter->isInTry()) {
-            interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
-                "Cannot access property '" + propertyName + "' on this type", "");
-            interpreter->markInlineErrorReported();
-        }
+        interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
+            "Cannot access property '" + propertyName + "' on this type", "");
+        interpreter->markInlineErrorReported();
         throw std::runtime_error("Cannot access property '" + propertyName + "' on this type");
     }
 }

@@ -29,6 +29,7 @@ public:
     void setErrorReporter(ErrorReporter* reporter) {
         errorReporter = reporter;
     }
+    ErrorReporter* getErrorReporter() const { return errorReporter; }
     
     // Optimized define with inline
     inline void define(const std::string& name, const Value& value) {

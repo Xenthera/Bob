@@ -1,0 +1,32 @@
+print("\n--- Test: try/catch with loops ---");
+
+// Break and continue in finally
+var i = 0; var seq = [];
+while (true) {
+  try {
+    i = i + 1;
+    seq.push(i);
+    if (i == 1) {}
+  }
+  finally {
+    if (i < 2) continue;
+    break;
+  }
+}
+assert(i == 2 && seq.len() == 2, "continue/break in finally");
+
+// Throw in loop body caught outside
+var hits = [];
+for (var j = 0; j < 3; j = j + 1) {
+  try {
+    if (j == 1) throw {"message":"bang"};
+    hits.push(j);
+  } catch (e) {
+    hits.push("caught:" + e.message);
+  }
+}
+assert(hits.len() == 4 && hits[1] == "caught:bang", "loop catch per-iteration");
+
+print("try/catch with loops: PASS");
+
+

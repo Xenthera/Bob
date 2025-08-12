@@ -94,6 +94,12 @@ void Interpreter::setEnvironment(std::shared_ptr<Environment> env) {
 }
 
 void Interpreter::reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme) {
+    // Always track last error site
+    setLastErrorSite(line, column);
+    // Suppress inline printing while inside try; error will propagate to catch/finally
+    if (isInTry()) {
+        return;
+    }
     if (errorReporter) {
         errorReporter->reportError(line, column, errorType, message, lexeme);
     }
@@ -433,7 +439,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
             
                 for (const auto& stmt : function->body) {
                     stmt->accept(executor.get(), &context);
-                    if (context.hasThrow) { setPendingThrow(context.thrownValue); return NONE_VALUE; }
+                    if (context.hasThrow) { setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); return NONE_VALUE; }
                     if (context.hasReturn) {
                         return context.returnValue;
                     }
@@ -472,7 +478,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         
         for (const auto& stmt : function->body) {
             stmt->accept(executor.get(), &context);
-            if (context.hasThrow) { setPendingThrow(context.thrownValue); return NONE_VALUE; }
+            if (context.hasThrow) { setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); return NONE_VALUE; }
             if (context.hasReturn) { return context.returnValue; }
         }
         

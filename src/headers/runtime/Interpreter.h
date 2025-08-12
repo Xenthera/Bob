@@ -82,8 +82,12 @@ private:
     std::unique_ptr<Evaluator> evaluator;
     std::unique_ptr<Executor> executor;
     // Pending throw propagation from expression evaluation
-    bool hasPendingThrow = false;
-    Value pendingThrow = NONE_VALUE;
+     bool hasPendingThrow = false;
+     Value pendingThrow = NONE_VALUE;
+     int pendingThrowLine = 0;
+     int pendingThrowColumn = 0;
+    int lastErrorLine = 0;
+    int lastErrorColumn = 0;
     int tryDepth = 0;
     bool inlineErrorReported = false;
     
@@ -106,6 +110,7 @@ public:
     bool isInteractiveMode() const;
     std::shared_ptr<Environment> getEnvironment();
     void setEnvironment(std::shared_ptr<Environment> env);
+    ErrorReporter* getErrorReporter() const { return errorReporter; }
     
     void addFunction(std::shared_ptr<Function> function);
     void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme = "");
@@ -123,8 +128,8 @@ public:
     std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
     void addStdLibFunctions();
      // Throw propagation helpers
-     void setPendingThrow(const Value& v) { hasPendingThrow = true; pendingThrow = v; }
-     bool consumePendingThrow(Value& out) { if (!hasPendingThrow) return false; out = pendingThrow; hasPendingThrow = false; pendingThrow = NONE_VALUE; return true; }
+     void setPendingThrow(const Value& v, int line = 0, int column = 0) { hasPendingThrow = true; pendingThrow = v; pendingThrowLine = line; pendingThrowColumn = column; }
+     bool consumePendingThrow(Value& out, int* lineOut = nullptr, int* colOut = nullptr) { if (!hasPendingThrow) return false; out = pendingThrow; if (lineOut) *lineOut = pendingThrowLine; if (colOut) *colOut = pendingThrowColumn; hasPendingThrow = false; pendingThrow = NONE_VALUE; pendingThrowLine = 0; pendingThrowColumn = 0; return true; }
      // Try tracking
      void enterTry() { tryDepth++; }
      void exitTry() { if (tryDepth > 0) tryDepth--; }
@@ -133,6 +138,10 @@ public:
      bool hasInlineErrorReported() const { return inlineErrorReported; }
      void clearInlineErrorReported() { inlineErrorReported = false; }
      bool hasReportedError() const;
+     // Last error site tracking
+     void setLastErrorSite(int line, int column) { lastErrorLine = line; lastErrorColumn = column; }
+     int getLastErrorLine() const { return lastErrorLine; }
+     int getLastErrorColumn() const { return lastErrorColumn; }
     
     
 

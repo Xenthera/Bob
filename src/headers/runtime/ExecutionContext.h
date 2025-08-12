@@ -9,4 +9,6 @@ struct ExecutionContext {
     bool shouldContinue = false;
     bool hasThrow = false;
     Value thrownValue = NONE_VALUE;
+    int throwLine = 0;
+    int throwColumn = 0;
 };

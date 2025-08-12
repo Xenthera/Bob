@@ -75,14 +75,16 @@ for(var i = 0; i < 100; i++){
 
 var counter = 0;
 
-//try{
+try{
     while(true){
         print(arr[counter]);
         counter++;
-        sleep(0.01);
+        //sleep(0.01);
     }
-//}catch(e){
-    
-//}
+}catch(){}
+try{
+    assert(false);
+
+}catch(){}
 
 print("done");

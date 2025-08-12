@@ -34,6 +34,9 @@ private:
     std::string currentFileName;
     std::vector<std::string> callStack;
     bool hadError = false;
+    // Support nested sources (e.g., eval of external files)
+    std::vector<std::vector<std::string>> sourceStack;
+    std::vector<std::string> fileNameStack;
 
 public:
     ErrorReporter() = default;
@@ -57,6 +60,10 @@ public:
     // Call stack management
     void pushCallStack(const std::string& functionName);
     void popCallStack();
+
+    // Source push/pop for eval
+    void pushSource(const std::string& source, const std::string& fileName);
+    void popSource();
 
 private:
     void displaySourceContext(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_ = "", bool showArrow = true);

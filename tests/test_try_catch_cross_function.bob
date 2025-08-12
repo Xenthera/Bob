@@ -1,0 +1,24 @@
+print("\n--- Test: try/catch across function boundaries ---");
+
+// Throw in callee, catch in caller
+func callee(x) { if (x == 0) throw {"message":"zero"}; return x + 1; }
+var r1 = 0; var m1 = "";
+try { r1 = callee(1); } catch (e) { m1 = e.message; }
+try { callee(0); } catch (e) { m1 = e.message; }
+assert(r1 == 2 && m1 == "zero", "throw in callee, catch in caller");
+
+// Throw in nested callee
+func inner() { throw {"message":"deep"}; }
+func outer() { inner(); }
+var m2 = "";
+try { outer(); } catch (e) { m2 = e.message; }
+assert(m2 == "deep", "nested callee throw");
+
+// Finally in caller overrides callee throw
+func thrower() { throw {"message":"boom"}; }
+func wrapper() { try { thrower(); } finally { return 9; } }
+assert(wrapper() == 9, "caller finally overrides");
+
+print("try/catch across functions: PASS");
+
+

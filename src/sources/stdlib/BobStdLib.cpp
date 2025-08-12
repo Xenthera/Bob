@@ -415,8 +415,13 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             }
             
             std::string code = args[0].asString();
+            std::string evalName = "<eval>";
             
             try {
+                // Push eval source for correct error context
+                if (errorReporter) {
+                    errorReporter->pushSource(code, evalName);
+                }
                 // Create a new lexer for the code string
                 Lexer lexer;
                 lexer.setErrorReporter(errorReporter);
@@ -441,6 +446,14 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                         "Failed to evaluate code: " + std::string(e.what()), code);
                 }
                 throw std::runtime_error("eval failed: " + std::string(e.what()));
+            } catch (...) {
+                if (errorReporter) {
+                    errorReporter->popSource();
+                }
+                throw;
+            }
+            if (errorReporter) {
+                errorReporter->popSource();
             }
         });
     env->define("eval", Value(evalFunc));

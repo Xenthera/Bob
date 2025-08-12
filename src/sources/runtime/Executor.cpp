@@ -27,7 +27,10 @@ void Executor::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
                 auto it = d.find("message");
                 if (it != d.end() && it->second.isString()) msg = it->second.asString();
             }
-            interpreter->reportError(0, 0, "Runtime Error", msg, "");
+            int line = top.throwLine;
+            int col = top.throwColumn;
+            if (line == 0 && col == 0) { line = interpreter->getLastErrorLine(); col = interpreter->getLastErrorColumn(); }
+            interpreter->reportError(line, col, "Runtime Error", msg, "");
         }
         // Clear inline marker after handling
         interpreter->clearInlineErrorReported();
@@ -44,6 +47,10 @@ void Executor::execute(const std::shared_ptr<Stmt>& statement, ExecutionContext*
             err["message"] = Value(std::string(e.what()));
             context->hasThrow = true;
             context->thrownValue = Value(err);
+            if (context->throwLine == 0 && context->throwColumn == 0) {
+                context->throwLine = interpreter->getLastErrorLine();
+                context->throwColumn = interpreter->getLastErrorColumn();
+            }
         }
     }
 }
@@ -55,9 +62,9 @@ void Executor::executeBlock(const std::vector<std::shared_ptr<Stmt>>& statements
     for (const auto& statement : statements) {
         execute(statement, context);
         // Bridge any pending throws from expression evaluation into the context
-        Value pending;
-        if (interpreter->consumePendingThrow(pending)) {
-            if (context) { context->hasThrow = true; context->thrownValue = pending; }
+        Value pending; int pl=0, pc=0;
+        if (interpreter->consumePendingThrow(pending, &pl, &pc)) {
+            if (context) { context->hasThrow = true; context->thrownValue = pending; context->throwLine = pl; context->throwColumn = pc; }
         }
         // If an inline reporter already handled this error and we are at top level (no try),
         // avoid reporting it again here.
@@ -76,9 +83,9 @@ void Executor::visitBlockStmt(const std::shared_ptr<BlockStmt>& statement, Execu
 
 void Executor::visitExpressionStmt(const std::shared_ptr<ExpressionStmt>& statement, ExecutionContext* context) {
     Value value = statement->expression->accept(evaluator);
-    Value thrown;
-    if (interpreter->consumePendingThrow(thrown)) {
-        if (context) { context->hasThrow = true; context->thrownValue = thrown; }
+    Value thrown; int tl=0, tc=0;
+    if (interpreter->consumePendingThrow(thrown, &tl, &tc)) {
+        if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; }
         return;
     }
 
@@ -90,8 +97,8 @@ void Executor::visitVarStmt(const std::shared_ptr<VarStmt>& statement, Execution
     Value value = NONE_VALUE;
     if (statement->initializer != nullptr) {
         value = statement->initializer->accept(evaluator);
-        Value thrownInit;
-        if (interpreter->consumePendingThrow(thrownInit)) { if (context) { context->hasThrow = true; context->thrownValue = thrownInit; } return; }
+        Value thrownInit; int tl=0, tc=0;
+        if (interpreter->consumePendingThrow(thrownInit, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrownInit; context->throwLine = tl; context->throwColumn = tc; } return; }
     }
     interpreter->getEnvironment()->define(statement->name.lexeme, value);
 }
@@ -124,8 +131,8 @@ void Executor::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, Exe
 
 void Executor::visitIfStmt(const std::shared_ptr<IfStmt>& statement, ExecutionContext* context) {
     Value condValIf = statement->condition->accept(evaluator);
-    Value thrownIf;
-    if (interpreter->consumePendingThrow(thrownIf)) { if (context) { context->hasThrow = true; context->thrownValue = thrownIf; } return; }
+    Value thrownIf; int tl=0, tc=0;
+    if (interpreter->consumePendingThrow(thrownIf, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrownIf; context->throwLine = tl; context->throwColumn = tc; } return; }
     if (interpreter->isTruthy(condValIf)) {
         execute(statement->thenBranch, context);
     } else if (statement->elseBranch != nullptr) {
@@ -141,7 +148,7 @@ void Executor::visitWhileStmt(const std::shared_ptr<WhileStmt>& statement, Execu
     
     while (interpreter->isTruthy(statement->condition->accept(evaluator))) {
         execute(statement->body, &loopContext);
-        if (loopContext.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; } break; }
+        if (loopContext.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; context->throwLine = loopContext.throwLine; context->throwColumn = loopContext.throwColumn; } break; }
         if (loopContext.hasReturn) {
             if (context) {
                 context->hasReturn = true;
@@ -169,13 +176,13 @@ void Executor::visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement, E
     
     while (true) {
         execute(statement->body, &loopContext);
-        if (loopContext.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; } break; }
+        if (loopContext.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; context->throwLine = loopContext.throwLine; context->throwColumn = loopContext.throwColumn; } break; }
         if (loopContext.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = loopContext.returnValue; } break; }
         if (loopContext.shouldBreak) { break; }
         if (loopContext.shouldContinue) { loopContext.shouldContinue = false; }
         Value c = statement->condition->accept(evaluator);
-        Value thrown;
-        if (interpreter->consumePendingThrow(thrown)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; } break; }
+        Value thrown; int tl=0, tc=0;
+        if (interpreter->consumePendingThrow(thrown, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; } break; }
         if (!interpreter->isTruthy(c)) break;
     }
 }
@@ -193,8 +200,8 @@ void Executor::visitForStmt(const std::shared_ptr<ForStmt>& statement, Execution
     while (true) {
         if (statement->condition != nullptr) {
             Value c = statement->condition->accept(evaluator);
-            Value thrown;
-            if (interpreter->consumePendingThrow(thrown)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; } break; }
+            Value thrown; int tl=0, tc=0;
+            if (interpreter->consumePendingThrow(thrown, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; } break; }
             if (!interpreter->isTruthy(c)) break;
         }
         execute(statement->body, &loopContext);
@@ -215,16 +222,16 @@ void Executor::visitForStmt(const std::shared_ptr<ForStmt>& statement, Execution
             loopContext.shouldContinue = false;
             if (statement->increment != nullptr) {
                 statement->increment->accept(evaluator);
-                Value thrown;
-                if (interpreter->consumePendingThrow(thrown)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; } break; }
+                Value thrown; int tl=0, tc=0;
+                if (interpreter->consumePendingThrow(thrown, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; } break; }
             }
             continue;
         }
         
         if (statement->increment != nullptr) {
             statement->increment->accept(evaluator);
-            Value thrown;
-            if (interpreter->consumePendingThrow(thrown)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; } break; }
+            Value thrown; int tl=0, tc=0;
+            if (interpreter->consumePendingThrow(thrown, &tl, &tc)) { if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; } break; }
         }
     }
 }
@@ -243,14 +250,19 @@ void Executor::visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement,
 
 void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, ExecutionContext* context) {
     interpreter->enterTry();
+    // Temporarily detach the reporter so any direct uses (e.g., in Environment) won't print inline
+    auto savedReporter = interpreter->getErrorReporter();
+    interpreter->setErrorReporter(nullptr);
     ExecutionContext inner;
     if (context) inner.isFunctionBody = context->isFunctionBody;
     execute(statement->tryBlock, &inner);
     // Also capture any pending throw signaled by expressions
-    Value pending;
-    if (interpreter->consumePendingThrow(pending)) {
+    Value pending; int pl=0, pc=0;
+    if (interpreter->consumePendingThrow(pending, &pl, &pc)) {
         inner.hasThrow = true;
         inner.thrownValue = pending;
+        inner.throwLine = pl;
+        inner.throwColumn = pc;
     }
     // If thrown, handle catch
     if (inner.hasThrow && statement->catchBlock) {
@@ -267,6 +279,8 @@ void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, Execution
         execute(statement->catchBlock, &catchCtx);
         inner.hasThrow = catchCtx.hasThrow;
         inner.thrownValue = catchCtx.thrownValue;
+        inner.throwLine = catchCtx.throwLine;
+        inner.throwColumn = catchCtx.throwColumn;
         interpreter->setEnvironment(saved);
     }
     // finally always
@@ -274,16 +288,17 @@ void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, Execution
         ExecutionContext fctx;
         fctx.isFunctionBody = inner.isFunctionBody;
         execute(statement->finallyBlock, &fctx);
-        if (fctx.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = fctx.returnValue; } return; }
-        if (fctx.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = fctx.thrownValue; } return; }
-        if (fctx.shouldBreak) { if (context) { context->shouldBreak = true; } return; }
-        if (fctx.shouldContinue) { if (context) { context->shouldContinue = true; } return; }
+        if (fctx.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = fctx.returnValue; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+        if (fctx.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = fctx.thrownValue; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+        if (fctx.shouldBreak) { if (context) { context->shouldBreak = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+        if (fctx.shouldContinue) { if (context) { context->shouldContinue = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
     }
     // propagate remaining control flow
-    if (inner.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = inner.returnValue; } interpreter->exitTry(); return; }
-    if (inner.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = inner.thrownValue; } interpreter->exitTry(); return; }
-    if (inner.shouldBreak) { if (context) { context->shouldBreak = true; } interpreter->exitTry(); return; }
-    if (inner.shouldContinue) { if (context) { context->shouldContinue = true; } interpreter->exitTry(); return; }
+    if (inner.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = inner.returnValue; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+    if (inner.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = inner.thrownValue; context->throwLine = inner.throwLine; context->throwColumn = inner.throwColumn; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+    if (inner.shouldBreak) { if (context) { context->shouldBreak = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+    if (inner.shouldContinue) { if (context) { context->shouldContinue = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+    interpreter->setErrorReporter(savedReporter);
     interpreter->exitTry();
 }
 
@@ -292,6 +307,8 @@ void Executor::visitThrowStmt(const std::shared_ptr<ThrowStmt>& statement, Execu
     if (context) {
         context->hasThrow = true;
         context->thrownValue = v;
+        context->throwLine = statement->keyword.line;
+        context->throwColumn = statement->keyword.column;
     }
 }
 

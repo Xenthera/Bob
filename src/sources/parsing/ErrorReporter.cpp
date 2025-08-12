@@ -56,6 +56,29 @@ void ErrorReporter::loadSource(const std::string& source, const std::string& fil
     }
 }
 
+void ErrorReporter::pushSource(const std::string& source, const std::string& fileName) {
+    // Save current
+    sourceStack.push_back(sourceLines);
+    fileNameStack.push_back(currentFileName);
+    // Load new
+    loadSource(source, fileName);
+}
+
+void ErrorReporter::popSource() {
+    if (!sourceStack.empty()) {
+        sourceLines = sourceStack.back();
+        sourceStack.pop_back();
+    } else {
+        sourceLines.clear();
+    }
+    if (!fileNameStack.empty()) {
+        currentFileName = fileNameStack.back();
+        fileNameStack.pop_back();
+    } else {
+        currentFileName.clear();
+    }
+}
+
 void ErrorReporter::reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_, bool showArrow) {
     hadError = true;
     displaySourceContext(line, column, errorType, message, operator_, showArrow);
@@ -75,6 +98,8 @@ void ErrorReporter::reportErrorWithContext(const ErrorContext& context) {
     
     if (!context.fileName.empty()) {
         std::cout << colorize("File: ", Colors::BOLD) << colorize(context.fileName, Colors::CYAN) << "\n";
+    } else if (!currentFileName.empty()) {
+        std::cout << colorize("File: ", Colors::BOLD) << colorize(currentFileName, Colors::CYAN) << "\n";
     }
     
     std::cout << colorize("Location: ", Colors::BOLD) << colorize("Line " + std::to_string(context.line) + 

@@ -3305,6 +3305,16 @@ eval(readFile(path14));
 
 var path15 = fileExists("tests/test_try_catch.bob") ? "tests/test_try_catch.bob" : "../tests/test_try_catch.bob";
 eval(readFile(path15));
+var path15a = fileExists("tests/test_try_catch_runtime.bob") ? "tests/test_try_catch_runtime.bob" : "../tests/test_try_catch_runtime.bob";
+eval(readFile(path15a));
+var path15b = fileExists("tests/test_try_catch_extensive.bob") ? "tests/test_try_catch_extensive.bob" : "../tests/test_try_catch_extensive.bob";
+eval(readFile(path15b));
+var path15c = fileExists("tests/test_try_catch_edge_cases2.bob") ? "tests/test_try_catch_edge_cases2.bob" : "../tests/test_try_catch_edge_cases2.bob";
+eval(readFile(path15c));
+var path15d = fileExists("tests/test_try_catch_cross_function.bob") ? "tests/test_try_catch_cross_function.bob" : "../tests/test_try_catch_cross_function.bob";
+eval(readFile(path15d));
+var path15e = fileExists("tests/test_try_catch_loop_interactions.bob") ? "tests/test_try_catch_loop_interactions.bob" : "../tests/test_try_catch_loop_interactions.bob";
+eval(readFile(path15e));
 
 print("\nAll tests passed.");
 print("Test suite complete.");

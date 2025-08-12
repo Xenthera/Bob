@@ -795,8 +795,11 @@ std::shared_ptr<Stmt> Parser::tryStatement() {
     std::shared_ptr<Stmt> finallyBlock = nullptr;
     if (match({CATCH})) {
         consume(OPEN_PAREN, "Expected '(' after 'catch'.");
-        Token var = consume(IDENTIFIER, "Expected identifier for catch variable.");
-        catchVar = var;
+        // Allow optional identifier: catch() or catch(e)
+        if (!check(CLOSE_PAREN)) {
+            Token var = consume(IDENTIFIER, "Expected identifier for catch variable.");
+            catchVar = var;
+        }
         consume(CLOSE_PAREN, "Expected ')' after catch variable.");
         catchBlock = statement();
     }
