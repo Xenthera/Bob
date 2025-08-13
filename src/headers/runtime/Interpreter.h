@@ -74,6 +74,8 @@ private:
     std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> builtinExtensions; // keys: "string","array","dict","any"
     std::unordered_map<std::string, std::string> classParents; // child -> parent
     std::unordered_map<std::string, std::unordered_map<std::string, Value>> classTemplates; // className -> template dict
+    // Field initializers per class in source order (to evaluate across inheritance chain)
+    std::unordered_map<std::string, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>> classFieldInitializers; // className -> [(field, expr)]
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
     
@@ -138,6 +140,12 @@ public:
     void setClassTemplate(const std::string& className, const std::unordered_map<std::string, Value>& tmpl);
     bool getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const;
     std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
+    // Field initializer APIs
+    void setClassFieldInitializers(const std::string& className, const std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& inits) { classFieldInitializers[className] = inits; }
+    bool getClassFieldInitializers(const std::string& className, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& out) const {
+        auto it = classFieldInitializers.find(className);
+        if (it == classFieldInitializers.end()) return false; out = it->second; return true;
+    }
     void addStdLibFunctions();
     // Module APIs
     Value importModule(const std::string& spec, int line, int column); // returns module dict

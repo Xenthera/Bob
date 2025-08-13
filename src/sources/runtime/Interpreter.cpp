@@ -8,7 +8,11 @@
 #include "Expression.h"
 #include "Parser.h"
 #include <filesystem>
-#include <unistd.h>
+#if defined(_WIN32)
+  #include <direct.h>
+#else
+  #include <unistd.h>
+#endif
 #include <fstream>
 #include <iostream>
 

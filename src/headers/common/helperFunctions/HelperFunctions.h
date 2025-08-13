@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
+#include <cctype>
 
 inline std::vector<std::string> splitString(const std::string& input, const std::string& delimiter) {
     std::vector<std::string> tokens;
@@ -56,9 +57,9 @@ inline bool isHexDigit(char c) {
     return (std::isdigit(c) || (std::isxdigit(c) && std::islower(c)));
 }
 
-inline u_long binaryStringToLong(const std::string& binaryString) {
+inline unsigned long long binaryStringToLong(const std::string& binaryString) {
     std::string binaryDigits = binaryString.substr(2);  // Remove the '0b' prefix
-    u_long result = 0;
+    unsigned long long result = 0;
     for (char ch : binaryDigits) {
         result <<= 1;
         result += (ch - '0');

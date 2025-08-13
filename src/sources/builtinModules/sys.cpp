@@ -2,7 +2,11 @@
 #include "Interpreter.h"
 #include "Environment.h"
 #include "Lexer.h" // for Token and IDENTIFIER
-#include <unistd.h>
+#if defined(_WIN32)
+  #include <windows.h>
+#else
+  #include <unistd.h>
+#endif
 #include <limits.h>
 #include <cstdlib>
 #include <cstring>

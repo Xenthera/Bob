@@ -111,8 +111,23 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             case PLUS: return left + right;
             case MINUS: return left - right;
             case STAR: return left * right;
-            case SLASH: return left / right;
-            case PERCENT: return left % right;
+            case SLASH: {
+                if (right.isNumber() && right.asNumber() == 0.0) {
+                    // Report precise site for division by zero
+                    interpreter->reportError(expression->oper.line, expression->oper.column,
+                                             "Runtime Error", "Division by zero", "/");
+                    throw std::runtime_error("Division by zero");
+                }
+                return left / right;
+            }
+            case PERCENT: {
+                if (right.isNumber() && right.asNumber() == 0.0) {
+                    interpreter->reportError(expression->oper.line, expression->oper.column,
+                                             "Runtime Error", "Modulo by zero", "%");
+                    throw std::runtime_error("Modulo by zero");
+                }
+                return left % right;
+            }
             case BIN_AND: return left & right;
             case BIN_OR: return left | right;
             case BIN_XOR: return left ^ right;

@@ -391,11 +391,11 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
     } else {
         interpreter->registerClass(statement->name.lexeme, "");
     }
-    // Predefine fields as none, keep initializers mapped
-    std::unordered_map<std::string, std::shared_ptr<Expr>> fieldInitializers;
+    // Predefine fields as none, capture this class's field initializers, and register them for inheritance evaluation
+    std::vector<std::pair<std::string, std::shared_ptr<Expr>>> fieldInitializers;
     for (const auto& f : statement->fields) {
         classDict[f.name.lexeme] = NONE_VALUE;
-        fieldInitializers[f.name.lexeme] = f.initializer;
+        fieldInitializers.emplace_back(f.name.lexeme, f.initializer);
     }
 
     // Attach methods as functions closed over a prototype env
@@ -411,6 +411,8 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
 
     // Save template to interpreter so instances can include inherited fields/methods
     interpreter->setClassTemplate(statement->name.lexeme, classDict);
+    // Register field initializers for this class
+    interpreter->setClassFieldInitializers(statement->name.lexeme, fieldInitializers);
 
     // Define a constructor function Name(...) that builds an instance dict
     auto ctorName = statement->name.lexeme;
@@ -422,17 +424,31 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
         for (const auto& kv : tmpl) dictRef[kv.first] = kv.second;
         // Tag instance with class name for extension lookup
         dictRef["__class"] = Value(className);
-        // Evaluate field initializers with this bound
-        if (!fieldInitializers.empty()) {
+        // Evaluate field initializers across inheritance chain (parent-to-child order)
+        {
+            // Build chain from base to current
+            std::vector<std::string> chain;
+            std::string cur = className;
+            while (!cur.empty()) { chain.push_back(cur); cur = runtime->getParentClass(cur); }
+            std::reverse(chain.begin(), chain.end());
             auto saved = runtime->getEnvironment();
             auto env = std::make_shared<Environment>(saved);
             env->setErrorReporter(nullptr);
             env->define("this", instance);
             runtime->setEnvironment(env);
-            for (const auto& kv : fieldInitializers) {
-                if (kv.second) {
-                    Value v = runtime->evaluate(kv.second);
-                    dictRef[kv.first] = v;
+            for (const auto& cls : chain) {
+                std::vector<std::pair<std::string, std::shared_ptr<Expr>>> inits;
+                if (runtime->getClassFieldInitializers(cls, inits)) {
+                    for (const auto& kv : inits) {
+                        const std::string& fieldName = kv.first;
+                        const auto& expr = kv.second;
+                        if (expr) {
+                            Value v = runtime->evaluate(expr);
+                            dictRef[fieldName] = v;
+                            // Expose field names as locals for subsequent initializers
+                            env->define(fieldName, v);
+                        }
+                    }
                 }
             }
             runtime->setEnvironment(saved);
@@ -445,6 +461,10 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
             std::shared_ptr<Environment> newEnv = std::make_shared<Environment>(fn->closure);
             newEnv->setErrorReporter(nullptr);
             newEnv->define("this", instance);
+            // Seed current class for proper super resolution within init
+            if (fn && !fn->ownerClass.empty()) {
+                newEnv->define("__currentClass", Value(fn->ownerClass));
+            }
             // Bind params
             size_t n = std::min(fn->params.size(), args.size());
             for (size_t i = 0; i < n; ++i) {

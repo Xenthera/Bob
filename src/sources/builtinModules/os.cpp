@@ -4,9 +4,19 @@
 #include <vector>
 #include <string>
 #include <filesystem>
-#include <unistd.h>
-#include <sys/types.h>
-#include <dirent.h>
+#if defined(_WIN32)
+  #include <windows.h>
+  #include <direct.h>
+  #include <limits.h>
+  #include <io.h>
+  #ifndef PATH_MAX
+    #define PATH_MAX MAX_PATH
+  #endif
+#else
+  #include <unistd.h>
+  #include <sys/types.h>
+  #include <dirent.h>
+#endif
 
 namespace fs = std::filesystem;
 
@@ -15,19 +25,35 @@ void registerOsModule(Interpreter& interpreter) {
         // Process
         m.fn("getcwd", [](std::vector<Value>, int, int) -> Value {
             char buf[PATH_MAX];
+            #if defined(_WIN32)
+            if (_getcwd(buf, sizeof(buf))) return Value(std::string(buf));
+            #else
             if (getcwd(buf, sizeof(buf))) return Value(std::string(buf));
+            #endif
             return NONE_VALUE;
         });
         m.fn("chdir", [](std::vector<Value> a, int, int) -> Value {
             if (a.size() != 1 || !a[0].isString()) return Value(false);
+            #if defined(_WIN32)
+            int rc = ::_chdir(a[0].asString().c_str());
+            #else
             int rc = ::chdir(a[0].asString().c_str());
+            #endif
             return Value(rc == 0);
         });
         m.fn("getpid", [](std::vector<Value>, int, int) -> Value {
+            #if defined(_WIN32)
+            return Value(static_cast<double>(GetCurrentProcessId()));
+            #else
             return Value(static_cast<double>(getpid()));
+            #endif
         });
         m.fn("getppid", [](std::vector<Value>, int, int) -> Value {
+            #if defined(_WIN32)
+            return NONE_VALUE; // not directly available; could use Toolhelp32Snapshot if needed
+            #else
             return Value(static_cast<double>(getppid()));
+            #endif
         });
         m.fn("name", [](std::vector<Value>, int, int) -> Value {
 #if defined(_WIN32)
