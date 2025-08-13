@@ -1,12 +1,121 @@
-print("\n--- Test: super calls ---");
+print("\n--- Test: Super functionality in classes and extensions ---");
+
+// ========================================
+// TEST 1: SUPER IN CLASS INHERITANCE
+// ========================================
+print("\n1. Testing super in class inheritance:");
+
+// Base class with methods
+class Animal {
+    var name;
+    var age;
+    
+    func init(n, a) {
+        this.name = n;
+        this.age = a;
+    }
+    
+    func speak() {
+        return "Some sound";
+    }
+    
+    func getInfo() {
+        return this.name + " is " + this.age + " years old";
+    }
+    
+    func makeSound() {
+        return this.name + " says: " + this.speak();
+    }
+}
+
+// Derived class using super
+class Dog extends Animal {
+    var breed;
+    
+    func init(n, a, b) {
+        super.init(n, a);  // Call parent constructor
+        this.breed = b;
+    }
+    
+    func speak() {
+        return "Woof!";
+    }
+    
+    func getInfo() {
+        return super.getInfo() + " and is a " + this.breed;  // Call parent method
+    }
+    
+    func getBreed() {
+        return this.breed;
+    }
+}
+
+// Test basic inheritance with super
+var dog = Dog("Buddy", 5, "Golden Retriever");
+assert(dog.getInfo() == "Buddy is 5 years old and is a Golden Retriever", "Dog getInfo with super");
+assert(dog.makeSound() == "Buddy says: Woof!", "Dog makeSound");
+assert(dog.getBreed() == "Golden Retriever", "Dog getBreed");
+
+print("  Class inheritance with super: PASS");
+
+// ========================================
+// TEST 2: DEEP INHERITANCE WITH SUPER
+// ========================================
+print("\n2. Testing deep inheritance with super:");
+
+// Deep inheritance chain
+class Puppy extends Dog {
+    var isTrained;
+    
+    func init(n, a, b, trained) {
+        super.init(n, a, b);  // Call Dog's init
+        this.isTrained = trained;
+    }
+    
+    func speak() {
+        return "Yip!";
+    }
+    
+    func getInfo() {
+        return super.getInfo() + " (trained: " + this.isTrained + ")";  // Call Dog's getInfo
+    }
+    
+    func getTrainingStatus() {
+        return this.isTrained;
+    }
+}
+
+var puppy = Puppy("Max", 1, "Labrador", true);
+assert(puppy.getInfo() == "Max is 1 years old and is a Labrador (trained: true)", "Puppy getInfo with super chain");
+assert(puppy.makeSound() == "Max says: Yip!", "Puppy makeSound");
+assert(puppy.getTrainingStatus() == true, "Puppy getTrainingStatus");
+
+print("  Deep inheritance with super: PASS");
+
+// ========================================
+// TEST 3: SUPER IN EXTENSIONS
+// ========================================
+print("\n3. Testing super in extensions:");
 
 class A { }
 class B extends A { }
 class C extends B { }
 
-extension A { func v() { return 1; } }
-extension B { func v() { return super.v() + 1; } }
-extension C { func v() { return super.v() + 1; } }
+extension A { 
+    func v() { 
+        return 1; 
+    } 
+}
+extension B { 
+    func v() { 
+        return super.v() + 1; 
+    } 
+}
+extension C { 
+    func v() { 
+        return super.v() + 1; 
+    } 
+}
 
 var a = A();
 var b = B();
@@ -16,6 +125,102 @@ assert(a.v() == 1, "A.v");
 assert(b.v() == 2, "B.v via super");
 assert(c.v() == 3, "C.v via super chain");
 
-print("super calls: PASS");
+print("  Super in extensions: PASS");
+
+// ========================================
+// TEST 4: SUPER EDGE CASES
+// ========================================
+print("\n4. Testing super edge cases:");
+
+// Base class with complex methods
+class Base {
+    var value;
+    
+    func init(v) {
+        this.value = v;
+    }
+    
+    func getValue() {
+        return this.value;
+    }
+    
+    func setValue(v) {
+        this.value = v;
+        return this;
+    }
+    
+    func calculate(x) {
+        return this.value + x;
+    }
+    
+    func toString() {
+        return "Base(" + this.value + ")";
+    }
+}
+
+// Derived class with method chaining
+class Derived extends Base {
+    var extra;
+    
+    func init(v, e) {
+        super.init(v);  // Call parent constructor
+        this.extra = e;
+    }
+    
+    func getValue() {
+        return super.getValue() + " + " + this.extra;  // Call parent method
+    }
+    
+    func setValue(v) {
+        super.setValue(v);  // Call parent method and chain
+        return this;
+    }
+    
+    func calculate(x) {
+        return super.calculate(x) * 2;  // Call parent method and modify result
+    }
+    
+    func toString() {
+        return "Derived(" + super.toString() + ", " + this.extra + ")";  // Call parent method in string
+    }
+    
+    func getExtra() {
+        return this.extra;
+    }
+}
+
+var derived = Derived(100, "extra");
+assert(derived.getValue() == "100 + extra", "Derived getValue with super");
+assert(derived.calculate(5) == 210, "Derived calculate with super");
+assert(derived.toString() == "Derived(Base(100), extra)", "Derived toString with super");
+
+// Test method chaining
+derived.setValue(200);
+assert(derived.getValue() == "200 + extra", "Derived method chaining with super");
+
+print("  Super edge cases: PASS");
+
+// ========================================
+// TEST 5: EMPTY DERIVED CLASS
+// ========================================
+print("\n5. Testing empty derived class:");
+
+// Test class with no parent methods
+class Empty extends Base {
+    func init(v) {
+        super.init(v);  // Still call parent constructor
+    }
+    
+    // No method overrides - should use parent methods
+}
+
+var empty = Empty(999);
+assert(empty.getValue() == 999, "Empty getValue (inherited)");
+assert(empty.calculate(1) == 1000, "Empty calculate (inherited)");
+assert(empty.toString() == "Base(999)", "Empty toString (inherited)");
+
+print("  Empty derived class: PASS");
+
+print("\nSuper functionality: ALL TESTS PASS");
 
 
