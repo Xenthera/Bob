@@ -36,7 +36,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("toString", Value(toStringFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(toStringFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(toStringFunc);
 
     // Create a built-in print function
     auto printFunc = std::make_shared<BuiltinFunction>("print", 
@@ -55,7 +55,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("print", Value(printFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(printFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(printFunc);
 
     // Create a built-in printRaw function (no newline, for ANSI escape sequences)
     auto printRawFunc = std::make_shared<BuiltinFunction>("printRaw", 
@@ -74,7 +74,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("printRaw", Value(printRawFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(printRawFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(printRawFunc);
 
     
 
@@ -106,9 +106,10 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                         message += " - " + std::string(args[1].asString());
                     }
                 }
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", message, "", true);
-                }
+                // Use interpreter's reportError method to ensure proper error tracking
+                interpreter.reportError(line, column, "StdLib Error", message, "");
+                // Mark that we've already reported this error to prevent double reporting
+                interpreter.markInlineErrorReported();
                 throw std::runtime_error(message);
             }
             
@@ -117,7 +118,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("assert", Value(assertFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(assertFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(assertFunc);
 
     // time-related globals moved into builtin time module
 
@@ -146,7 +147,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("input", Value(inputFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(inputFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(inputFunc);
 
     // Create a built-in type function
     auto typeFunc = std::make_shared<BuiltinFunction>("type",
@@ -178,7 +179,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                     // This indicates it's a dispatcher, not a true builtin
                     bool hasUserFunction = false;
                     for (size_t arity = 0; arity < 256; ++arity) { // Reasonable limit
-                        if (interpreter.lookupFunction(bf->name, arity)) {
+                        if (interpreter.getFunctionRegistry().lookupFunction(bf->name, arity)) {
                             hasUserFunction = true;
                             break;
                         }
@@ -206,7 +207,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("type", Value(typeFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(typeFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(typeFunc);
 
     // Create a built-in toNumber function for string-to-number conversion
     auto toNumberFunc = std::make_shared<BuiltinFunction>("toNumber",
@@ -241,7 +242,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("toNumber", Value(toNumberFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(toNumberFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(toNumberFunc);
 
     // Create a built-in toInt function for float-to-integer conversion
     auto toIntFunc = std::make_shared<BuiltinFunction>("toInt",
@@ -269,7 +270,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("toInt", Value(toIntFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(toIntFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(toIntFunc);
 
     // Create a built-in toBoolean function for explicit boolean conversion
     auto toBooleanFunc = std::make_shared<BuiltinFunction>("toBoolean",
@@ -307,7 +308,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("toBoolean", Value(toBooleanFunc));
     
     // Store the shared_ptr in the interpreter to keep it alive
-    interpreter.addBuiltinFunction(toBooleanFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(toBooleanFunc);
 
     // exit moved to sys module
 
@@ -331,7 +332,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             return Value(out);
         });
     env->define("dir", Value(dirFunc));
-    interpreter.addBuiltinFunction(dirFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(dirFunc);
 
     auto functionsFunc = std::make_shared<BuiltinFunction>("functions",
         [](std::vector<Value> args, int, int) -> Value {
@@ -353,7 +354,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             return Value(out);
         });
     env->define("functions", Value(functionsFunc));
-    interpreter.addBuiltinFunction(functionsFunc);
+    interpreter.getFunctionRegistry().addBuiltinFunction(functionsFunc);
 
     // random moved to rand module
 

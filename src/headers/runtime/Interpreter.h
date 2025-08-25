@@ -10,6 +10,9 @@
 #include "TypeWrapper.h"
 #include "RuntimeDiagnostics.h"
 #include "ModuleRegistry.h"
+#include "FunctionRegistry.h"
+#include "ClassRegistry.h"
+#include "ExtensionRegistry.h"
 #include <unordered_set>
 
 struct Expr;
@@ -22,10 +25,20 @@ class ErrorReporter;
 struct ExecutionContext;
 struct CallExpr;
 
- 
-
 // Forward declaration
 class Evaluator;
+
+// Call analysis information for method resolution
+struct CallInfo {
+    bool isMethodCall = false;
+    bool isSuperCall = false;
+    std::string methodName;
+    Value receiver = NONE_VALUE;
+    Value callee = NONE_VALUE;
+    std::vector<Value> arguments;
+    int line = 0;
+    int column = 0;
+};
 
 // RAII helper for thunk execution flag
 struct ScopedThunkFlag {
@@ -66,25 +79,14 @@ class Interpreter {
 private:
     std::shared_ptr<Environment> environment;
     bool isInteractive;
-    std::vector<std::shared_ptr<BuiltinFunction>> builtinFunctions;
-    // Maintain legacy list for diagnostics
-    std::vector<std::shared_ptr<Function>> functions;
-    // Class method overloading: className -> methodName -> (arity -> function)
-    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<size_t, std::shared_ptr<Function>>>> classMethodOverloads;
-    std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
-    // Global extension registries
-    std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> classExtensions;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> builtinExtensions; // keys: "string","array","dict","any"
-    std::unordered_map<std::string, std::string> classParents; // child -> parent
-    std::unordered_map<std::string, std::unordered_map<std::string, Value>> classTemplates; // className -> template dict
-    // Field initializers per class in source order (to evaluate across inheritance chain)
-    std::unordered_map<std::string, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>> classFieldInitializers; // className -> [(field, expr)]
+    
+    // Registry components
+    FunctionRegistry functionRegistry;
+    ClassRegistry classRegistry;
+    ExtensionRegistry extensionRegistry;
+    
     ErrorReporter* errorReporter;
     bool inThunkExecution = false;
-    
-    // Automatic cleanup tracking
-    int thunkCreationCount = 0;
-    static const int CLEANUP_THRESHOLD = 10000;
     
     RuntimeDiagnostics diagnostics;  // Utility functions for runtime operations
     std::unique_ptr<Evaluator> evaluator;
@@ -129,30 +131,28 @@ public:
     void setEnvironment(std::shared_ptr<Environment> env);
     ErrorReporter* getErrorReporter() const { return errorReporter; }
     
+    // Function management (delegated to FunctionRegistry)
     void addFunction(std::shared_ptr<Function> function);
-    std::shared_ptr<Function> lookupFunction(const std::string& name, size_t arity);
-    void addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function);
-    std::shared_ptr<Function> lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity);
-    std::shared_ptr<Function> lookupExtensionOverload(const std::string& targetName, const std::string& methodName, size_t arity);
-    void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme = "");
-    void addBuiltinFunction(std::shared_ptr<BuiltinFunction> func);
-    void cleanupUnusedFunctions();
-    void cleanupUnusedThunks();
-    void forceCleanup();
-    // Extension APIs
-    void registerExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn);
-    std::shared_ptr<Function> lookupExtension(const std::string& targetName, const std::string& methodName);
+    
+    // Class management (delegated to ClassRegistry)
+    void addClassMethod(const std::string& className, std::shared_ptr<Function> method);
     void registerClass(const std::string& className, const std::string& parentName);
     std::string getParentClass(const std::string& className) const;
     void setClassTemplate(const std::string& className, const std::unordered_map<std::string, Value>& tmpl);
     bool getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const;
     std::unordered_map<std::string, Value> buildMergedTemplate(const std::string& className) const;
-    // Field initializer APIs
-    void setClassFieldInitializers(const std::string& className, const std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& inits) { classFieldInitializers[className] = inits; }
-    bool getClassFieldInitializers(const std::string& className, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& out) const {
-        auto it = classFieldInitializers.find(className);
-        if (it == classFieldInitializers.end()) return false; out = it->second; return true;
-    }
+    void setClassFieldInitializers(const std::string& className, const std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& inits);
+    bool getClassFieldInitializers(const std::string& className, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& out) const;
+    
+    // Extension management (delegated to ExtensionRegistry)
+    void addExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn);
+    
+    // Internal registry access (for advanced use cases)
+    FunctionRegistry& getFunctionRegistry() { return functionRegistry; }
+    ClassRegistry& getClassRegistry() { return classRegistry; }
+    ExtensionRegistry& getExtensionRegistry() { return extensionRegistry; }
+    
+    void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme = "");
     void addStdLibFunctions();
     // Module APIs
     Value importModule(const std::string& spec, int line, int column); // returns module dict
@@ -194,11 +194,21 @@ public:
     std::string getExecutablePath() const { return executableFile; }
     std::unordered_map<std::string, Value> getModuleCacheSnapshot() const { return moduleCache; }
 
-    
-    
+    // Registry accessors for diagnostics and testing
+    const FunctionRegistry& getFunctionRegistry() const { return functionRegistry; }
+    const ClassRegistry& getClassRegistry() const { return classRegistry; }
+    const ExtensionRegistry& getExtensionRegistry() const { return extensionRegistry; }
 
 private:
     Value runTrampoline(Value initialResult);
+    
+    // Call expression analysis and execution helpers
+    CallInfo analyzeCallExpression(const std::shared_ptr<CallExpr>& expression);
+    Value resolveCallee(const CallInfo& callInfo);
+    Value executeCall(const Value& callee, const CallInfo& callInfo);
+    Value resolveExtensionMethod(const Value& receiver, const std::string& methodName);
+    Value createBuiltinMethod(const std::string& type, const std::string& methodName, const Value& receiver);
+    
     // Stored argv/executable for sys module
     std::vector<std::string> argvData;
     std::string executableFile;

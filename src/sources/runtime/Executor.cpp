@@ -47,6 +47,7 @@ void Executor::execute(const std::shared_ptr<Stmt>& statement, ExecutionContext*
             err["message"] = Value(std::string(e.what()));
             context->hasThrow = true;
             context->thrownValue = Value(err);
+            // Preserve line/column information from the last error site if not already set
             if (context->throwLine == 0 && context->throwColumn == 0) {
                 context->throwLine = interpreter->getLastErrorLine();
                 context->throwColumn = interpreter->getLastErrorColumn();
@@ -367,7 +368,7 @@ void Executor::visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, Exe
         // Assign first to release references held by the old value
         interpreter->getEnvironment()->assign(statement->name, value);
         // Clean up on any reassignment
-        interpreter->forceCleanup();
+        interpreter->getFunctionRegistry().forceCleanup();
         return;
     }
 
@@ -407,9 +408,9 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
         for (const Token& p : method->params) paramNames.push_back(p.lexeme);
         auto fn = std::make_shared<Function>(method->name.lexeme, paramNames, method->body, protoEnv, statement->name.lexeme);
         // Register overload by arity for this class
-        interpreter->addClassMethodOverload(statement->name.lexeme, fn);
+        interpreter->addClassMethod(statement->name.lexeme, fn);
         // Register overload mapping and store the raw function under the method name.
-        interpreter->addClassMethodOverload(statement->name.lexeme, fn);
+        interpreter->addClassMethod(statement->name.lexeme, fn);
         classDict[method->name.lexeme] = Value(fn);
     }
 
@@ -496,6 +497,6 @@ void Executor::visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statemen
         std::vector<std::string> params;
         for (const Token& p : method->params) params.push_back(p.lexeme);
         auto fn = std::make_shared<Function>(method->name.lexeme, params, method->body, interpreter->getEnvironment(), target);
-        interpreter->registerExtension(target, method->name.lexeme, fn);
+        interpreter->addExtension(target, method->name.lexeme, fn);
     }
 }

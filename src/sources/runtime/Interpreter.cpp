@@ -250,15 +250,10 @@ bool Interpreter::fromImport(const std::string& spec, const std::vector<std::pai
     return true;
 }
 
-void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {
-    builtinFunctions.push_back(func);
-}
 
- 
 
 void Interpreter::addFunction(std::shared_ptr<Function> function) {
-    // Keep legacy list for diagnostics/cleanup
-    functions.push_back(function);
+    functionRegistry.addFunction(function);
     
     // Simply define the function in the environment (no overloading)
     if (environment) {
@@ -266,60 +261,40 @@ void Interpreter::addFunction(std::shared_ptr<Function> function) {
     }
 }
 
-void Interpreter::addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function) {
-    classMethodOverloads[className][function->name][function->params.size()] = function;
+void Interpreter::addClassMethod(const std::string& className, std::shared_ptr<Function> method) {
+    classRegistry.addClassMethodOverload(className, method);
 }
 
-std::shared_ptr<Function> Interpreter::lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity) {
-    // Walk inheritance chain from className upward
-    std::string cur = className;
-    int guard = 0;
-    while (!cur.empty() && guard++ < 256) {
-        auto classIt = classMethodOverloads.find(cur);
-        if (classIt != classMethodOverloads.end()) {
-            auto methIt = classIt->second.find(methodName);
-            if (methIt != classIt->second.end()) {
-                auto arityIt = methIt->second.find(arity);
-                if (arityIt != methIt->second.end()) return arityIt->second;
-            }
-        }
-        cur = getParentClass(cur);
-    }
-    return nullptr;
+void Interpreter::registerClass(const std::string& className, const std::string& parentName) {
+    classRegistry.registerClass(className, parentName);
 }
 
-std::shared_ptr<Function> Interpreter::lookupExtensionOverload(const std::string& targetName, const std::string& methodName, size_t arity) {
-    // Simple extension lookup (no overloading)
-    if (targetName == "string" || targetName == "array" || targetName == "dict" || targetName == "any" || targetName == "number") {
-        auto tIt = builtinExtensions.find(targetName);
-        if (tIt == builtinExtensions.end()) return nullptr;
-        auto mIt = tIt->second.find(methodName);
-        if (mIt == tIt->second.end()) return nullptr;
-        return mIt->second;
-    } else {
-        // User class extension
-        auto tIt = classExtensions.find(targetName);
-        if (tIt == classExtensions.end()) return nullptr;
-        auto mIt = tIt->second.find(methodName);
-        if (mIt == tIt->second.end()) return nullptr;
-        return mIt->second;
-    }
+std::string Interpreter::getParentClass(const std::string& className) const {
+    return classRegistry.getParentClass(className);
 }
 
-std::shared_ptr<Function> Interpreter::lookupFunction(const std::string& name, size_t arity) {
-    // Simple function lookup (no overloading)
-    if (!environment) return nullptr;
-    
-    try {
-        Value funcValue = environment->get(Token{IDENTIFIER, name, 0, 0});
-        if (funcValue.isFunction()) {
-            return funcValue.function;
-        }
-    } catch (...) {
-        // Function not found
-    }
-    
-    return nullptr;
+void Interpreter::setClassTemplate(const std::string& className, const std::unordered_map<std::string, Value>& tmpl) {
+    classRegistry.setClassTemplate(className, tmpl);
+}
+
+bool Interpreter::getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const {
+    return classRegistry.getClassTemplate(className, out);
+}
+
+std::unordered_map<std::string, Value> Interpreter::buildMergedTemplate(const std::string& className) const {
+    return classRegistry.buildMergedTemplate(className);
+}
+
+void Interpreter::setClassFieldInitializers(const std::string& className, const std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& inits) {
+    classRegistry.setClassFieldInitializers(className, inits);
+}
+
+bool Interpreter::getClassFieldInitializers(const std::string& className, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>& out) const {
+    return classRegistry.getClassFieldInitializers(className, out);
+}
+
+void Interpreter::addExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn) {
+    extensionRegistry.registerExtension(targetName, methodName, fn);
 }
 
 void Interpreter::setErrorReporter(ErrorReporter* reporter) {
@@ -353,285 +328,274 @@ void Interpreter::reportError(int line, int column, const std::string& errorType
     }
 }
 
-void Interpreter::cleanupUnusedFunctions() {
-    diagnostics.cleanupUnusedFunctions(functions);
-}
 
-void Interpreter::cleanupUnusedThunks() {
-    diagnostics.cleanupUnusedThunks(thunks);
-}
-
-void Interpreter::forceCleanup() {
-    diagnostics.forceCleanup(builtinFunctions, functions, thunks);
-}
-
-void Interpreter::registerExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn) {
-    // Simple extension registration (no overloading)
-    if (targetName == "string" || targetName == "array" || targetName == "dict" || targetName == "any" || targetName == "number") {
-        // Register into simple map for property lookup
-        builtinExtensions[targetName][methodName] = fn;
-    } else {
-        // Treat as user class extension
-        classExtensions[targetName][methodName] = fn;
-    }
-}
-
-std::shared_ptr<Function> Interpreter::lookupExtension(const std::string& targetName, const std::string& methodName) {
-    // If this is a user class name, prefer class extensions
-    auto cit = classExtensions.find(targetName);
-    if (cit != classExtensions.end()) {
-        auto mit = cit->second.find(methodName);
-        if (mit != cit->second.end()) return mit->second;
-        // If not on class, fall through to any
-        auto anyIt2 = builtinExtensions.find("any");
-        if (anyIt2 != builtinExtensions.end()) {
-            auto am = anyIt2->second.find(methodName);
-            if (am != anyIt2->second.end()) return am->second;
-        }
-        return nullptr;
-    }
-
-    // Builtin targets
-    auto bit = builtinExtensions.find(targetName);
-    if (bit != builtinExtensions.end()) {
-        auto mit = bit->second.find(methodName);
-        if (mit != bit->second.end()) return mit->second;
-    }
-    // any fallback for builtins and unknowns
-    auto anyIt = builtinExtensions.find("any");
-    if (anyIt != builtinExtensions.end()) {
-        auto mit = anyIt->second.find(methodName);
-        if (mit != anyIt->second.end()) return mit->second;
-    }
-    return nullptr;
-}
-
-void Interpreter::registerClass(const std::string& className, const std::string& parentName) {
-    if (!parentName.empty()) {
-        classParents[className] = parentName;
-    }
-}
-
-std::string Interpreter::getParentClass(const std::string& className) const {
-    auto it = classParents.find(className);
-    if (it != classParents.end()) return it->second;
-    return "";
-}
-
-void Interpreter::setClassTemplate(const std::string& className, const std::unordered_map<std::string, Value>& tmpl) {
-    classTemplates[className] = tmpl;
-}
-
-bool Interpreter::getClassTemplate(const std::string& className, std::unordered_map<std::string, Value>& out) const {
-    auto it = classTemplates.find(className);
-    if (it == classTemplates.end()) return false;
-    out = it->second;
-    return true;
-}
-
-std::unordered_map<std::string, Value> Interpreter::buildMergedTemplate(const std::string& className) const {
-    std::unordered_map<std::string, Value> merged;
-    // Merge parent chain first
-    std::string cur = className;
-    std::vector<std::string> chain;
-    while (!cur.empty()) { chain.push_back(cur); cur = getParentClass(cur); }
-    for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
-        auto ct = classTemplates.find(*it);
-        if (ct != classTemplates.end()) {
-            for (const auto& kv : ct->second) merged[kv.first] = kv.second;
-        }
-    }
-    return merged;
-}
 
 Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expression) {
-    bool isMethodCall = false;
-    bool isSuperCall = false;
-    std::string methodName;
-    Value receiver = NONE_VALUE;
+    // Phase 1 refactoring: Break down into smaller, focused methods
+    auto callInfo = analyzeCallExpression(expression);
+    auto callee = resolveCallee(callInfo);
+    
+    // Handle tail call optimization
+    if (expression->isTailCall) {
+        auto thunk = std::make_shared<Thunk>([this, callee, callInfo]() -> Value {
+            return executeCall(callee, callInfo);
+        });
+        
+        functionRegistry.addThunk(thunk);
+        return Value(thunk);
+    } else {
+        return executeCall(callee, callInfo);
+    }
+}
+
+// Call expression analysis and execution helpers
+
+CallInfo Interpreter::analyzeCallExpression(const std::shared_ptr<CallExpr>& expression) {
+    CallInfo info;
+    info.line = expression->paren.line;
+    info.column = expression->paren.column;
+    
+    // Check if this is a method call (obj.method())
     if (auto prop = std::dynamic_pointer_cast<PropertyExpr>(expression->callee)) {
         if (auto varObj = std::dynamic_pointer_cast<VarExpr>(prop->object)) {
             if (varObj->name.lexeme == "super") {
-                isSuperCall = true;
+                info.isSuperCall = true;
                 if (environment) {
                     try {
-                        receiver = environment->get(Token{IDENTIFIER, "this", prop->name.line, prop->name.column});
+                        info.receiver = environment->get(Token{IDENTIFIER, "this", prop->name.line, prop->name.column});
                     } catch (...) {
-                        receiver = NONE_VALUE;
+                        info.receiver = NONE_VALUE;
                     }
                 }
             }
         }
-        if (!isSuperCall) {
-            receiver = evaluate(prop->object);
+        if (!info.isSuperCall) {
+            info.receiver = evaluate(prop->object);
         }
-        methodName = prop->name.lexeme;
-        isMethodCall = true;
+        info.methodName = prop->name.lexeme;
+        info.isMethodCall = true;
     }
 
-    Value callee = NONE_VALUE;
-    if (!isSuperCall) {
-        callee = evaluate(expression->callee);
+    // Evaluate the callee (function to call)
+    if (!info.isSuperCall) {
+        info.callee = evaluate(expression->callee);
     }
 
+    // Evaluate all arguments
+    for (const auto& argument : expression->arguments) {
+        info.arguments.push_back(evaluate(argument));
+    }
+    
+    return info;
+}
+
+Value Interpreter::resolveCallee(const CallInfo& callInfo) {
+    Value callee = callInfo.callee;
+    
+    // Handle super call resolution
+    if (callInfo.isSuperCall && callInfo.receiver.isDict()) {
+        // Resolve using the current executing class context when available
+        std::string curClass;
+        if (environment) {
+            try {
+                Value cc = environment->get(Token{IDENTIFIER, "__currentClass", callInfo.line, callInfo.column});
+                if (cc.isString()) curClass = cc.asString();
+            } catch (...) {}
+        }
+        // If still not set, try using the callee's ownerClass (when a direct function ref)
+        if (curClass.empty() && callee.isFunction()) {
+            Function* cf = callee.asFunction();
+            if (cf && !cf->ownerClass.empty()) curClass = cf->ownerClass;
+        }
+        // Fallback to the receiver's class tag
+        if (curClass.empty()) {
+            const auto& d = callInfo.receiver.asDict();
+            auto itc = d.find("__class");
+            if (itc != d.end() && itc->second.isString()) curClass = itc->second.asString();
+        }
+        std::string cur = getParentClass(curClass);
+        int guard = 0;
+        while (!cur.empty() && guard++ < 64) {
+            std::unordered_map<std::string, Value> tmpl;
+            if (getClassTemplate(cur, tmpl)) {
+                auto vIt = tmpl.find(callInfo.methodName);
+                if (vIt != tmpl.end() && vIt->second.isFunction()) {
+                    callee = vIt->second;
+                    break;
+                }
+            }
+            if (auto fn = extensionRegistry.lookupExtension(cur, callInfo.methodName)) {
+                callee = Value(fn);
+                break;
+            }
+            cur = getParentClass(cur);
+        }
+        // If still not found, try built-in fallbacks to keep behavior consistent
+        if (!callee.isFunction()) {
+            if (auto dictFn = extensionRegistry.lookupExtension("dict", callInfo.methodName)) callee = Value(dictFn);
+            else if (auto anyFn = extensionRegistry.lookupExtension("any", callInfo.methodName)) callee = Value(anyFn);
+        }
+    }
     // If property wasn't found as a callable, try extension lookup
-    if (isMethodCall && !(callee.isFunction() || callee.isBuiltinFunction())) {
-        if (isSuperCall && !receiver.isDict()) {
+    else if (callInfo.isMethodCall && !(callee.isFunction() || callee.isBuiltinFunction())) {
+        if (callInfo.isSuperCall && !callInfo.receiver.isDict()) {
             std::string errorMsg = "super can only be used inside class methods";
             if (errorReporter) {
-                errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+                errorReporter->reportError(callInfo.line, callInfo.column, "Runtime Error",
                     errorMsg, "");
             }
             throw std::runtime_error(errorMsg);
         }
-        if (!methodName.empty()) {
-            // Built-ins direct
-            if (isSuperCall && receiver.isDict()) {
-                // Resolve using the current executing class context when available
-                std::string curClass;
-                if (environment) {
-                    try {
-                        Value cc = environment->get(Token{IDENTIFIER, "__currentClass", expression->paren.line, expression->paren.column});
-                        if (cc.isString()) curClass = cc.asString();
-                    } catch (...) {}
-                }
-                // If still not set, try using the callee's ownerClass (when a direct function ref)
-                if (curClass.empty() && callee.isFunction()) {
-                    Function* cf = callee.asFunction();
-                    if (cf && !cf->ownerClass.empty()) curClass = cf->ownerClass;
-                }
-                // Fallback to the receiver's class tag
-                if (curClass.empty()) {
-                    const auto& d = receiver.asDict();
-                    auto itc = d.find("__class");
-                    if (itc != d.end() && itc->second.isString()) curClass = itc->second.asString();
-                }
-                std::string cur = getParentClass(curClass);
-                int guard = 0;
-                while (!cur.empty() && guard++ < 64) {
-                    auto tmplIt = classTemplates.find(cur);
-                    if (tmplIt != classTemplates.end()) {
-                        auto vIt = tmplIt->second.find(methodName);
-                        if (vIt != tmplIt->second.end() && vIt->second.isFunction()) {
-                            callee = vIt->second;
-                            break;
-                        }
-                    }
-                    if (auto fn = lookupExtension(cur, methodName)) callee = Value(fn); break;
-                    cur = getParentClass(cur);
-                }
-                // If still not found, try built-in fallbacks to keep behavior consistent
-                if (!callee.isFunction()) {
-                    if (auto dictFn = lookupExtension("dict", methodName)) callee = Value(dictFn);
-                    else if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-                }
-            } else if (receiver.isArray()) {
-                if (auto fn = lookupExtension("array", methodName)) callee = Value(fn);
-                else if (methodName == "len") {
-                    auto bf = std::make_shared<BuiltinFunction>("array.len", [receiver](std::vector<Value> args, int, int){
-                        return Value(static_cast<double>(receiver.asArray().size()));
-                    });
-                    callee = Value(bf);
-                } else if (methodName == "push") {
-                    auto bf = std::make_shared<BuiltinFunction>("array.push", [receiver](std::vector<Value> args, int, int){
-                        std::vector<Value>& arr = const_cast<std::vector<Value>&>(receiver.asArray());
-                        for (size_t i = 0; i < args.size(); ++i) arr.push_back(args[i]);
-                        return receiver;
-                    });
-                    callee = Value(bf);
-                } else if (methodName == "pop") {
-                    auto bf = std::make_shared<BuiltinFunction>("array.pop", [receiver](std::vector<Value> args, int, int){
-                        std::vector<Value>& arr = const_cast<std::vector<Value>&>(receiver.asArray());
-                        if (arr.empty()) return NONE_VALUE;
-                        Value v = arr.back();
-                        arr.pop_back();
-                        return v;
-                    });
-                    callee = Value(bf);
-                } else if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-            } else if (receiver.isString()) {
-                if (auto fn = lookupExtension("string", methodName)) callee = Value(fn);
-                else if (methodName == "len") {
-                    auto bf = std::make_shared<BuiltinFunction>("string.len", [receiver](std::vector<Value> args, int, int){
-                        return Value(static_cast<double>(receiver.asString().length()));
-                    });
-                    callee = Value(bf);
-                } else if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-            } else if (receiver.isNumber()) {
-                if (auto fn = lookupExtension("number", methodName)) callee = Value(fn);
-                else if (methodName == "toInt") {
-                    auto bf = std::make_shared<BuiltinFunction>("number.toInt", [receiver](std::vector<Value> args, int, int){
-                        return Value(static_cast<double>(static_cast<long long>(receiver.asNumber())));
-                    });
-                    callee = Value(bf);
-                } else if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-            } else if (receiver.isDict()) {
-                const auto& d = receiver.asDict();
-                std::string cls;
-                auto it = d.find("__class");
-                if (it != d.end() && it->second.isString()) cls = it->second.asString();
-                // Walk class chain first
-                std::string cur = cls;
-                while (!cur.empty()) {
-                    if (auto fn = lookupExtension(cur, methodName)) { callee = Value(fn); break; }
-                    cur = getParentClass(cur);
-                }
-                // Fallbacks
-                if (!callee.isFunction()) {
-                    if (auto dictFn = lookupExtension("dict", methodName)) callee = Value(dictFn);
-                    else if (methodName == "len") {
-                        auto bf = std::make_shared<BuiltinFunction>("dict.len", [receiver](std::vector<Value> args, int, int){
-                            return Value(static_cast<double>(receiver.asDict().size()));
-                        });
-                        callee = Value(bf);
-                    } else if (methodName == "keys") {
-                        auto bf = std::make_shared<BuiltinFunction>("dict.keys", [receiver](std::vector<Value> args, int, int){
-                            std::vector<Value> keys; const auto& m = receiver.asDict();
-                            for (const auto& kv : m) keys.push_back(Value(kv.first));
-                            return Value(keys);
-                        });
-                        callee = Value(bf);
-                    } else if (methodName == "values") {
-                        auto bf = std::make_shared<BuiltinFunction>("dict.values", [receiver](std::vector<Value> args, int, int){
-                            std::vector<Value> vals; const auto& m = receiver.asDict();
-                            for (const auto& kv : m) vals.push_back(kv.second);
-                            return Value(vals);
-                        });
-                        callee = Value(bf);
-                    } else if (methodName == "has") {
-                        auto bf = std::make_shared<BuiltinFunction>("dict.has", [receiver](std::vector<Value> args, int, int){
-                            if (args.size() != 1 || !args[0].isString()) return Value(false);
-                            const auto& m = receiver.asDict();
-                            return Value(m.find(args[0].asString()) != m.end());
-                        });
-                        callee = Value(bf);
-                    }
-                    else if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-                }
-            } else {
-                if (auto anyFn = lookupExtension("any", methodName)) callee = Value(anyFn);
-            }
+        
+        if (!callInfo.methodName.empty()) {
+            callee = resolveExtensionMethod(callInfo.receiver, callInfo.methodName);
         }
     }
     
     // Allow dispatchers (builtin) and plain functions
     if (!(callee.isFunction() || callee.isBuiltinFunction())) {
-        std::string errorMsg = isSuperCall ? ("Undefined super method '" + methodName + "'")
-                                           : ("Can only call functions, got " + callee.getType());
+        std::string errorMsg = callInfo.isSuperCall ? ("Undefined super method '" + callInfo.methodName + "'")
+                                                   : ("Can only call functions, got " + callee.getType());
         if (errorReporter) {
-            errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+            errorReporter->reportError(callInfo.line, callInfo.column, "Runtime Error",
                 errorMsg, "");
         }
         throw std::runtime_error(errorMsg);
     }
+    
+    return callee;
+}
+
+Value Interpreter::resolveExtensionMethod(const Value& receiver, const std::string& methodName) {
+    // Built-ins direct
+    if (receiver.isArray()) {
+        if (auto fn = extensionRegistry.lookupExtension("array", methodName)) return Value(fn);
+        else if (methodName == "len") {
+            return createBuiltinMethod("array", "len", receiver);
+        } else if (methodName == "push") {
+            return createBuiltinMethod("array", "push", receiver);
+        } else if (methodName == "pop") {
+            return createBuiltinMethod("array", "pop", receiver);
+        } else if (auto anyFn = extensionRegistry.lookupExtension("any", methodName)) return Value(anyFn);
+    } else if (receiver.isString()) {
+        if (auto fn = extensionRegistry.lookupExtension("string", methodName)) return Value(fn);
+        else if (methodName == "len") {
+            return createBuiltinMethod("string", "len", receiver);
+        } else if (auto anyFn = extensionRegistry.lookupExtension("any", methodName)) return Value(anyFn);
+    } else if (receiver.isNumber()) {
+        if (auto fn = extensionRegistry.lookupExtension("number", methodName)) return Value(fn);
+        else if (methodName == "toInt") {
+            return createBuiltinMethod("number", "toInt", receiver);
+        } else if (auto anyFn = extensionRegistry.lookupExtension("any", methodName)) return Value(anyFn);
+    } else if (receiver.isDict()) {
+        const auto& d = receiver.asDict();
+        std::string cls;
+        auto it = d.find("__class");
+        if (it != d.end() && it->second.isString()) cls = it->second.asString();
+        
+        // Walk class chain first
+        std::string cur = cls;
+        while (!cur.empty()) {
+            if (auto fn = extensionRegistry.lookupExtension(cur, methodName)) { 
+                return Value(fn); 
+            }
+            cur = getParentClass(cur);
+        }
+        
+        // Fallbacks
+        if (auto dictFn = extensionRegistry.lookupExtension("dict", methodName)) return Value(dictFn);
+        else if (methodName == "len") {
+            return createBuiltinMethod("dict", "len", receiver);
+        } else if (methodName == "keys") {
+            return createBuiltinMethod("dict", "keys", receiver);
+        } else if (methodName == "values") {
+            return createBuiltinMethod("dict", "values", receiver);
+        } else if (methodName == "has") {
+            return createBuiltinMethod("dict", "has", receiver);
+        } else if (auto anyFn = extensionRegistry.lookupExtension("any", methodName)) return Value(anyFn);
+    } else {
+        if (auto anyFn = extensionRegistry.lookupExtension("any", methodName)) return Value(anyFn);
+    }
+    
+    return NONE_VALUE;
+}
+
+Value Interpreter::createBuiltinMethod(const std::string& type, const std::string& methodName, const Value& receiver) {
+    if (type == "array") {
+        if (methodName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("array.len", [receiver](std::vector<Value> args, int, int){
+                return Value(static_cast<double>(receiver.asArray().size()));
+            });
+            return Value(bf);
+        } else if (methodName == "push") {
+            auto bf = std::make_shared<BuiltinFunction>("array.push", [receiver](std::vector<Value> args, int, int){
+                std::vector<Value>& arr = const_cast<std::vector<Value>&>(receiver.asArray());
+                for (size_t i = 0; i < args.size(); ++i) arr.push_back(args[i]);
+                return receiver;
+            });
+            return Value(bf);
+        } else if (methodName == "pop") {
+            auto bf = std::make_shared<BuiltinFunction>("array.pop", [receiver](std::vector<Value> args, int, int){
+                std::vector<Value>& arr = const_cast<std::vector<Value>&>(receiver.asArray());
+                if (arr.empty()) return NONE_VALUE;
+                Value v = arr.back();
+                arr.pop_back();
+                return v;
+            });
+            return Value(bf);
+        }
+    } else if (type == "string") {
+        if (methodName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("string.len", [receiver](std::vector<Value> args, int, int){
+                return Value(static_cast<double>(receiver.asString().length()));
+            });
+            return Value(bf);
+        }
+    } else if (type == "number") {
+        if (methodName == "toInt") {
+            auto bf = std::make_shared<BuiltinFunction>("number.toInt", [receiver](std::vector<Value> args, int, int){
+                return Value(static_cast<double>(static_cast<long long>(receiver.asNumber())));
+            });
+            return Value(bf);
+        }
+    } else if (type == "dict") {
+        if (methodName == "len") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.len", [receiver](std::vector<Value> args, int, int){
+                return Value(static_cast<double>(receiver.asDict().size()));
+            });
+            return Value(bf);
+        } else if (methodName == "keys") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.keys", [receiver](std::vector<Value> args, int, int){
+                std::vector<Value> keys; const auto& m = receiver.asDict();
+                for (const auto& kv : m) keys.push_back(Value(kv.first));
+                return Value(keys);
+            });
+            return Value(bf);
+        } else if (methodName == "values") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.values", [receiver](std::vector<Value> args, int, int){
+                std::vector<Value> vals; const auto& m = receiver.asDict();
+                for (const auto& kv : m) vals.push_back(kv.second);
+                return Value(vals);
+            });
+            return Value(bf);
+        } else if (methodName == "has") {
+            auto bf = std::make_shared<BuiltinFunction>("dict.has", [receiver](std::vector<Value> args, int, int){
+                if (args.size() != 1 || !args[0].isString()) return Value(false);
+                const auto& m = receiver.asDict();
+                return Value(m.find(args[0].asString()) != m.end());
+            });
+            return Value(bf);
+        }
+    }
+    
+    return NONE_VALUE;
+}
+
+Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
     if (callee.isBuiltinFunction()) {
         // Handle builtin functions with direct evaluation
-        std::vector<Value> arguments;
-        for (const auto& argument : expression->arguments) {
-            arguments.push_back(evaluate(argument));
-        }
         BuiltinFunction* builtinFunction = callee.asBuiltinFunction();
-        return builtinFunction->func(arguments, expression->paren.line, expression->paren.column);
+        return builtinFunction->func(callInfo.arguments, callInfo.line, callInfo.column);
     }
 
     // Hold a shared_ptr to keep the function alive across tail calls
@@ -641,136 +605,106 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     }
     Function* function = callee.asFunction();
     
-    std::vector<Value> arguments;
-    for (const auto& argument : expression->arguments) {
-        arguments.push_back(evaluate(argument));
-    }
-
     // Builtin targets: select extension overload by arity
     // For super calls, we must NOT re-dispatch by arity here; keep the resolved callee (parent method)
-    if (isMethodCall && !isSuperCall && !receiver.isDict()) {
+    if (callInfo.isMethodCall && !callInfo.isSuperCall && !callInfo.receiver.isDict()) {
         std::string target;
-        if (receiver.isString()) target = "string";
-        else if (receiver.isArray()) target = "array";
-        else if (receiver.isDict()) target = "dict";
-        else if (receiver.isNumber()) target = "number";
+        if (callInfo.receiver.isString()) target = "string";
+        else if (callInfo.receiver.isArray()) target = "array";
+        else if (callInfo.receiver.isDict()) target = "dict";
+        else if (callInfo.receiver.isNumber()) target = "number";
         if (!target.empty()) {
-            if (auto sel = lookupExtensionOverload(target, methodName, arguments.size())) {
+            if (auto sel = extensionRegistry.lookupExtensionOverload(target, callInfo.methodName, callInfo.arguments.size())) {
                 functionShared = sel;
                 function = sel.get();
             } else {
-                if (auto any = lookupExtensionOverload("any", methodName, arguments.size())) { functionShared = any; function = any.get(); }
+                if (auto any = extensionRegistry.lookupExtensionOverload("any", callInfo.methodName, callInfo.arguments.size())) { 
+                    functionShared = any; 
+                    function = any.get(); 
+                }
             }
         }
     }
     
     // Method overloading by arity: prefer class overloads if receiver is a user instance; otherwise builtin/any extensions
     // For super calls, do not override the callee selected from the parent chain above
-    if (isMethodCall && !isSuperCall) {
+    if (callInfo.isMethodCall && !callInfo.isSuperCall) {
         bool resolved = false;
-        if (receiver.isDict()) {
-            const auto& d = receiver.asDict();
+        if (callInfo.receiver.isDict()) {
+            const auto& d = callInfo.receiver.asDict();
             auto itc = d.find("__class");
             if (itc != d.end() && itc->second.isString()) {
                 std::string cls = itc->second.asString();
-                if (auto sel = lookupClassMethodOverload(cls, methodName, arguments.size())) { functionShared = sel; function = sel.get(); resolved = true; }
+                if (auto sel = classRegistry.lookupClassMethodOverload(cls, callInfo.methodName, callInfo.arguments.size())) { 
+                    functionShared = sel; 
+                    function = sel.get(); 
+                    resolved = true; 
+                }
             }
         }
         if (!resolved) {
             std::string target;
-            if (receiver.isString()) target = "string";
-            else if (receiver.isArray()) target = "array";
-            else if (receiver.isDict()) target = "dict";
-            else if (receiver.isNumber()) target = "number";
+            if (callInfo.receiver.isString()) target = "string";
+            else if (callInfo.receiver.isArray()) target = "array";
+            else if (callInfo.receiver.isDict()) target = "dict";
+            else if (callInfo.receiver.isNumber()) target = "number";
             if (!target.empty()) {
-                if (auto sel = lookupExtensionOverload(target, methodName, arguments.size())) { functionShared = sel; function = sel.get(); resolved = true; }
-                else if (auto any = lookupExtensionOverload("any", methodName, arguments.size())) { functionShared = any; function = any.get(); resolved = true; }
+                if (auto sel = extensionRegistry.lookupExtensionOverload(target, callInfo.methodName, callInfo.arguments.size())) { 
+                    functionShared = sel; 
+                    function = sel.get(); 
+                    resolved = true; 
+                }
+                else if (auto any = extensionRegistry.lookupExtensionOverload("any", callInfo.methodName, callInfo.arguments.size())) { 
+                    functionShared = any; 
+                    function = any.get(); 
+                    resolved = true; 
+                }
             }
         }
     }
     
     // Check arity (like original)
-    if (arguments.size() != function->params.size()) {
+    if (callInfo.arguments.size() != function->params.size()) {
         if (errorReporter) {
-            errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+            errorReporter->reportError(callInfo.line, callInfo.column, "Runtime Error",
                 "Expected " + std::to_string(function->params.size()) +
-                " arguments but got " + std::to_string(arguments.size()) + ".", "");
+                " arguments but got " + std::to_string(callInfo.arguments.size()) + ".", "");
         }
         throw std::runtime_error("Expected " + std::to_string(function->params.size()) +
-                               " arguments but got " + std::to_string(arguments.size()) + ".");
+                               " arguments but got " + std::to_string(callInfo.arguments.size()) + ".");
     }
     
-    // Check if this is a tail call for inline TCO
-    if (expression->isTailCall) {
-        auto thunk = std::make_shared<Thunk>([this, function, arguments, isMethodCall, receiver, isSuperCall]() -> Value {
-            ScopedEnv _env(environment);
-            environment = std::make_shared<Environment>(function->closure);
-            environment->setErrorReporter(errorReporter);
-            
-            if (isMethodCall) {
-                environment->define("this", receiver);
-                if (isSuperCall) environment->define("super", receiver);
-                if (function && !function->ownerClass.empty()) {
-                    environment->define("__currentClass", Value(function->ownerClass));
-                }
-            }
-            
-            for (size_t i = 0; i < function->params.size(); i++) {
-                environment->define(function->params[i], arguments[i]);
-            }
-            
-            ExecutionContext context;
-            context.isFunctionBody = true;
-            
-            ScopedThunkFlag _inThunk(inThunkExecution);
-            
-            for (const auto& stmt : function->body) {
-                stmt->accept(executor.get(), &context);
-                if (context.hasReturn) {
-                    return context.returnValue;
-                }
-            }
-            
-            return context.returnValue;
-        });
-        
-        thunks.push_back(thunk);
-        
-        thunkCreationCount++;
-        if (thunkCreationCount >= CLEANUP_THRESHOLD) {
-            cleanupUnusedThunks();
-            thunkCreationCount = 0;
+
+    
+    // Regular function execution
+    ScopedEnv _env(environment);
+    environment = std::make_shared<Environment>(function->closure);
+    environment->setErrorReporter(errorReporter);
+    if (callInfo.isMethodCall) {
+        environment->define("this", callInfo.receiver);
+        if (callInfo.isSuperCall) environment->define("super", callInfo.receiver);
+        if (function && !function->ownerClass.empty()) {
+            environment->define("__currentClass", Value(function->ownerClass));
         }
-        
-        return Value(thunk);
-    } else {
-        ScopedEnv _env(environment);
-        environment = std::make_shared<Environment>(function->closure);
-        environment->setErrorReporter(errorReporter);
-        if (isMethodCall) {
-            environment->define("this", receiver);
-            if (isSuperCall) environment->define("super", receiver);
-            if (function && !function->ownerClass.empty()) {
-                environment->define("__currentClass", Value(function->ownerClass));
-            }
-        }
-        
-        for (size_t i = 0; i < function->params.size(); i++) {
-            environment->define(function->params[i], arguments[i]);
-        }
-        
-        ExecutionContext context;
-        context.isFunctionBody = true;
-        
-        for (const auto& stmt : function->body) {
-            stmt->accept(executor.get(), &context);
-            if (context.hasThrow) { setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); return NONE_VALUE; }
-            if (context.hasReturn) { 
-                return context.returnValue; 
-            }
-        }
-        
-        return context.returnValue;
     }
+    
+    for (size_t i = 0; i < function->params.size(); i++) {
+        environment->define(function->params[i], callInfo.arguments[i]);
+    }
+    
+    ExecutionContext context;
+    context.isFunctionBody = true;
+    
+    for (const auto& stmt : function->body) {
+        stmt->accept(executor.get(), &context);
+        if (context.hasThrow) { 
+            setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); 
+            return NONE_VALUE; 
+        }
+        if (context.hasReturn) { 
+            return context.returnValue; 
+        }
+    }
+    
+    return context.returnValue;
 }
- 

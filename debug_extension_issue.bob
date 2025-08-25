@@ -1,0 +1,13 @@
+// Debug extension precedence issue
+class AF {}
+extension any { func tag() { return "<" + toString(this) + ">"; } }
+extension AF { func tag() { return "af"; } }
+
+var af = AF();
+print("Testing AF().tag()");
+var result = af.tag();
+print("Result: " + result);
+print("Expected: af");
+print("Actual: " + result);
+assert(result == "af", "AF extension should return 'af'");
+print("Test passed!");
