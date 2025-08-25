@@ -1,0 +1,20 @@
+// Simple test for basic class functionality
+print("Testing basic class functionality...");
+
+class SimpleClass {
+    var name;
+    
+    func init(n) {
+        this.name = n;
+    }
+    
+    func getName() {
+        return this.name;
+    }
+}
+
+var obj = SimpleClass("test");
+assert(obj.name == "test", "Field access works");
+assert(obj.getName() == "test", "Method call works");
+
+print("Basic class test: PASS");

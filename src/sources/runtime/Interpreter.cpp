@@ -257,7 +257,69 @@ void Interpreter::addBuiltinFunction(std::shared_ptr<BuiltinFunction> func) {
  
 
 void Interpreter::addFunction(std::shared_ptr<Function> function) {
+    // Keep legacy list for diagnostics/cleanup
     functions.push_back(function);
+    
+    // Simply define the function in the environment (no overloading)
+    if (environment) {
+        environment->define(function->name, Value(function));
+    }
+}
+
+void Interpreter::addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function) {
+    classMethodOverloads[className][function->name][function->params.size()] = function;
+}
+
+std::shared_ptr<Function> Interpreter::lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity) {
+    // Walk inheritance chain from className upward
+    std::string cur = className;
+    int guard = 0;
+    while (!cur.empty() && guard++ < 256) {
+        auto classIt = classMethodOverloads.find(cur);
+        if (classIt != classMethodOverloads.end()) {
+            auto methIt = classIt->second.find(methodName);
+            if (methIt != classIt->second.end()) {
+                auto arityIt = methIt->second.find(arity);
+                if (arityIt != methIt->second.end()) return arityIt->second;
+            }
+        }
+        cur = getParentClass(cur);
+    }
+    return nullptr;
+}
+
+std::shared_ptr<Function> Interpreter::lookupExtensionOverload(const std::string& targetName, const std::string& methodName, size_t arity) {
+    // Simple extension lookup (no overloading)
+    if (targetName == "string" || targetName == "array" || targetName == "dict" || targetName == "any" || targetName == "number") {
+        auto tIt = builtinExtensions.find(targetName);
+        if (tIt == builtinExtensions.end()) return nullptr;
+        auto mIt = tIt->second.find(methodName);
+        if (mIt == tIt->second.end()) return nullptr;
+        return mIt->second;
+    } else {
+        // User class extension
+        auto tIt = classExtensions.find(targetName);
+        if (tIt == classExtensions.end()) return nullptr;
+        auto mIt = tIt->second.find(methodName);
+        if (mIt == tIt->second.end()) return nullptr;
+        return mIt->second;
+    }
+}
+
+std::shared_ptr<Function> Interpreter::lookupFunction(const std::string& name, size_t arity) {
+    // Simple function lookup (no overloading)
+    if (!environment) return nullptr;
+    
+    try {
+        Value funcValue = environment->get(Token{IDENTIFIER, name, 0, 0});
+        if (funcValue.isFunction()) {
+            return funcValue.function;
+        }
+    } catch (...) {
+        // Function not found
+    }
+    
+    return nullptr;
 }
 
 void Interpreter::setErrorReporter(ErrorReporter* reporter) {
@@ -304,13 +366,14 @@ void Interpreter::forceCleanup() {
 }
 
 void Interpreter::registerExtension(const std::string& targetName, const std::string& methodName, std::shared_ptr<Function> fn) {
-    // Builtin targets routed to builtinExtensions
+    // Simple extension registration (no overloading)
     if (targetName == "string" || targetName == "array" || targetName == "dict" || targetName == "any" || targetName == "number") {
+        // Register into simple map for property lookup
         builtinExtensions[targetName][methodName] = fn;
-        return;
+    } else {
+        // Treat as user class extension
+        classExtensions[targetName][methodName] = fn;
     }
-    // Otherwise treat as user class name
-    classExtensions[targetName][methodName] = fn;
 }
 
 std::shared_ptr<Function> Interpreter::lookupExtension(const std::string& targetName, const std::string& methodName) {
@@ -424,7 +487,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         if (!methodName.empty()) {
             // Built-ins direct
             if (isSuperCall && receiver.isDict()) {
-                // Resolve using current executing class context if available
+                // Resolve using the current executing class context when available
                 std::string curClass;
                 if (environment) {
                     try {
@@ -432,22 +495,12 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
                         if (cc.isString()) curClass = cc.asString();
                     } catch (...) {}
                 }
-                // If not set yet (e.g., resolving before entering callee), inspect callee ownerClass if available
-                if (curClass.empty()) {
-                    // Try child class extension to determine current context
-                    const auto& d = receiver.asDict();
-                    auto itc = d.find("__class");
-                    if (itc != d.end() && itc->second.isString()) {
-                        std::string child = itc->second.asString();
-                        if (auto childExt = lookupExtension(child, methodName)) {
-                            curClass = child; // use child as current class for super
-                        }
-                    }
-                }
+                // If still not set, try using the callee's ownerClass (when a direct function ref)
                 if (curClass.empty() && callee.isFunction()) {
                     Function* cf = callee.asFunction();
                     if (cf && !cf->ownerClass.empty()) curClass = cf->ownerClass;
                 }
+                // Fallback to the receiver's class tag
                 if (curClass.empty()) {
                     const auto& d = receiver.asDict();
                     auto itc = d.find("__class");
@@ -464,7 +517,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
                             break;
                         }
                     }
-                    if (auto fn = lookupExtension(cur, methodName)) { callee = Value(fn); break; }
+                    if (auto fn = lookupExtension(cur, methodName)) callee = Value(fn); break;
                     cur = getParentClass(cur);
                 }
                 // If still not found, try built-in fallbacks to keep behavior consistent
@@ -561,6 +614,16 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         }
     }
     
+    // Allow dispatchers (builtin) and plain functions
+    if (!(callee.isFunction() || callee.isBuiltinFunction())) {
+        std::string errorMsg = isSuperCall ? ("Undefined super method '" + methodName + "'")
+                                           : ("Can only call functions, got " + callee.getType());
+        if (errorReporter) {
+            errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
+                errorMsg, "");
+        }
+        throw std::runtime_error(errorMsg);
+    }
     if (callee.isBuiltinFunction()) {
         // Handle builtin functions with direct evaluation
         std::vector<Value> arguments;
@@ -570,22 +633,60 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         BuiltinFunction* builtinFunction = callee.asBuiltinFunction();
         return builtinFunction->func(arguments, expression->paren.line, expression->paren.column);
     }
-    
-    if (!callee.isFunction()) {
-        std::string errorMsg = isSuperCall ? ("Undefined super method '" + methodName + "'")
-                                           : ("Can only call functions, got " + callee.getType());
-        if (errorReporter) {
-            errorReporter->reportError(expression->paren.line, expression->paren.column, "Runtime Error",
-                errorMsg, "");
-        }
-        throw std::runtime_error(errorMsg);
+
+    // Hold a shared_ptr to keep the function alive across tail calls
+    std::shared_ptr<Function> functionShared;
+    if (callee.isFunction()) {
+        functionShared = callee.function;
     }
-    
     Function* function = callee.asFunction();
     
     std::vector<Value> arguments;
     for (const auto& argument : expression->arguments) {
         arguments.push_back(evaluate(argument));
+    }
+
+    // Builtin targets: select extension overload by arity
+    // For super calls, we must NOT re-dispatch by arity here; keep the resolved callee (parent method)
+    if (isMethodCall && !isSuperCall && !receiver.isDict()) {
+        std::string target;
+        if (receiver.isString()) target = "string";
+        else if (receiver.isArray()) target = "array";
+        else if (receiver.isDict()) target = "dict";
+        else if (receiver.isNumber()) target = "number";
+        if (!target.empty()) {
+            if (auto sel = lookupExtensionOverload(target, methodName, arguments.size())) {
+                functionShared = sel;
+                function = sel.get();
+            } else {
+                if (auto any = lookupExtensionOverload("any", methodName, arguments.size())) { functionShared = any; function = any.get(); }
+            }
+        }
+    }
+    
+    // Method overloading by arity: prefer class overloads if receiver is a user instance; otherwise builtin/any extensions
+    // For super calls, do not override the callee selected from the parent chain above
+    if (isMethodCall && !isSuperCall) {
+        bool resolved = false;
+        if (receiver.isDict()) {
+            const auto& d = receiver.asDict();
+            auto itc = d.find("__class");
+            if (itc != d.end() && itc->second.isString()) {
+                std::string cls = itc->second.asString();
+                if (auto sel = lookupClassMethodOverload(cls, methodName, arguments.size())) { functionShared = sel; function = sel.get(); resolved = true; }
+            }
+        }
+        if (!resolved) {
+            std::string target;
+            if (receiver.isString()) target = "string";
+            else if (receiver.isArray()) target = "array";
+            else if (receiver.isDict()) target = "dict";
+            else if (receiver.isNumber()) target = "number";
+            if (!target.empty()) {
+                if (auto sel = lookupExtensionOverload(target, methodName, arguments.size())) { functionShared = sel; function = sel.get(); resolved = true; }
+                else if (auto any = lookupExtensionOverload("any", methodName, arguments.size())) { functionShared = any; function = any.get(); resolved = true; }
+            }
+        }
     }
     
     // Check arity (like original)
@@ -601,11 +702,11 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     
     // Check if this is a tail call for inline TCO
     if (expression->isTailCall) {
-        
         auto thunk = std::make_shared<Thunk>([this, function, arguments, isMethodCall, receiver, isSuperCall]() -> Value {
             ScopedEnv _env(environment);
             environment = std::make_shared<Environment>(function->closure);
             environment->setErrorReporter(errorReporter);
+            
             if (isMethodCall) {
                 environment->define("this", receiver);
                 if (isSuperCall) environment->define("super", receiver);
@@ -623,13 +724,12 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
             
             ScopedThunkFlag _inThunk(inThunkExecution);
             
-                for (const auto& stmt : function->body) {
-                    stmt->accept(executor.get(), &context);
-                    if (context.hasThrow) { setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); return NONE_VALUE; }
-                    if (context.hasReturn) {
-                        return context.returnValue;
-                    }
+            for (const auto& stmt : function->body) {
+                stmt->accept(executor.get(), &context);
+                if (context.hasReturn) {
+                    return context.returnValue;
                 }
+            }
             
             return context.returnValue;
         });
@@ -665,7 +765,9 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
         for (const auto& stmt : function->body) {
             stmt->accept(executor.get(), &context);
             if (context.hasThrow) { setPendingThrow(context.thrownValue, context.throwLine, context.throwColumn); return NONE_VALUE; }
-            if (context.hasReturn) { return context.returnValue; }
+            if (context.hasReturn) { 
+                return context.returnValue; 
+            }
         }
         
         return context.returnValue;

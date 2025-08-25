@@ -1,0 +1,122 @@
+print("\n=== Heavy Regression Test Suite ===");
+
+// Utilities
+func assertEq(a,b,msg){ assert(a==b, msg + " | got=" + toString(a) + " expected=" + toString(b)); }
+func assertThrows(body, msg){ var ok=false; try { body(); } catch (e) { ok=true; } assert(ok, msg); }
+
+// 1. Numbers & arithmetic, division/modulo by zero
+assertEq(2+3,5,"add");
+assertEq(10-4,6,"sub");
+assertEq(6*7,42,"mul");
+assertEq(20/5,4,"div");
+assertEq(20%3,2,"mod");
+assertEq(-5, -5, "unary minus");
+assertThrows(func(){ var x=1/0; }, "div by zero throws");
+assertThrows(func(){ var x=1%0; }, "mod by zero throws");
+
+// 2. Bitwise ops
+assertEq((5 & 3), 1, "bit and");
+assertEq((5 | 2), 7, "bit or");
+assertEq((5 ^ 1), 4, "bit xor");
+assertEq((1 << 3), 8, "shift left");
+assertEq((8 >> 2), 2, "shift right");
+assertEq((~1).toInt(), -2, "bit not");
+
+// 3. Booleans & logical short-circuit
+func side(){ assert(false, "should not be called"); return true; }
+var t=true; var f=false;
+assertEq(t && 1, 1, "and truthy");
+assertEq(f && 1, false, "and short-circuit false");
+assertEq(t || 0, true, "or truthy short");
+assertEq(f || 0, 0, "or returns rhs");
+
+// 4. Ternary
+assertEq(true ? 1 : 2, 1, "ternary true");
+assertEq(false ? 1 : 2, 2, "ternary false");
+
+// 5. Strings: concat, escapes, indexing (pos/neg), immutability
+assertEq("Hello"+" "+"Bob", "Hello Bob", "concat");
+assertEq("a\n\t\\\"", "a\n\t\\\"", "escapes");
+assertEq("test"[0], "t", "string index 0");
+assertEq("test"[3], "t", "string index last");
+assertEq("test"[-1], "t", "string index -1");
+assertThrows(func(){ var tmp = "x"[1]; }, "string oob");
+assertThrows(func(){ var s="x"; s[0]="y"; }, "string immutable assign");
+
+// 6. Arrays: indexing, push/pop, len, assign, oob
+var arr=[1,2,3];
+assertEq(arr[0],1,"arr idx 0");
+arr[1]=9; assertEq(arr[1],9,"arr assign");
+arr.push(4,5); assertEq(arr.len(),5,"push len");
+assertEq(arr.pop(),5,"pop returns last");
+assertEq(arr.len(),4,"len after pop");
+assertThrows(func(){ var j=arr[99]; }, "array oob read");
+assertThrows(func(){ arr[99]=1; }, "array oob write");
+
+// 7. Dicts: bracket/dot, has/keys/values/len, missing->none
+var d={"a":1}; d.b=2; d["c"]=3;
+assertEq(d.a,1,"dict dot"); assertEq(d["b"],2,"dict bracket");
+assert(d.has("a"), "has a");
+assertEq(d.len(),3,"dict len");
+var ks=d.keys(); var vs=d.values();
+assert(ks.len()==3 && vs.len()==3, "keys/values length");
+assertEq(d["missing"], none, "missing -> none");
+
+// 8. Functions: basics, closures, recursion
+func inc(x){ return x+1; }
+assertEq(inc(4),5,"func call");
+func makeCounter(){ var c=0; return func(){ c=c+1; return c; }; }
+var cnt=makeCounter(); assertEq(cnt(),1,"closure 1"); assertEq(cnt(),2,"closure 2");
+func fact(n){ if(n<=1) return 1; return n*fact(n-1); }
+assertEq(fact(6),720,"recursion");
+
+// 9. Simple functions (no overloading)
+func op(a){ return a+1; }
+assertEq(op(2),3,"op(1)");
+var f=op; assertEq(f(5),6,"function ref");
+var fa=[op]; assertEq(fa[0](2),3,"function in array");
+var fd={"f":op}; assertEq(fd.f(7),8,"function in dict");
+
+// 10. Classes: init, fields, overloading, inheritance
+class Acc { var n; func init(n){ this.n=n; } func add(){ this.n=this.n+1; return this; } func add(x){ this.n=this.n+x; return this; } func add(x,y){ this.n=this.n+x+y; return this; } func val(){ return this.n; } }
+var a=Acc(10); a.add(); a.add(2); a.add(3,4); assertEq(a.val(),10+1+2+3+4,"class overloads");
+var add1=a.add; a.add(5); assertEq(a.val(),10+1+2+3+4+5,"extracted then call via a.add");
+class Base { func who(){ return "Base"; } func who(x){ return "Base:"+toString(x); } }
+class Child extends Base { func who(){ return "Child"; } func who(x,y){ return "Child:"+toString(x+y); } }
+var c=Child(); assertEq(c.who(),"Child","inherit who()"); assertEq(c.who(7),"Base:7","inherit base arity"); assertEq(c.who(2,3),"Child:5","derived arity");
+assertThrows(func(){ c.who(1,2,3); }, "who wrong arity");
+
+// 11. Extensions: string/array/dict/number/any (no overloading)
+extension string { func pad(){ return this; } }
+extension array { func take(){ return []; } }
+extension dict { func get(k){ if(this.has(k)) return this[k]; return none; } }
+extension number { func pow(){ return 1; } }
+extension any { func echo(){ return toString(this); } }
+assertEq("x".pad(),"x","string.pad()");
+var xs=[1,2,3,4]; assertEq(xs.take().len(),0,"array.take()");
+var m={"k":9}; assertEq(m.get("k"),9,"dict.get");
+assertEq(3.pow(),1,"num.pow()");
+assertEq(7.echo(),"7","any.echo()");
+
+// 12. Type conversion & type
+assertEq(toString(42),"42","toString num");
+assertEq(toInt(3.9),3,"toInt trunc");
+assertEq(toBoolean(0),false,"toBoolean 0");
+assertEq(type(42),"number","type number");
+assertEq(type("s"),"string","type string");
+assertEq(type([1]),"array","type array");
+assertEq(type({}),"dict","type dict");
+assertEq(type(op),"function","type user function");
+
+// 13. Try/catch propagation
+func boom(){ throw "x"; }
+var caught=false; try { boom(); } catch(e) { caught = (e == "x"); }
+assert(caught, "try/catch catches thrown value");
+
+// 14. Increment/decrement constraints
+var y=0; y = y + 1; assertEq(y,1,"manual inc");
+assertThrows(func(){ var s="a"; s[0]++; }, "inc string element forbidden");
+
+print("Heavy regression tests passed!");
+
+

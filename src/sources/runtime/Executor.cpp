@@ -113,8 +113,8 @@ void Executor::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement,
                                    paramNames, 
                                    statement->body, 
                                    interpreter->getEnvironment());
+    // Register function; this also installs/updates a dispatcher in env under this name
     interpreter->addFunction(function);
-    interpreter->getEnvironment()->define(statement->name.lexeme, Value(function));
 }
 
 void Executor::visitReturnStmt(const std::shared_ptr<ReturnStmt>& statement, ExecutionContext* context) {
@@ -406,6 +406,10 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
         std::vector<std::string> paramNames;
         for (const Token& p : method->params) paramNames.push_back(p.lexeme);
         auto fn = std::make_shared<Function>(method->name.lexeme, paramNames, method->body, protoEnv, statement->name.lexeme);
+        // Register overload by arity for this class
+        interpreter->addClassMethodOverload(statement->name.lexeme, fn);
+        // Register overload mapping and store the raw function under the method name.
+        interpreter->addClassMethodOverload(statement->name.lexeme, fn);
         classDict[method->name.lexeme] = Value(fn);
     }
 

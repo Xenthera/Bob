@@ -1,6 +1,7 @@
 
 #include "Parser.h"
 #include <stdexcept>
+#include <iostream> // Added for debug output
 
 
 // Operator Precedence Rules
@@ -774,7 +775,15 @@ sptr(Stmt) Parser::continueStatement()
 bool Parser::isTailCall(const std::shared_ptr<Expr>& expr) {
     // Check if this is a direct function call (no operations on the result)
     if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(expr)) {
-        return true;  // Direct function call in return statement
+        // Check if all arguments are simple (not function calls)
+        for (const auto& arg : callExpr->arguments) {
+            if (std::dynamic_pointer_cast<CallExpr>(arg)) {
+                // If any argument is a function call, this is not a tail call
+                return false;
+            }
+        }
+        
+        return true;  // Direct function call in return statement with simple arguments
     }
     return false;
 }

@@ -150,7 +150,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in type function
     auto typeFunc = std::make_shared<BuiltinFunction>("type",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
@@ -171,7 +171,26 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             } else if (args[0].isFunction()) {
                 typeName = "function";
             } else if (args[0].isBuiltinFunction()) {
-                typeName = "builtin_function";
+                // Check if this is a dispatcher for a user-defined function
+                auto bf = args[0].asBuiltinFunction();
+                if (bf && !bf->name.empty()) {
+                    // Check if there are any user-defined functions with this name
+                    // This indicates it's a dispatcher, not a true builtin
+                    bool hasUserFunction = false;
+                    for (size_t arity = 0; arity < 256; ++arity) { // Reasonable limit
+                        if (interpreter.lookupFunction(bf->name, arity)) {
+                            hasUserFunction = true;
+                            break;
+                        }
+                    }
+                    if (hasUserFunction) {
+                        typeName = "function";
+                    } else {
+                        typeName = "builtin_function";
+                    }
+                } else {
+                    typeName = "builtin_function";
+                }
             } else if (args[0].isArray()) {
                 typeName = "array";
             } else if (args[0].isDict()) {

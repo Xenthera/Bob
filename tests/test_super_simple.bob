@@ -1,0 +1,29 @@
+// Simple test for super calls
+print("Testing simple super calls...");
+
+class Parent {
+    var name;
+    
+    func init(n) {
+        this.name = n;
+    }
+    
+    func getName() {
+        return this.name;
+    }
+}
+
+class Child extends Parent {
+    func init(n) {
+        super.init(n);  // This should work
+    }
+    
+    func getName() {
+        return "Child: " + super.getName();  // This should work
+    }
+}
+
+var child = Child("test");
+print("Child name: " + child.getName());
+
+print("Simple super test: PASS");

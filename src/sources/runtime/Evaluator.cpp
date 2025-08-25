@@ -3,6 +3,7 @@
 #include "Environment.h"
 #include "AssignmentUtils.h"
 #include "helperFunctions/HelperFunctions.h"
+#include "ExecutionContext.h"
 
 Evaluator::Evaluator(Interpreter* interpreter) : interpreter(interpreter) {}
 
@@ -180,29 +181,34 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
         Value array = interpreter->evaluate(arrayExpr->array);
         Value index = interpreter->evaluate(arrayExpr->index);
         
-        if (!array.isArray()) {
+        if (array.isArray()) {
+            if (!index.isNumber()) {
+                interpreter->reportError(expression->oper.line, expression->oper.column, 
+                    "Runtime Error", "Array index must be a number", "");
+                throw std::runtime_error("Array index must be a number");
+            }
+            
+            int idx = static_cast<int>(index.asNumber());
+            std::vector<Value>& arr = array.asArray();
+            
+            if (idx < 0 || idx >= static_cast<int>(arr.size())) {
+                interpreter->reportError(arrayExpr->bracket.line, arrayExpr->bracket.column, 
+                    "Runtime Error", "Array index out of bounds", "");
+                throw std::runtime_error("Array index out of bounds");
+            }
+            
+            // Update the array element
+            arr[idx] = Value(newValue);
+        } else if (array.isString()) {
+            // Handle string indexing increment/decrement (read-only)
             interpreter->reportError(expression->oper.line, expression->oper.column, 
-                "Runtime Error", "Can only index arrays", "");
-            throw std::runtime_error("Can only index arrays");
-        }
-        
-        if (!index.isNumber()) {
+                "Runtime Error", "Cannot increment/decrement string characters (strings are immutable)", "");
+            throw std::runtime_error("Cannot increment/decrement string characters (strings are immutable)");
+        } else {
             interpreter->reportError(expression->oper.line, expression->oper.column, 
-                "Runtime Error", "Array index must be a number", "");
-            throw std::runtime_error("Array index must be a number");
+                "Runtime Error", "Can only index arrays and strings", "");
+            throw std::runtime_error("Can only index arrays and strings");
         }
-        
-        int idx = static_cast<int>(index.asNumber());
-        std::vector<Value>& arr = array.asArray();
-        
-        if (idx < 0 || idx >= static_cast<int>(arr.size())) {
-            interpreter->reportError(arrayExpr->bracket.line, arrayExpr->bracket.column, 
-                "Runtime Error", "Array index out of bounds", "");
-            throw std::runtime_error("Array index out of bounds");
-        }
-        
-        // Update the array element
-        arr[idx] = Value(newValue);
     } else if (auto propExpr = std::dynamic_pointer_cast<PropertyExpr>(expression->operand)) {
         // obj.prop++ / obj.prop--
         Value object = interpreter->evaluate(propExpr->object);
@@ -319,11 +325,36 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
             return NONE_VALUE;  // Return none for missing keys
         }
         
+    } else if (array.isString()) {
+        // Handle string indexing
+        if (!index.isNumber()) {
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "String index must be a number", "");
+        interpreter->markInlineErrorReported();
+            throw std::runtime_error("String index must be a number");
+        }
+        
+        int idx = static_cast<int>(index.asNumber());
+        const std::string& str = array.asString();
+        
+        if (idx < 0) {
+            idx = static_cast<int>(str.length()) + idx;
+        }
+        
+        if (idx < 0 || idx >= static_cast<int>(str.length())) {
+        interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+            "String index out of bounds", "");
+        interpreter->markInlineErrorReported();
+            throw std::runtime_error("String index out of bounds");
+        }
+        
+        return Value(std::string(1, str[idx]));
+        
     } else {
         interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
-            "Can only index arrays and dictionaries", "");
+            "Can only index arrays, dictionaries, and strings", "");
         interpreter->markInlineErrorReported();
-        throw std::runtime_error("Can only index arrays and dictionaries");
+        throw std::runtime_error("Can only index arrays, dictionaries, and strings");
     }
 }
 
@@ -342,18 +373,32 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
     } else if (object.isDict()) {
         Value v = getDictProperty(object, propertyName);
         if (!v.isNone()) {
-            // If this is an inherited inline method, prefer a current-class extension override
-            if (v.isFunction()) {
-                const auto& d = object.asDict();
-                std::string curCls;
-                auto itc = d.find("__class");
-                if (itc != d.end() && itc->second.isString()) curCls = itc->second.asString();
-                Function* f = v.asFunction();
-                if (f && !curCls.empty() && !f->ownerClass.empty() && f->ownerClass != curCls) {
-                    if (auto ext = interpreter->lookupExtension(curCls, propertyName)) {
-                        return Value(ext);
+            // Only create dispatchers for class methods, not for plain functions stored as properties
+            const auto& d = object.asDict();
+            auto itc = d.find("__class");
+            if (itc != d.end() && itc->second.isString() && v.isFunction()) {
+                // This is a class instance, create a dispatcher for method calls
+                std::string curCls = itc->second.asString();
+                auto dispatcher = std::make_shared<BuiltinFunction>(curCls + "." + propertyName, [runtime=interpreter, self=object, curCls, propertyName](std::vector<Value> args, int line, int col) -> Value {
+                    std::shared_ptr<Function> sel;
+                    if (!curCls.empty()) sel = runtime->lookupClassMethodOverload(curCls, propertyName, args.size());
+                    if (!sel) sel = runtime->lookupExtensionOverload("dict", propertyName, args.size());
+                    if (!sel) sel = runtime->lookupExtensionOverload("any", propertyName, args.size());
+                    if (!sel) { runtime->reportError(line, col, "Runtime Error", "No overload of method '" + propertyName + "' for " + std::to_string(args.size()) + " argument(s)", ""); throw std::runtime_error("No method overload"); }
+                    std::shared_ptr<Environment> saved = runtime->getEnvironment();
+                    runtime->setEnvironment(std::make_shared<Environment>(sel->closure));
+                    runtime->getEnvironment()->setErrorReporter(runtime->getErrorReporter());
+                    runtime->getEnvironment()->define("this", self);
+                    // Set __currentClass for class methods
+                    if (!curCls.empty()) {
+                        runtime->getEnvironment()->define("__currentClass", Value(curCls));
                     }
-                }
+                    for (size_t i = 0; i < sel->params.size(); ++i) runtime->getEnvironment()->define(sel->params[i], args[i]);
+                    ExecutionContext ctx; ctx.isFunctionBody = true;
+                    for (const auto& s : sel->body) { runtime->execute(s, &ctx); if (ctx.hasThrow) { runtime->setPendingThrow(ctx.thrownValue, ctx.throwLine, ctx.throwColumn); runtime->setEnvironment(saved); return NONE_VALUE; } if (ctx.hasReturn) { runtime->setEnvironment(saved); return ctx.returnValue; } }
+                    runtime->setEnvironment(saved); return ctx.returnValue;
+                });
+                return Value(dispatcher);
             }
             return v;
         }
@@ -459,9 +504,21 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
             return NONE_VALUE;
         }
         auto fn = interpreter->lookupExtension(target, propertyName);
-        if (!object.isModule() && fn) { return Value(fn); }
-        if (auto anyFn = interpreter->lookupExtension("any", propertyName)) {
-            return Value(anyFn);
+        if (!object.isModule() && (fn || interpreter->lookupExtension("any", propertyName))) {
+            auto dispatcher = std::make_shared<BuiltinFunction>(target + "." + propertyName, [runtime=interpreter, self=object, target, propertyName](std::vector<Value> args, int line, int col) -> Value {
+                std::shared_ptr<Function> sel = runtime->lookupExtensionOverload(target, propertyName, args.size());
+                if (!sel) sel = runtime->lookupExtensionOverload("any", propertyName, args.size());
+                if (!sel) { runtime->reportError(line, col, "Runtime Error", "No overload of method '" + propertyName + "' for " + std::to_string(args.size()) + " argument(s)", ""); throw std::runtime_error("No extension overload"); }
+                std::shared_ptr<Environment> saved = runtime->getEnvironment();
+                runtime->setEnvironment(std::make_shared<Environment>(sel->closure));
+                runtime->getEnvironment()->setErrorReporter(runtime->getErrorReporter());
+                runtime->getEnvironment()->define("this", self);
+                for (size_t i = 0; i < sel->params.size(); ++i) runtime->getEnvironment()->define(sel->params[i], args[i]);
+                ExecutionContext ctx; ctx.isFunctionBody = true;
+                for (const auto& s : sel->body) { runtime->execute(s, &ctx); if (ctx.hasThrow) { runtime->setPendingThrow(ctx.thrownValue, ctx.throwLine, ctx.throwColumn); runtime->setEnvironment(saved); return NONE_VALUE; } if (ctx.hasReturn) { runtime->setEnvironment(saved); return ctx.returnValue; } }
+                runtime->setEnvironment(saved); return ctx.returnValue;
+            });
+            return Value(dispatcher);
         }
 
         interpreter->reportError(expr->name.line, expr->name.column, "Runtime Error",
@@ -518,6 +575,15 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
         
         dict[key] = value;
         return value;
+        
+    } else if (array.isString()) {
+        // Handle string assignment (read-only - strings are immutable)
+        if (!interpreter->isInTry()) {
+            interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
+                "Cannot assign to string characters (strings are immutable)", "");
+            interpreter->markInlineErrorReported();
+        }
+        throw std::runtime_error("Cannot assign to string characters (strings are immutable)");
         
     } else {
         if (!interpreter->isInTry()) {
@@ -642,3 +708,5 @@ Value Evaluator::getDictProperty(const Value& dictValue, const std::string& prop
     // Property not found
     return NONE_VALUE;
 }
+
+

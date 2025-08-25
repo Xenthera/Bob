@@ -42,4 +42,6 @@ private:
     // Helper methods for builtin properties
     Value getArrayProperty(const Value& array, const std::string& propertyName);
     Value getDictProperty(const Value& dict, const std::string& propertyName);
+    
+
 };

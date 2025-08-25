@@ -67,7 +67,10 @@ private:
     std::shared_ptr<Environment> environment;
     bool isInteractive;
     std::vector<std::shared_ptr<BuiltinFunction>> builtinFunctions;
+    // Maintain legacy list for diagnostics
     std::vector<std::shared_ptr<Function>> functions;
+    // Class method overloading: className -> methodName -> (arity -> function)
+    std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<size_t, std::shared_ptr<Function>>>> classMethodOverloads;
     std::vector<std::shared_ptr<Thunk>> thunks;  // Store thunks to prevent memory leaks
     // Global extension registries
     std::unordered_map<std::string, std::unordered_map<std::string, std::shared_ptr<Function>>> classExtensions;
@@ -96,10 +99,10 @@ private:
     bool allowBuiltinImports = true;
     std::vector<std::string> moduleSearchPaths; // e.g., BOBPATH
     // Pending throw propagation from expression evaluation
-     bool hasPendingThrow = false;
-     Value pendingThrow = NONE_VALUE;
-     int pendingThrowLine = 0;
-     int pendingThrowColumn = 0;
+    bool hasPendingThrow = false;
+    Value pendingThrow = NONE_VALUE;
+    int pendingThrowLine = 0;
+    int pendingThrowColumn = 0;
     int lastErrorLine = 0;
     int lastErrorColumn = 0;
     int tryDepth = 0;
@@ -127,6 +130,10 @@ public:
     ErrorReporter* getErrorReporter() const { return errorReporter; }
     
     void addFunction(std::shared_ptr<Function> function);
+    std::shared_ptr<Function> lookupFunction(const std::string& name, size_t arity);
+    void addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function);
+    std::shared_ptr<Function> lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity);
+    std::shared_ptr<Function> lookupExtensionOverload(const std::string& targetName, const std::string& methodName, size_t arity);
     void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme = "");
     void addBuiltinFunction(std::shared_ptr<BuiltinFunction> func);
     void cleanupUnusedFunctions();

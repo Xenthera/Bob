@@ -1,0 +1,75 @@
+print("\n=== Method Overloading: Extensive Stress Tests ===");
+
+// -----------------------------------------------------------------------------
+// Classes: overloads, chaining, higher-order method refs, wrong-arity, mutation
+// -----------------------------------------------------------------------------
+
+class Acc {
+  var n;
+  func init(n){ this.n = n; }
+  func add(){ this.n = this.n + 1; return this; }
+  func add(x){ this.n = this.n + x; return this; }
+  func add(x,y){ this.n = this.n + x + y; return this; }
+  func val(){ return this.n; }
+}
+
+var a = Acc(10);
+a.add();
+a.add(2);
+a.add(3,4);
+assert(a.val() == 10 + 1 + 2 + 3 + 4, "Acc add overloads");
+
+// Method-as-value: call through the instance to bind 'this'
+// (Bob binds 'this' when invoking as a property call)
+// So use a.add(...) form for the actual calls
+var add1 = a.add; // reference
+a.add(5);
+assert(a.val() == 10 + 1 + 2 + 3 + 4 + 5, "method-as-value arity=1 (invoked via a.add)");
+
+try { a.add(); a.add(); /* second call ok */ } catch (e) { assert(false, "unexpected"); }
+
+// Inheritance: base and derived overloads
+class Base { func who(){ return "Base"; } func who(x){ return "Base:" + toString(x); } }
+class Child extends Base { func who(){ return "Child"; } func who(x,y){ return "Child:" + toString(x+y); } }
+
+var c = Child();
+assert(c.who() == "Child", "inherit who()");
+assert(c.who(7) == "Base:7", "inherit who(x) from base");
+assert(c.who(2,3) == "Child:5", "derived who(x,y)");
+try { c.who(1,2,3); assert(false, "wrong arity on who should throw"); } catch (e) { assert(true, "threw"); }
+
+// -----------------------------------------------------------------------------
+// Simple Extensions (No Overloading)
+// -----------------------------------------------------------------------------
+
+extension string { func pad(){ return this; } }
+extension array { func take(){ return []; } }
+extension dict { func get(k){ if (this.has(k)) return this[k]; return none; } }
+extension number { func pow(){ return 1; } }
+extension any { func echo(){ return toString(this); } }
+
+assert("x".pad() == "x", "string.pad()");
+
+var xs = [1,2,3,4];
+assert(xs.take().len() == 0, "array.take()");
+
+var m = {"k": 9};
+assert(m.get("k") == 9, "dict.get(k)");
+
+assert(3.pow() == 1, "number.pow()");
+
+assert(7.echo() == "7", "any.echo()");
+
+// -----------------------------------------------------------------------------
+// Precedence: class method vs extension method of same name
+// -----------------------------------------------------------------------------
+
+extension any { func who(){ return "ext-any"; } }
+class Who { func who(){ return "class-who"; } }
+var w = Who();
+assert(w.who() == "class-who", "class method should win over any extension");
+
+// Builtin vs any extension: concrete target wins
+assert("s".echo() == "s", "any.echo on string still works (no string.echo)" );
+
+print("Method overloading extensive tests passed!");

@@ -15,15 +15,13 @@ public:
     Environment() : parent(nullptr), errorReporter(nullptr) {}
     Environment(std::shared_ptr<Environment> parent_env) : parent(parent_env), errorReporter(nullptr) {}
     
-    // Copy constructor for closure snapshots - creates a deep copy of the environment chain
-    Environment(const Environment& other) : parent(nullptr), errorReporter(other.errorReporter) {
+    // Copy constructor for closure snapshots - preserves shared reference to parent chain
+    Environment(const Environment& other) : parent(other.parent), errorReporter(other.errorReporter) {
         // Copy all variables normally - arrays will be handled by forceCleanup
         variables = other.variables;
         
-        // Create a deep copy of the parent environment chain
-        if (other.parent) {
-            parent = std::make_shared<Environment>(*other.parent);
-        }
+        // Preserve shared reference to parent environment chain instead of deep copying
+        // This ensures closures maintain access to the global environment with built-in functions
     }
     
     // Set error reporter for enhanced error reporting
@@ -55,6 +53,5 @@ private:
     std::unordered_map<std::string, Value> variables;
     std::shared_ptr<Environment> parent;
     ErrorReporter* errorReporter;
-    std::unordered_set<std::string> constBindings;
 };
 

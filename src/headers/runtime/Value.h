@@ -30,8 +30,6 @@ enum ValueType {
     VAL_MODULE
 };
 
-// (moved below Value)
-
 // Tagged value system (like Lua) - no heap allocation for simple values
 struct Value {
     union {
