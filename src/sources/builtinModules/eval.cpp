@@ -44,6 +44,10 @@ void registerEvalModule(Interpreter& interpreter) {
             }
             std::stringstream buf; buf << f.rdbuf(); f.close();
             std::string code = buf.str();
+            
+            // Reset error reporter state before evaluating each file
+            if (er) er->resetErrorState();
+            
             try {
                 if (er) er->pushSource(code, filename);
                 Lexer lx; if (er) lx.setErrorReporter(er);

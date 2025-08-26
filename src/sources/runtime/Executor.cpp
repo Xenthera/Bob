@@ -18,22 +18,27 @@ void Executor::interpret(const std::vector<std::shared_ptr<Stmt>>& statements) {
         if (top.hasThrow) break;
     }
     if (top.hasThrow) {
-        // If already reported inline, don't double-report here
-        if (!interpreter->hasInlineErrorReported()) {
-            std::string msg = "Uncaught exception";
-            if (top.thrownValue.isString()) msg = top.thrownValue.asString();
-            if (top.thrownValue.isDict()) {
-                auto& d = top.thrownValue.asDict();
-                auto it = d.find("message");
-                if (it != d.end() && it->second.isString()) msg = it->second.asString();
+        // If we're not in a try block, display the error
+        if (!interpreter->isInTry()) {
+            // Check if the error was already reported by the error reporter
+            auto errorReporter = interpreter->getErrorReporter();
+            if (errorReporter && !errorReporter->hasError()) {
+                std::string msg = "Uncaught exception";
+                if (top.thrownValue.isString()) msg = top.thrownValue.asString();
+                if (top.thrownValue.isDict()) {
+                    auto& d = top.thrownValue.asDict();
+                    auto it = d.find("message");
+                    if (it != d.end() && it->second.isString()) msg = it->second.asString();
+                }
+                int line = top.throwLine;
+                int col = top.throwColumn;
+                if (line == 0 && col == 0) { 
+                    line = interpreter->getLastErrorLine(); 
+                    col = interpreter->getLastErrorColumn(); 
+                }
+                interpreter->reportError(line, col, "Runtime Error", msg, "");
             }
-            int line = top.throwLine;
-            int col = top.throwColumn;
-            if (line == 0 && col == 0) { line = interpreter->getLastErrorLine(); col = interpreter->getLastErrorColumn(); }
-            interpreter->reportError(line, col, "Runtime Error", msg, "");
         }
-        // Clear inline marker after handling
-        interpreter->clearInlineErrorReported();
     }
 }
 
@@ -47,7 +52,8 @@ void Executor::execute(const std::shared_ptr<Stmt>& statement, ExecutionContext*
             err["message"] = Value(std::string(e.what()));
             context->hasThrow = true;
             context->thrownValue = Value(err);
-            // Preserve line/column information from the last error site if not already set
+            
+            // Get line/column from the error reporter if available
             if (context->throwLine == 0 && context->throwColumn == 0) {
                 context->throwLine = interpreter->getLastErrorLine();
                 context->throwColumn = interpreter->getLastErrorColumn();
@@ -251,12 +257,15 @@ void Executor::visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement,
 
 void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, ExecutionContext* context) {
     interpreter->enterTry();
+    
     // Temporarily detach the reporter so any direct uses (e.g., in Environment) won't print inline
     auto savedReporter = interpreter->getErrorReporter();
     interpreter->setErrorReporter(nullptr);
+    
     ExecutionContext inner;
     if (context) inner.isFunctionBody = context->isFunctionBody;
     execute(statement->tryBlock, &inner);
+    
     // Also capture any pending throw signaled by expressions
     Value pending; int pl=0, pc=0;
     if (interpreter->consumePendingThrow(pending, &pl, &pc)) {
@@ -265,15 +274,18 @@ void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, Execution
         inner.throwLine = pl;
         inner.throwColumn = pc;
     }
+    
     // If thrown, handle catch
     if (inner.hasThrow && statement->catchBlock) {
         auto saved = interpreter->getEnvironment();
         auto env = std::make_shared<Environment>(saved);
-        env->setErrorReporter(nullptr);
+        env->setErrorReporter(interpreter->getErrorReporter());
+        
         // Bind catch var if provided
         if (!statement->catchVar.lexeme.empty()) {
             env->define(statement->catchVar.lexeme, inner.thrownValue);
         }
+        
         interpreter->setEnvironment(env);
         ExecutionContext catchCtx;
         catchCtx.isFunctionBody = inner.isFunctionBody;
@@ -284,6 +296,7 @@ void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, Execution
         inner.throwColumn = catchCtx.throwColumn;
         interpreter->setEnvironment(saved);
     }
+    
     // finally always
     if (statement->finallyBlock) {
         ExecutionContext fctx;
@@ -294,11 +307,14 @@ void Executor::visitTryStmt(const std::shared_ptr<TryStmt>& statement, Execution
         if (fctx.shouldBreak) { if (context) { context->shouldBreak = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
         if (fctx.shouldContinue) { if (context) { context->shouldContinue = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
     }
+    
     // propagate remaining control flow
     if (inner.hasReturn) { if (context) { context->hasReturn = true; context->returnValue = inner.returnValue; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
     if (inner.hasThrow) { if (context) { context->hasThrow = true; context->thrownValue = inner.thrownValue; context->throwLine = inner.throwLine; context->throwColumn = inner.throwColumn; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
     if (inner.shouldBreak) { if (context) { context->shouldBreak = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
     if (inner.shouldContinue) { if (context) { context->shouldContinue = true; } interpreter->setErrorReporter(savedReporter); interpreter->exitTry(); return; }
+    
+    // Restore error reporter
     interpreter->setErrorReporter(savedReporter);
     interpreter->exitTry();
 }

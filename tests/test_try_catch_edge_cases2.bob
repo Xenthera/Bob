@@ -36,8 +36,8 @@ assert(out4 == "y", "rethrow new error");
 
 // 5) catch variable scoping (not visible outside catch block)
 var scopeMark = "";
-try { var z = e; } catch (err) { scopeMark = "scoped"; }
-assert(scopeMark == "scoped", "catch var e is scoped to catch block");
+try { var z = undefinedVar; } catch (err) { scopeMark = "scoped"; }
+assert(scopeMark == "scoped", "catch var undefinedVar is scoped to catch block");
 
 // 6) throw non-dict: number
 var tnum = 0; var ttype = "";

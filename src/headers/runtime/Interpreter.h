@@ -176,8 +176,8 @@ public:
      void setPendingThrow(const Value& v, int line = 0, int column = 0) { hasPendingThrow = true; pendingThrow = v; pendingThrowLine = line; pendingThrowColumn = column; }
      bool consumePendingThrow(Value& out, int* lineOut = nullptr, int* colOut = nullptr) { if (!hasPendingThrow) return false; out = pendingThrow; if (lineOut) *lineOut = pendingThrowLine; if (colOut) *colOut = pendingThrowColumn; hasPendingThrow = false; pendingThrow = NONE_VALUE; pendingThrowLine = 0; pendingThrowColumn = 0; return true; }
      // Try tracking
-     void enterTry() { tryDepth++; }
-     void exitTry() { if (tryDepth > 0) tryDepth--; }
+     void enterTry();
+     void exitTry();
      bool isInTry() const { return tryDepth > 0; }
      void markInlineErrorReported() { inlineErrorReported = true; }
      bool hasInlineErrorReported() const { return inlineErrorReported; }

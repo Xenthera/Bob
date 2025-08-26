@@ -146,6 +146,32 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
 
 Value Evaluator::visitVarExpr(const std::shared_ptr<VarExpr>& expression)
 {
+    // Special handling for 'super' in extension methods
+    if (expression->name.lexeme == "super") {
+
+        // Check if we're in an extension method context
+        try {
+            Value currentClass = interpreter->getEnvironment()->get(Token{IDENTIFIER, "__currentClass", 0, 0});
+
+            if (currentClass.isString() && !currentClass.asString().empty()) {
+                // We're in an extension method, create a special super object
+                std::string parentClass = interpreter->getParentClass(currentClass.asString());
+
+                if (!parentClass.empty()) {
+                    // Create a special object that represents the parent class
+                    std::unordered_map<std::string, Value> superObj;
+                    superObj["__class"] = Value(parentClass);
+                    superObj["__super"] = Value(true); // Mark as super object
+
+                    return Value(superObj);
+                }
+            }
+        } catch (const std::exception& e) {
+
+            // If __currentClass is not available, fall through to normal lookup
+        }
+    }
+    
     return interpreter->getEnvironment()->get(expression->name);
 }
 
@@ -381,13 +407,33 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
                 std::string curCls = itc->second.asString();
                 auto dispatcher = std::make_shared<BuiltinFunction>(curCls + "." + propertyName, [runtime=interpreter, self=object, curCls, propertyName](std::vector<Value> args, int line, int col) -> Value {
                     std::shared_ptr<Function> sel;
-                    // First try class methods (with overloading)
-                    if (!curCls.empty()) sel = runtime->getClassRegistry().lookupClassMethodOverload(curCls, propertyName, args.size());
-                    // Then try class extensions (no overloading)
-                    if (!sel) sel = runtime->getExtensionRegistry().lookupExtension(curCls, propertyName);
-                    // Then try builtin extensions (no overloading)
-                    if (!sel) sel = runtime->getExtensionRegistry().lookupExtension("dict", propertyName);
-                    if (!sel) sel = runtime->getExtensionRegistry().lookupExtension("any", propertyName);
+                    
+                    // First check for instance methods on the current class
+                    if (!curCls.empty()) sel = runtime->getClassRegistry().lookupClassMethodDirect(curCls, propertyName, args.size());
+                    
+                    // Then check for extension methods on the current class
+                    if (!sel && !curCls.empty()) sel = runtime->getExtensionRegistry().lookupExtension(curCls, propertyName);
+                    
+                    // Then check for inherited class methods
+                    if (!sel && !curCls.empty()) sel = runtime->getClassRegistry().lookupClassMethodOverload(curCls, propertyName, args.size());
+                    
+                    // Then check for class extensions in inheritance chain
+                    if (!sel && !curCls.empty()) {
+                        std::string cur = curCls;
+                        while (!cur.empty()) {
+                            if (auto fn = runtime->getExtensionRegistry().lookupExtension(cur, propertyName)) {
+                                sel = fn;
+                                break;
+                            }
+                            cur = runtime->getParentClass(cur);
+                        }
+                    }
+                    
+
+                    
+                    // Then check for built-in extensions
+                    if (!sel) sel = runtime->getExtensionRegistry().lookupExtensionOverload("dict", propertyName, args.size());
+                    if (!sel) sel = runtime->getExtensionRegistry().lookupExtensionOverload("any", propertyName, args.size());
                     
                     if (!sel) { 
                         runtime->reportError(line, col, "Runtime Error", "Method '" + propertyName + "' not found", ""); 
@@ -428,6 +474,9 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
         std::string cls = "";
         auto it = d.find("__class");
         if (it != d.end() && it->second.isString()) cls = it->second.asString();
+        
+
+        
         if (!cls.empty()) {
             std::string cur = cls;
             while (!cur.empty()) {
@@ -439,27 +488,27 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
                         runtime->getEnvironment()->setErrorReporter(runtime->getErrorReporter());
                         runtime->getEnvironment()->define("this", self);
                         runtime->getEnvironment()->define("__currentClass", Value(cur));
-                        
+
                         for (size_t i = 0; i < fn->params.size(); ++i) {
                             if (i < args.size()) {
                                 runtime->getEnvironment()->define(fn->params[i], args[i]);
                             }
                         }
-                        
+
                         ExecutionContext ctx; ctx.isFunctionBody = true;
-                        for (const auto& s : fn->body) { 
-                            runtime->execute(s, &ctx); 
-                            if (ctx.hasThrow) { 
-                                runtime->setPendingThrow(ctx.thrownValue, ctx.throwLine, ctx.throwColumn); 
-                                runtime->setEnvironment(saved); 
-                                return NONE_VALUE; 
-                            } 
-                            if (ctx.hasReturn) { 
-                                runtime->setEnvironment(saved); 
-                                return ctx.returnValue; 
-                            } 
+                        for (const auto& s : fn->body) {
+                            runtime->execute(s, &ctx);
+                            if (ctx.hasThrow) {
+                                runtime->setPendingThrow(ctx.thrownValue, ctx.throwLine, ctx.throwColumn);
+                                runtime->setEnvironment(saved);
+                                return NONE_VALUE;
+                            }
+                            if (ctx.hasReturn) {
+                                runtime->setEnvironment(saved);
+                                return ctx.returnValue;
+                            }
                         }
-                        runtime->setEnvironment(saved); 
+                        runtime->setEnvironment(saved);
                         return ctx.returnValue;
                     });
                     return Value(dispatcher);
@@ -467,6 +516,9 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
                 cur = interpreter->getParentClass(cur);
             }
         }
+        
+
+        
         // Provide method-style builtins on dict
         if (propertyName == "len") {
             auto bf = std::make_shared<BuiltinFunction>("dict.len", [object](std::vector<Value>, int, int){

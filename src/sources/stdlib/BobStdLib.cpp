@@ -80,7 +80,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
 
     // Create a built-in assert function
     auto assertFunc = std::make_shared<BuiltinFunction>("assert",
-        [errorReporter](std::vector<Value> args, int line, int column) -> Value {
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
             if (args.size() != 1 && args.size() != 2) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
@@ -106,10 +106,10 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                         message += " - " + std::string(args[1].asString());
                     }
                 }
-                // Use interpreter's reportError method to ensure proper error tracking
-                interpreter.reportError(line, column, "StdLib Error", message, "");
-                // Mark that we've already reported this error to prevent double reporting
-                interpreter.markInlineErrorReported();
+                // Only report the error if we're not in a try block
+                if (!interpreter.isInTry()) {
+                    interpreter.reportError(line, column, "StdLib Error", message, "");
+                }
                 throw std::runtime_error(message);
             }
             

@@ -41,6 +41,7 @@ public:
     // Method overloading
     void addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function);
     std::shared_ptr<Function> lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity);
+    std::shared_ptr<Function> lookupClassMethodDirect(const std::string& className, const std::string& methodName, size_t arity = 0);
     
     // Class inheritance
     void registerClass(const std::string& className, const std::string& parentName);

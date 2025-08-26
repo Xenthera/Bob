@@ -27,6 +27,21 @@ std::shared_ptr<Function> ClassRegistry::lookupClassMethodOverload(const std::st
     return nullptr;
 }
 
+std::shared_ptr<Function> ClassRegistry::lookupClassMethodDirect(const std::string& className, const std::string& methodName, size_t arity) {
+    // Only look for methods defined on the current class, not inherited ones
+    auto classIt = classMethodOverloads.find(className);
+    if (classIt != classMethodOverloads.end()) {
+        auto methodIt = classIt->second.find(methodName);
+        if (methodIt != classIt->second.end()) {
+            auto arityIt = methodIt->second.find(arity);
+            if (arityIt != methodIt->second.end()) {
+                return arityIt->second;
+            }
+        }
+    }
+    return nullptr;
+}
+
 void ClassRegistry::registerClass(const std::string& className, const std::string& parentName) {
     classParents[className] = parentName;
 }

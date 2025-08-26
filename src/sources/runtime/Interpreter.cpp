@@ -304,6 +304,16 @@ void Interpreter::setErrorReporter(ErrorReporter* reporter) {
     }
 }
 
+void Interpreter::enterTry() {
+    tryDepth++;
+    if (errorReporter) errorReporter->enterTry();
+}
+
+void Interpreter::exitTry() {
+    if (tryDepth > 0) tryDepth--;
+    if (errorReporter) errorReporter->exitTry();
+}
+
 bool Interpreter::isInteractiveMode() const {
     return isInteractive;
 }
@@ -319,10 +329,8 @@ void Interpreter::setEnvironment(std::shared_ptr<Environment> env) {
 void Interpreter::reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& lexeme) {
     // Always track last error site
     setLastErrorSite(line, column);
-    // Suppress inline printing while inside try; error will propagate to catch/finally
-    if (isInTry()) {
-        return;
-    }
+    
+    // Use the new error reporter interface
     if (errorReporter) {
         errorReporter->reportError(line, column, errorType, message, lexeme);
     }
@@ -331,7 +339,7 @@ void Interpreter::reportError(int line, int column, const std::string& errorType
 
 
 Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expression) {
-    // Phase 1 refactoring: Break down into smaller, focused methods
+
     auto callInfo = analyzeCallExpression(expression);
     auto callee = resolveCallee(callInfo);
     
@@ -348,7 +356,7 @@ Value Interpreter::evaluateCallExprInline(const std::shared_ptr<CallExpr>& expre
     }
 }
 
-// Call expression analysis and execution helpers
+
 
 CallInfo Interpreter::analyzeCallExpression(const std::shared_ptr<CallExpr>& expression) {
     CallInfo info;
@@ -394,6 +402,34 @@ Value Interpreter::resolveCallee(const CallInfo& callInfo) {
     
     // Handle super call resolution
     if (callInfo.isSuperCall && callInfo.receiver.isDict()) {
+        // Check if this is a special super object from extension methods
+        const auto& d = callInfo.receiver.asDict();
+        auto superIt = d.find("__super");
+        if (superIt != d.end() && superIt->second.isBoolean() && superIt->second.asBoolean()) {
+            // This is a super object from an extension method
+            auto classIt = d.find("__class");
+            if (classIt != d.end() && classIt->second.isString()) {
+                std::string parentClass = classIt->second.asString();
+
+                
+                // Look for the method in the parent class
+                std::unordered_map<std::string, Value> tmpl;
+                if (getClassTemplate(parentClass, tmpl)) {
+                    auto vIt = tmpl.find(callInfo.methodName);
+                    if (vIt != tmpl.end() && vIt->second.isFunction()) {
+
+                        callee = vIt->second;
+                    }
+                }
+                if (!callee.isFunction()) {
+                    // Try extension methods on the parent class
+                    if (auto fn = extensionRegistry.lookupExtension(parentClass, callInfo.methodName)) {
+
+                        callee = Value(fn);
+                    }
+                }
+            }
+        } else {
         // Resolve using the current executing class context when available
         std::string curClass;
         if (environment) {
@@ -413,27 +449,33 @@ Value Interpreter::resolveCallee(const CallInfo& callInfo) {
             auto itc = d.find("__class");
             if (itc != d.end() && itc->second.isString()) curClass = itc->second.asString();
         }
+
         std::string cur = getParentClass(curClass);
+
         int guard = 0;
         while (!cur.empty() && guard++ < 64) {
             std::unordered_map<std::string, Value> tmpl;
             if (getClassTemplate(cur, tmpl)) {
                 auto vIt = tmpl.find(callInfo.methodName);
                 if (vIt != tmpl.end() && vIt->second.isFunction()) {
+
                     callee = vIt->second;
                     break;
                 }
             }
             if (auto fn = extensionRegistry.lookupExtension(cur, callInfo.methodName)) {
+
                 callee = Value(fn);
                 break;
             }
             cur = getParentClass(cur);
+
         }
         // If still not found, try built-in fallbacks to keep behavior consistent
         if (!callee.isFunction()) {
             if (auto dictFn = extensionRegistry.lookupExtension("dict", callInfo.methodName)) callee = Value(dictFn);
             else if (auto anyFn = extensionRegistry.lookupExtension("any", callInfo.methodName)) callee = Value(anyFn);
+        }
         }
     }
     // If property wasn't found as a callable, try extension lookup

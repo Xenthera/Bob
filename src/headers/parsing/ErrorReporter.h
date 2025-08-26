@@ -19,56 +19,72 @@ namespace Colors {
     const std::string RESET = "\033[0m";
 }
 
-struct ErrorContext {
+// Centralized error information structure
+struct ErrorInfo {
     std::string errorType;
     std::string message;
     std::string fileName;
     int line;
     int column;
-    std::vector<std::string> callStack;
+    std::string lexeme;
+    bool showArrow;
+    
+    // Default constructor
+    ErrorInfo() : line(0), column(0), showArrow(true) {}
+    
+    // Constructor with parameters
+    ErrorInfo(const std::string& type, const std::string& msg, const std::string& file, 
+              int l, int c, const std::string& lex = "", bool arrow = true)
+        : errorType(type), message(msg), fileName(file), line(l), column(c), 
+          lexeme(lex), showArrow(arrow) {}
 };
 
 class ErrorReporter {
 private:
     std::vector<std::string> sourceLines;
     std::string currentFileName;
-    std::vector<std::string> callStack;
-    bool hadError = false;
+    
     // Support nested sources (e.g., eval of external files)
     std::vector<std::vector<std::string>> sourceStack;
     std::vector<std::string> fileNameStack;
+    
+    // Try/catch state management
+    int tryDepth = 0;
+    bool errorReported = false;
+    ErrorInfo lastError;
 
 public:
     ErrorReporter() = default;
     ~ErrorReporter() = default;
 
-    // Load source code for context
-    void loadSource(const std::string& source, const std::string& fileName);
-
-    // Report errors with line and column information
-    void reportError(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_ = "", bool showArrow = true);
+    // Main error reporting interface - works with try/catch
+    void reportError(const ErrorInfo& error);
     
-    // Check if an error has been reported
-    bool hasReportedError() const { return hadError; }
-
-    // Reset error state (call this between REPL commands)
-    void resetErrorState() { hadError = false; }
-
-    // Report errors with full context
-    void reportErrorWithContext(const ErrorContext& context);
-
-    // Call stack management
-    void pushCallStack(const std::string& functionName);
-    void popCallStack();
-
-    // Source push/pop for eval
+    // Convenience overloads for common cases
+    void reportError(int line, int column, const std::string& errorType, 
+                    const std::string& message, const std::string& lexeme = "", 
+                    bool showArrow = true);
+    
+    // Source management
+    void loadSource(const std::string& source, const std::string& fileName);
     void pushSource(const std::string& source, const std::string& fileName);
     void popSource();
+    
+    // Try/catch integration
+    void enterTry() { tryDepth++; }
+    void exitTry() { if (tryDepth > 0) tryDepth--; }
+    bool isInTry() const { return tryDepth > 0; }
+    
+    // Error state management
+    bool hasError() const { return errorReported; }
+    const ErrorInfo& getLastError() const { return lastError; }
+    void clearError() { errorReported = false; }
+    void resetErrorState() { errorReported = false; tryDepth = 0; lastError = ErrorInfo(); }
+    
     const std::string& getCurrentFileName() const { return currentFileName; }
 
 private:
-    void displaySourceContext(int line, int column, const std::string& errorType, const std::string& message, const std::string& operator_ = "", bool showArrow = true);
-    void displayCallStack(const std::vector<std::string>& callStack);
-    std::string getLineWithArrow(int line, int column);
+    void displayError(const ErrorInfo& error);
+    void displaySourceContext(const ErrorInfo& error);
     std::string colorize(const std::string& text, const std::string& color);
 }; 
