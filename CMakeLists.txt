@@ -73,6 +73,14 @@ target_include_directories(bob PRIVATE
     src/headers/common
 )
 
+# Find and link GMP library
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(GMP REQUIRED gmp)
+target_include_directories(bob PRIVATE ${GMP_INCLUDE_DIRS})
+target_link_directories(bob PRIVATE ${GMP_LIBRARY_DIRS})
+target_link_libraries(bob PRIVATE ${GMP_LIBRARIES})
+target_compile_options(bob PRIVATE ${GMP_CFLAGS_OTHER})
+
 # Apply compiler options
 target_compile_options(bob PRIVATE ${BOB_COMPILE_OPTIONS})
 

@@ -398,7 +398,28 @@ std::vector<Token> Lexer::Tokenize(std::string source){
                     }
                 }
 
-                tokens.push_back(Token{NUMBER, num, line, startColumn});
+                // Check if this number should be promoted to bigint or integer
+                if (!isNotation && num.find('.') == std::string::npos) {
+                    // It's an integer, check the range
+                    try {
+                        long long val = std::stoll(num);
+                        const long long MAX_INTEGER = LLONG_MAX;
+                        const long long MIN_INTEGER = LLONG_MIN;
+                        
+                        if (val > MAX_INTEGER || val < MIN_INTEGER) {
+                            // Too large for long long, promote to bigint
+                            tokens.push_back(Token{BIGINT, num, line, startColumn});
+                        } else {
+                            // Fits in long long, use INTEGER token
+                            tokens.push_back(Token{INTEGER, num, line, startColumn});
+                        }
+                    } catch (...) {
+                        // If conversion fails, it's definitely a bigint
+                        tokens.push_back(Token{BIGINT, num, line, startColumn});
+                    }
+                } else {
+                    tokens.push_back(Token{NUMBER, num, line, startColumn});
+                }
             }
             else if(std::isalpha(t))
             {

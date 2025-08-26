@@ -22,7 +22,7 @@ enum TokenType{
     // Increment/decrement operators
     PLUS_PLUS, MINUS_MINUS,
 
-    IDENTIFIER, STRING, NUMBER, KW_BOOL,
+    IDENTIFIER, STRING, NUMBER, INTEGER, BIGINT, KW_BOOL,
 
     AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
     WHILE, DO, VAR, CLASS, EXTENDS, EXTENSION, SUPER, THIS, NONE, RETURN, BREAK, CONTINUE,
@@ -53,7 +53,7 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
                            
                            "PLUS_PLUS", "MINUS_MINUS",
 
-                           "IDENTIFIER", "STRING", "NUMBER", "KW_BOOL",
+                           "IDENTIFIER", "STRING", "NUMBER", "INTEGER", "BIGINT", "KW_BOOL",
 
                            "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
                            "WHILE", "DO", "VAR", "CLASS", "EXTENDS", "EXTENSION", "SUPER", "THIS", "NONE", "RETURN", "BREAK", "CONTINUE",

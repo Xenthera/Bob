@@ -1,0 +1,12 @@
+// Test fib with smaller number to verify bigint works
+func fib(n) {
+    if (n <= 1) {
+        return n;
+    }
+    return fib(n - 1) + fib(n - 2);
+}
+
+print("Testing fib with bigint support...");
+var result = fib(50);
+print("fib(50) = " + result);
+print("Test completed!");

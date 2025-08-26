@@ -2,6 +2,7 @@
 #include "register.h"
 #include "Evaluator.h"
 #include "Executor.h"
+#include "ValuePool.h"
 #include "BobStdLib.h"
 #include "ErrorReporter.h"
 #include "Environment.h"
@@ -18,6 +19,9 @@
 
 Interpreter::Interpreter(bool isInteractive) 
     : isInteractive(isInteractive), errorReporter(nullptr) {
+    // Initialize value pool for performance
+    ValuePool::initialize();
+    
     evaluator = std::make_unique<Evaluator>(this);
     executor = std::make_unique<Executor>(this, evaluator.get());
     environment = std::make_shared<Environment>();

@@ -20,10 +20,24 @@ Value Evaluator::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
         }
         return Value(num);
     }
+    if (expr->isInteger) {
+        long long val = std::stoll(expr->value);
+        // Check if we can use the value pool
+        Value* pooled = ValuePool::getInteger(val);
+        if (pooled) {
+            return *pooled;
+        }
+        return Value(val); // Create integer value
+    }
+    if (expr->isBigInt) {
+        return Value(GMPWrapper::BigInt::fromString(expr->value)); // Create bigint value
+    }
     if (expr->isBoolean) {
         if (expr->value == "true") return TRUE_VALUE;
         if (expr->value == "false") return FALSE_VALUE;
     }
+    if (expr->value == "0") return Value(0LL);
+    if (expr->value == "1") return Value(1LL);
     return Value(expr->value);
 }
 
@@ -59,6 +73,24 @@ Value Evaluator::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 }
 
 Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) {
+    // Fast path for common integer operations
+    if (expression->oper.type == PLUS || expression->oper.type == MINUS) {
+        // Try to evaluate left and right directly for integers
+        if (auto leftLit = std::dynamic_pointer_cast<LiteralExpr>(expression->left)) {
+            if (auto rightLit = std::dynamic_pointer_cast<LiteralExpr>(expression->right)) {
+                if (leftLit->isInteger && rightLit->isInteger) {
+                    long long leftVal = std::stoll(leftLit->value);
+                    long long rightVal = std::stoll(rightLit->value);
+                    if (expression->oper.type == PLUS) {
+                        return Value::fastIntegerAdd(leftVal, rightVal);
+                    } else if (expression->oper.type == MINUS) {
+                        return Value::fastIntegerSub(leftVal, rightVal);
+                    }
+                }
+            }
+        }
+    }
+    
     Value left = interpreter->evaluate(expression->left);
     Value right = interpreter->evaluate(expression->right);
 
@@ -76,7 +108,7 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
         return Value(expression->oper.type == DOUBLE_EQUAL ? equal : !equal);
     }
 
-    // Handle comparison operators - only work with numbers
+    // Handle comparison operators - work with numbers and integers
     if (expression->oper.type == GREATER || expression->oper.type == GREATER_EQUAL || 
         expression->oper.type == LESS || expression->oper.type == LESS_EQUAL) {
         
@@ -93,7 +125,20 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             }
         }
         
-        // Error for non-number comparisons
+        if (left.isInteger() && right.isInteger()) {
+            long long leftNum = left.asInteger();
+            long long rightNum = right.asInteger();
+            
+            switch (expression->oper.type) {
+                case GREATER: return Value(leftNum > rightNum);
+                case GREATER_EQUAL: return Value(leftNum >= rightNum);
+                case LESS: return Value(leftNum < rightNum);
+                case LESS_EQUAL: return Value(leftNum <= rightNum);
+                default: break; // Unreachable
+            }
+        }
+        
+        // Error for unsupported comparisons
         std::string opName;
         switch (expression->oper.type) {
             case GREATER: opName = ">"; break;
@@ -109,8 +154,20 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
     // Handle all other operators using Value's operator overloads
     try {
         switch (expression->oper.type) {
-            case PLUS: return left + right;
-            case MINUS: return left - right;
+            case PLUS: {
+                // Fast path for integer addition
+                if (left.isInteger() && right.isInteger()) {
+                    return Value::fastIntegerAdd(left.asInteger(), right.asInteger());
+                }
+                return left + right;
+            }
+            case MINUS: {
+                // Fast path for integer subtraction
+                if (left.isInteger() && right.isInteger()) {
+                    return Value::fastIntegerSub(left.asInteger(), right.asInteger());
+                }
+                return left - right;
+            }
             case STAR: return left * right;
             case SLASH: {
                 if (right.isNumber() && right.asNumber() == 0.0) {
@@ -179,20 +236,31 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     // Get the current value of the operand
     Value currentValue = interpreter->evaluate(expression->operand);
     
-    if (!currentValue.isNumber()) {
+    if (!currentValue.isNumber() && !currentValue.isInteger()) {
         interpreter->reportError(expression->oper.line, expression->oper.column, 
-            "Runtime Error", "Increment/decrement can only be applied to numbers.", "");
-        throw std::runtime_error("Increment/decrement can only be applied to numbers.");
+            "Runtime Error", "Increment/decrement can only be applied to numbers or integers.", "");
+        throw std::runtime_error("Increment/decrement can only be applied to numbers or integers.");
     }
     
-    double currentNum = currentValue.asNumber();
-    double newValue;
+    Value newValue;
     
     // Determine the operation based on the operator
     if (expression->oper.type == PLUS_PLUS) {
-        newValue = currentNum + 1.0;
+        if (currentValue.isInteger()) {
+            long long currentInt = currentValue.asInteger();
+            newValue = Value(currentInt + 1);
+        } else {
+            double currentNum = currentValue.asNumber();
+            newValue = Value(currentNum + 1.0);
+        }
     } else if (expression->oper.type == MINUS_MINUS) {
-        newValue = currentNum - 1.0;
+        if (currentValue.isInteger()) {
+            long long currentInt = currentValue.asInteger();
+            newValue = Value(currentInt - 1);
+        } else {
+            double currentNum = currentValue.asNumber();
+            newValue = Value(currentNum - 1.0);
+        }
     } else {
         interpreter->reportError(expression->oper.line, expression->oper.column, 
             "Runtime Error", "Invalid increment/decrement operator.", "");
@@ -201,7 +269,7 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     
     // Update the variable, array element, or object property
     if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(expression->operand)) {
-        interpreter->getEnvironment()->assign(varExpr->name, Value(newValue));
+        interpreter->getEnvironment()->assign(varExpr->name, newValue);
     } else if (auto arrayExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(expression->operand)) {
         // Handle array indexing increment/decrement
         Value array = interpreter->evaluate(arrayExpr->array);
@@ -224,7 +292,7 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
             }
             
             // Update the array element
-            arr[idx] = Value(newValue);
+            arr[idx] = newValue;
         } else if (array.isString()) {
             // Handle string indexing increment/decrement (read-only)
             interpreter->reportError(expression->oper.line, expression->oper.column, 
@@ -242,7 +310,7 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
             throw std::runtime_error("Can only increment/decrement properties on objects");
         }
         std::unordered_map<std::string, Value>& dict = object.asDict();
-        dict[propExpr->name.lexeme] = Value(newValue);
+        dict[propExpr->name.lexeme] = newValue;
     } else {
         interpreter->reportError(expression->oper.line, expression->oper.column, 
             "Runtime Error", "Increment/decrement can only be applied to variables or array elements.", "");

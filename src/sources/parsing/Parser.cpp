@@ -289,12 +289,14 @@ sptr(Expr) Parser::postfix()
 
 sptr(Expr) Parser::primary()
 {
-    if(match({FALSE})) return msptr(LiteralExpr)("false", false, false, true);
-    if(match({TRUE})) return msptr(LiteralExpr)("true", false, false, true);
-    if(match({NONE})) return msptr(LiteralExpr)("none", false, true, false);
+    if(match({FALSE})) return msptr(LiteralExpr)("false", false, false, false, false, true);
+    if(match({TRUE})) return msptr(LiteralExpr)("true", false, false, false, false, true);
+    if(match({NONE})) return msptr(LiteralExpr)("none", false, false, false, true, false);
 
-    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false, false);
-    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false, false);
+    if(match({NUMBER})) return msptr(LiteralExpr)(previous().lexeme, true, false, false, false, false);
+    if(match({INTEGER})) return msptr(LiteralExpr)(previous().lexeme, false, true, false, false, false);
+    if(match({BIGINT})) return msptr(LiteralExpr)(previous().lexeme, false, false, true, false, false);
+    if(match({STRING})) return msptr(LiteralExpr)(previous().lexeme, false, false, false, false, false);
 
     if(match( {IDENTIFIER, THIS, SUPER})) {
         Token ident = previous();
@@ -519,7 +521,7 @@ sptr(Stmt) Parser::varDeclaration()
 {
     Token name = consume(IDENTIFIER, "Expected variable name.");
 
-    sptr(Expr) initializer = msptr(LiteralExpr)("none", false, true, false);
+            sptr(Expr) initializer = msptr(LiteralExpr)("none", false, false, false, true, false);
     if(match({EQUAL}))
     {
         initializer = expression();
@@ -801,7 +803,7 @@ sptr(Stmt) Parser::returnStatement()
         throw std::runtime_error("Cannot return from outside a function");
     }
     
-    sptr(Expr) value = msptr(LiteralExpr)("none", false, true, false);
+            sptr(Expr) value = msptr(LiteralExpr)("none", false, false, false, true, false);
     
     if (!check(SEMICOLON)) {
         value = expression();

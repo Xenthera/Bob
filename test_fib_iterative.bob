@@ -1,0 +1,17 @@
+// Test iterative fib with bigint support
+func fib_iterative(n) {
+    if (n <= 1) return n;
+    var a = 0;
+    var b = 1;
+    for (var i = 2; i <= n; i++) {
+        var temp = a + b;
+        a = b;
+        b = temp;
+    }
+    return b;
+}
+
+print("Testing iterative fib...");
+var result = fib_iterative(50);
+print("fib_iterative(50) = " + result);
+print("Test completed!");

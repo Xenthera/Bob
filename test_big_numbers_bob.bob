@@ -1,0 +1,36 @@
+// Extreme big number test for Bob
+print("=== Bob Big Number Performance Test ===");
+
+// Test 1: Large integer arithmetic
+print("1. Large integer arithmetic...");
+var huge1 = 1234567890123456789012345678901234567890;
+var huge2 = 9876543210987654321098765432109876543210;
+var result1 = huge1 + huge2;
+print("Result: " + result1);
+
+// Test 2: Multiplication of large numbers
+print("2. Large number multiplication...");
+var big1 = 123456789012345678901234567890;
+var big2 = 987654321098765432109876543210;
+var result2 = big1 * big2;
+print("Result: " + result2);
+
+// Test 3: Iterative calculation with big numbers
+print("3. Iterative calculation with big numbers...");
+var sum = 0;
+for (var i = 0; i < 1000; i++) {
+    sum = sum + 123456789012345678901234567890;
+}
+print("Sum: " + sum);
+
+// Test 4: Power calculation
+print("4. Power calculation...");
+var base = 2;
+var power = 1000;
+var result3 = 1;
+for (var i = 0; i < power; i++) {
+    result3 = result3 * base;
+}
+print("2^1000: " + result3);
+
+print("=== Bob Big Number Test Complete ===");

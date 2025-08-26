@@ -1,0 +1,31 @@
+// Test GMP bigint auto-promotion
+var small_num = 42;
+var big_num = 9223372036854775808; // 2^63, should auto-promote to bigint
+
+print("Small number: " + small_num);
+print("Big number: " + big_num);
+
+// Test arithmetic operations
+var result1 = big_num + 1;
+var result2 = big_num * 2;
+var result3 = big_num - 1000;
+
+print("Big + 1: " + result1);
+print("Big * 2: " + result2);
+print("Big - 1000: " + result3);
+
+// Test mixed operations
+var mixed1 = small_num + big_num;
+var mixed2 = big_num + small_num;
+
+print("Small + Big: " + mixed1);
+print("Big + Small: " + mixed2);
+
+// Test very large numbers
+var huge_num = 123456789012345678901234567890;
+print("Huge number: " + huge_num);
+
+var huge_result = huge_num * huge_num;
+print("Huge squared: " + huge_result);
+
+print("All tests completed!");

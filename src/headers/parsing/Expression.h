@@ -99,11 +99,13 @@ struct LiteralExpr : Expr
 {
     std::string value;
     bool isNumber;
+    bool isInteger;
+    bool isBigInt;
     bool isNull;
     bool isBoolean;
 
-    LiteralExpr(const std::string& value, bool isNumber, bool isNull, bool isBoolean)
-        : value(value), isNumber(isNumber), isNull(isNull), isBoolean(isBoolean) {}
+    LiteralExpr(const std::string& value, bool isNumber, bool isInteger, bool isBigInt, bool isNull, bool isBoolean)
+        : value(value), isNumber(isNumber), isInteger(isInteger), isBigInt(isBigInt), isNull(isNull), isBoolean(isBoolean) {}
     Value accept(ExprVisitor* visitor) override{
         return visitor->visitLiteralExpr(std::static_pointer_cast<LiteralExpr>(shared_from_this()));
     }

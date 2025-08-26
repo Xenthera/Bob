@@ -1,0 +1,29 @@
+// Precise Bob Big Number Timing
+print("=== Precise Bob Big Number Timing ===");
+
+// Test 1: Large addition with precise timing
+var a = 1234567890123456789012345678901234567890;
+var b = 9876543210987654321098765432109876543210;
+
+// Multiple runs to get accurate timing
+var times = [];
+for (var i = 0; i < 1000; i++) {
+    var start = 0; // We don't have precise timing in Bob yet
+    var result = a + b;
+    var end = 0;
+    times.push(end - start);
+}
+
+print("Large addition completed (1000 runs)");
+
+// Test 2: Large multiplication with precise timing
+var c = 123456789012345678901234567890;
+var d = 987654321098765432109876543210;
+
+for (var i = 0; i < 100; i++) {
+    var product = c * d;
+}
+
+print("Large multiplication completed (100 runs)");
+
+print("=== Test Complete ===");

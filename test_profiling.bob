@@ -1,0 +1,35 @@
+// Comprehensive performance profiling test
+print("=== Bob Performance Profiling ===");
+
+// Test 1: Simple arithmetic
+print("1. Simple arithmetic...");
+var a = 0;
+for (var i = 0; i < 100000; i++) {
+    a = a + 1;
+}
+print("Result: " + a);
+
+// Test 2: Variable access
+print("2. Variable access...");
+var x = 42;
+for (var i = 0; i < 100000; i++) {
+    var temp = x;
+}
+print("Result: " + x);
+
+// Test 3: Function calls
+print("3. Function calls...");
+func simple() { return 42; }
+for (var i = 0; i < 10000; i++) {
+    var result = simple();
+}
+print("Result: " + simple());
+
+// Test 4: Loop overhead
+print("4. Loop overhead...");
+for (var i = 0; i < 100000; i++) {
+    // Empty loop
+}
+print("Result: " + i);
+
+print("=== Profiling Complete ===");

@@ -1,5 +1,7 @@
 #pragma once
 #include "helperFunctions/ErrorUtils.h"
+#include "GMPWrapper.h"
+#include "ValuePool.h"
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -20,6 +22,8 @@ struct Module;
 enum ValueType {
     VAL_NONE,
     VAL_NUMBER,
+    VAL_INTEGER,
+    VAL_BIGINT,
     VAL_BOOLEAN,
     VAL_STRING,
     VAL_FUNCTION,
@@ -34,10 +38,12 @@ enum ValueType {
 struct Value {
     union {
         double number;
+        long long integer;
         bool boolean;
     };
     ValueType type;
     std::string string_value; // Store strings outside the union for safety
+    std::shared_ptr<GMPWrapper::BigInt> bigint_value; // Store big integers using GMP
     std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
     std::shared_ptr<std::unordered_map<std::string, Value> > dict_value; // Store dictionaries as shared_ptr for mutability
     std::shared_ptr<Module> module_value; // Module object
@@ -51,6 +57,8 @@ struct Value {
     // Constructors
     Value() : number(0.0), type(ValueType::VAL_NONE) {}
     Value(double n) : number(n), type(ValueType::VAL_NUMBER) {}
+    Value(long long i) : integer(i), type(ValueType::VAL_INTEGER) {}
+    Value(const GMPWrapper::BigInt& bigint) : type(ValueType::VAL_BIGINT), bigint_value(std::make_shared<GMPWrapper::BigInt>(bigint)) {}
     Value(bool b) : boolean(b), type(ValueType::VAL_BOOLEAN) {}
     Value(const char* s) : type(ValueType::VAL_STRING), string_value(s ? s : "") {}
     Value(const std::string& s) : type(ValueType::VAL_STRING), string_value(s) {}
@@ -74,9 +82,9 @@ struct Value {
 
     // Move constructor
     Value(Value&& other) noexcept 
-        : type(other.type), string_value(std::move(other.string_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)),
+        : type(other.type), string_value(std::move(other.string_value)), bigint_value(std::move(other.bigint_value)), array_value(std::move(other.array_value)), dict_value(std::move(other.dict_value)),
           function(std::move(other.function)), builtin_function(std::move(other.builtin_function)), thunk(std::move(other.thunk)), module_value(std::move(other.module_value)) {
-        if (type != ValueType::VAL_STRING && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT && 
+        if (type != ValueType::VAL_STRING && type != ValueType::VAL_BIGINT && type != ValueType::VAL_ARRAY && type != ValueType::VAL_DICT && 
             type != ValueType::VAL_FUNCTION && type != ValueType::VAL_BUILTIN_FUNCTION && type != ValueType::VAL_THUNK) {
             number = other.number; // Copy the union
         }
@@ -89,6 +97,8 @@ struct Value {
             type = other.type;
             if (type == ValueType::VAL_STRING) {
                 string_value = std::move(other.string_value);
+            } else if (type == ValueType::VAL_BIGINT) {
+                bigint_value = std::move(other.bigint_value);
             } else if (type == ValueType::VAL_ARRAY) {
                 array_value = std::move(other.array_value);
             } else if (type == ValueType::VAL_DICT) {
@@ -114,6 +124,8 @@ struct Value {
     Value(const Value& other) : type(other.type) {
         if (type == ValueType::VAL_STRING) {
             string_value = other.string_value;
+        } else if (type == ValueType::VAL_BIGINT) {
+            bigint_value = other.bigint_value; // shared_ptr automatically handles sharing
         } else if (type == ValueType::VAL_ARRAY) {
             array_value = other.array_value; // shared_ptr automatically handles sharing
         } else if (type == ValueType::VAL_DICT) {
@@ -135,6 +147,7 @@ struct Value {
     Value& operator=(const Value& other) {
         if (this != &other) {
             // First, clear all old shared_ptr members to release references
+            bigint_value.reset();
             array_value.reset();
             dict_value.reset();
             function.reset();
@@ -145,6 +158,8 @@ struct Value {
             type = other.type;
             if (type == ValueType::VAL_STRING) {
                 string_value = other.string_value;
+            } else if (type == ValueType::VAL_BIGINT) {
+                bigint_value = other.bigint_value; // shared_ptr automatically handles sharing
             } else if (type == ValueType::VAL_ARRAY) {
                 array_value = other.array_value; // shared_ptr automatically handles sharing
             } else if (type == ValueType::VAL_DICT) {
@@ -175,12 +190,16 @@ struct Value {
     inline bool isModule() const { return type == ValueType::VAL_MODULE; }
     inline bool isThunk() const { return type == ValueType::VAL_THUNK; }
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
+    inline bool isInteger() const { return type == ValueType::VAL_INTEGER; }
+    inline bool isBigInt() const { return type == ValueType::VAL_BIGINT; }
 
     // Get type name as string for error messages
     inline std::string getType() const {
         switch (type) {
             case ValueType::VAL_NONE: return "none";
             case ValueType::VAL_NUMBER: return "number";
+            case ValueType::VAL_INTEGER: return "integer";
+            case ValueType::VAL_BIGINT: return "bigint";
             case ValueType::VAL_BOOLEAN: return "boolean";
             case ValueType::VAL_STRING: return "string";
             case ValueType::VAL_FUNCTION: return "function";
@@ -197,6 +216,8 @@ struct Value {
 
     // Value extraction (safe, with type checking) - inline for performance
     inline double asNumber() const { return isNumber() ? number : 0.0; }
+    inline long long asInteger() const { return isInteger() ? integer : 0; }
+    inline const GMPWrapper::BigInt& asBigInt() const { return *bigint_value; }
     inline bool asBoolean() const { return isBoolean() ? boolean : false; }
     inline const std::string& asString() const { return string_value; }
     inline const std::vector<Value>& asArray() const { 
@@ -222,6 +243,8 @@ struct Value {
             case ValueType::VAL_NONE: return false;
             case ValueType::VAL_BOOLEAN: return boolean;
             case ValueType::VAL_NUMBER: return number != 0.0;
+            case ValueType::VAL_INTEGER: return integer != 0;
+            case ValueType::VAL_BIGINT: return *bigint_value != GMPWrapper::BigInt(0);
             case ValueType::VAL_STRING: return !string_value.empty();
             case ValueType::VAL_FUNCTION: return function != nullptr;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function != nullptr;
@@ -241,6 +264,8 @@ struct Value {
             case ValueType::VAL_NONE: return true;
             case ValueType::VAL_BOOLEAN: return boolean == other.boolean;
             case ValueType::VAL_NUMBER: return number == other.number;
+            case ValueType::VAL_INTEGER: return integer == other.integer;
+            case ValueType::VAL_BIGINT: return *bigint_value == *other.bigint_value;
             case ValueType::VAL_STRING: return string_value == other.string_value;
             case ValueType::VAL_FUNCTION: return function == other.function;
             case ValueType::VAL_BUILTIN_FUNCTION: return builtin_function == other.builtin_function;
@@ -269,6 +294,8 @@ struct Value {
         switch (type) {
             case ValueType::VAL_NONE: return "none";
             case ValueType::VAL_BOOLEAN: return boolean ? "true" : "false";
+            case ValueType::VAL_INTEGER: return std::to_string(integer);
+            case ValueType::VAL_BIGINT: return bigint_value->toString();
             case ValueType::VAL_NUMBER: {
                 // Format numbers like the original stringify function
                 if (number == std::floor(number)) {
@@ -330,10 +357,78 @@ struct Value {
         return !equals(other);
     }
 
+    // Fast path for common integer operations
+    static Value fastIntegerAdd(long long a, long long b) {
+        long long result = a + b;
+        // Check for overflow
+        if ((result > 0 && a < 0 && b < 0) ||
+            (result < 0 && a > 0 && b > 0)) {
+            // Overflow occurred, promote to bigint
+            return Value(GMPWrapper::BigInt::fromLongLong(a) + GMPWrapper::BigInt::fromLongLong(b));
+        }
+        return Value(result);
+    }
+    
+    static Value fastIntegerSub(long long a, long long b) {
+        long long result = a - b;
+        // Check for overflow
+        if ((result > 0 && a < 0 && b > 0) ||
+            (result < 0 && a > 0 && b < 0)) {
+            // Overflow occurred, promote to bigint
+            return Value(GMPWrapper::BigInt::fromLongLong(a) - GMPWrapper::BigInt::fromLongLong(b));
+        }
+        return Value(result);
+    }
+    
+    static Value fastIntegerMul(long long a, long long b) {
+        // Check for overflow in multiplication
+        if (a != 0 && b != 0) {
+            long long result = a * b;
+            if (result / a != b) {
+                // Overflow occurred, promote to bigint
+                return Value(GMPWrapper::BigInt::fromLongLong(a) * GMPWrapper::BigInt::fromLongLong(b));
+            }
+            return Value(result);
+        }
+        return Value(0LL);
+    }
+    
     // Arithmetic operators
     Value operator+(const Value& other) const {
+        // Integer + Integer (fast native operations)
+        if (isInteger() && other.isInteger()) {
+            return fastIntegerAdd(integer, other.integer);
+        }
+        
+        // Number + Number (existing logic)
         if (isNumber() && other.isNumber()) {
-            return Value(number + other.number);
+            double result = number + other.number;
+            // Auto-promote to bigint if needed
+            if (GMPWrapper::shouldPromoteToBigInt(result)) {
+                return Value(GMPWrapper::doubleToBigInt(result));
+            }
+            return Value(result);
+        }
+        
+        // BigInt operations (existing logic)
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value + *other.bigint_value);
+        }
+        
+        // Mixed operations - convert to appropriate type
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) + *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value + GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isNumber() && other.isBigInt()) {
+            GMPWrapper::BigInt num_bigint = GMPWrapper::doubleToBigInt(number);
+            return Value(num_bigint + *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
+            return Value(*bigint_value + other_bigint);
         }
         if (isString() && other.isString()) {
             return Value(string_value + other.string_value);
@@ -361,15 +456,81 @@ struct Value {
     }
 
     Value operator-(const Value& other) const {
+        // Integer - Integer (fast native operations)
+        if (isInteger() && other.isInteger()) {
+            return fastIntegerSub(integer, other.integer);
+        }
+        
+        // Number - Number (existing logic)
         if (isNumber() && other.isNumber()) {
-            return Value(number - other.number);
+            double result = number - other.number;
+            // Auto-promote to bigint if needed
+            if (GMPWrapper::shouldPromoteToBigInt(result)) {
+                return Value(GMPWrapper::doubleToBigInt(result));
+            }
+            return Value(result);
+        }
+        
+        // BigInt operations (existing logic)
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value - *other.bigint_value);
+        }
+        
+        // Mixed operations - convert to appropriate type
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) - *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value - GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isNumber() && other.isBigInt()) {
+            GMPWrapper::BigInt num_bigint = GMPWrapper::doubleToBigInt(number);
+            return Value(num_bigint - *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
+            return Value(*bigint_value - other_bigint);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("-", getType(), other.getType()));
     }
 
     Value operator*(const Value& other) const {
+        // Integer * Integer (fast native operations)
+        if (isInteger() && other.isInteger()) {
+            return fastIntegerMul(integer, other.integer);
+        }
+        
+        // Number * Number (existing logic)
         if (isNumber() && other.isNumber()) {
-            return Value(number * other.number);
+            double result = number * other.number;
+            // Auto-promote to bigint if needed
+            if (GMPWrapper::shouldPromoteToBigInt(result)) {
+                return Value(GMPWrapper::doubleToBigInt(result));
+            }
+            return Value(result);
+        }
+        
+        // BigInt operations (existing logic)
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value * *other.bigint_value);
+        }
+        
+        // Mixed operations - convert to appropriate type
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) * *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value * GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isNumber() && other.isBigInt()) {
+            // Convert number to bigint and multiply
+            GMPWrapper::BigInt num_bigint = GMPWrapper::doubleToBigInt(number);
+            return Value(num_bigint * *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            // Convert other number to bigint and multiply
+            GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
+            return Value(*bigint_value * other_bigint);
         }
         if (isString() && other.isNumber()) {
             std::string result;
@@ -393,14 +554,50 @@ struct Value {
             if (other.number == 0) {
                 throw std::runtime_error("Division by zero");
             }
-            return Value(number / other.number);
+            double result = number / other.number;
+            // Auto-promote to bigint if needed
+            if (GMPWrapper::shouldPromoteToBigInt(result)) {
+                return Value(GMPWrapper::doubleToBigInt(result));
+            }
+            return Value(result);
+        }
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value / *other.bigint_value);
+        }
+        if (isNumber() && other.isBigInt()) {
+            // Convert number to bigint and divide
+            GMPWrapper::BigInt num_bigint = GMPWrapper::doubleToBigInt(number);
+            return Value(num_bigint / *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            // Convert other number to bigint and divide
+            GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
+            return Value(*bigint_value / other_bigint);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("/", getType(), other.getType()));
     }
 
     Value operator%(const Value& other) const {
         if (isNumber() && other.isNumber()) {
-            return Value(fmod(number, other.number));
+            double result = fmod(number, other.number);
+            // Auto-promote to bigint if needed
+            if (GMPWrapper::shouldPromoteToBigInt(result)) {
+                return Value(GMPWrapper::doubleToBigInt(result));
+            }
+            return Value(result);
+        }
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value % *other.bigint_value);
+        }
+        if (isNumber() && other.isBigInt()) {
+            // Convert number to bigint and modulo
+            GMPWrapper::BigInt num_bigint = GMPWrapper::doubleToBigInt(number);
+            return Value(num_bigint % *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            // Convert other number to bigint and modulo
+            GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
+            return Value(*bigint_value % other_bigint);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("%", getType(), other.getType()));
     }

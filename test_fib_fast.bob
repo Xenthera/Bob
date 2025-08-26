@@ -1,0 +1,7 @@
+// Test that should benefit from fast path optimizations
+var sum = 0;
+for (var i = 0; i < 100000; i++) {
+    sum = sum + 1;  // This should use the fast path
+}
+print("Sum: " + sum);
+print("Test completed!");
