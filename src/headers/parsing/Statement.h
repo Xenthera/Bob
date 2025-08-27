@@ -14,6 +14,7 @@ struct IfStmt;
 struct WhileStmt;
 struct DoWhileStmt;
 struct ForStmt;
+struct ForeachStmt;
 struct BreakStmt;
 struct ContinueStmt;
 struct AssignStmt;
@@ -33,6 +34,7 @@ struct StmtVisitor
     virtual void visitWhileStmt(const std::shared_ptr<WhileStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitForStmt(const std::shared_ptr<ForStmt>& stmt, ExecutionContext* context = nullptr) = 0;
+    virtual void visitForeachStmt(const std::shared_ptr<ForeachStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitBreakStmt(const std::shared_ptr<BreakStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitContinueStmt(const std::shared_ptr<ContinueStmt>& stmt, ExecutionContext* context = nullptr) = 0;
     virtual void visitAssignStmt(const std::shared_ptr<AssignStmt>& stmt, ExecutionContext* context = nullptr) = 0;
@@ -210,6 +212,21 @@ struct ForStmt : Stmt
     void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
     {
         visitor->visitForStmt(std::static_pointer_cast<ForStmt>(shared_from_this()), context);
+    }
+};
+
+struct ForeachStmt : Stmt
+{
+    Token varName;  // Variable name for the current element
+    std::shared_ptr<Expr> collection;  // Array or dict to iterate over
+    std::shared_ptr<Stmt> body;
+
+    ForeachStmt(Token varName, std::shared_ptr<Expr> collection, std::shared_ptr<Stmt> body)
+        : varName(varName), collection(collection), body(body) {}
+
+    void accept(StmtVisitor* visitor, ExecutionContext* context = nullptr) override
+    {
+        visitor->visitForeachStmt(std::static_pointer_cast<ForeachStmt>(shared_from_this()), context);
     }
 };
 

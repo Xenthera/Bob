@@ -256,19 +256,22 @@ async func fetchData() {
 ### **What's Done ✅**
 - [x] Core language syntax and semantics
 - [x] All operators and expressions
-- [x] Control flow (if, while, for, do-while)
+- [x] Control flow (if, while, for, do-while, foreach)
 - [x] Functions, closures, and tail call optimization
-- [x] Arrays and dictionaries
-- [x] Standard library (25+ built-in functions)
+- [x] Arrays and dictionaries with methods (contains, slice, reverse)
+- [x] Collection iteration (foreach loops for arrays, dicts, strings)
+- [x] Standard library (30+ built-in functions)
+- [x] Built-in modules (math, random, io, os, time, path, json, base64, sys)
 - [x] File I/O operations
-- [x] Interactive REPL
-- [x] Test suite with 70+ tests
+- [x] Enhanced interactive REPL with arrow keys and history
+- [x] Test suite with 80+ tests
 - [x] Error handling and reporting
 - [x] Memory management
 - [x] CMake + Ninja build system
 - [x] Modular architecture
 - [x] Cross-platform support
 - [x] Various optimizations
+- [x] Integer overflow detection and BigInt promotion
 
 ### **Might Add Later 📋**
 - [ ] Exception handling (try/catch)
@@ -277,6 +280,7 @@ async func fetchData() {
 - [ ] Module/import system
 - [ ] More built-in functions
 - [ ] Debugging tools
+- [ ] Syntax highlighting in REPL
 
 ## **Resources**
 
@@ -286,6 +290,17 @@ async func fetchData() {
 - **[Crafting Interpreters](https://craftinginterpreters.com/)** - Helpful book for language implementation
 
 ## **Recent Work**
+
+### **Collection Features & Enhanced REPL (2025)**
+- **Foreach Loops**: Added foreach loops for arrays, dictionaries, and strings
+- **Array Methods**: Added contains(), slice(), reverse() methods and array concatenation
+- **Range Function**: Added Python-style range() function for iteration
+- **Enhanced REPL**: Added arrow key navigation, command history, and line editing
+- **Introspection Functions**: Added dir(), functions(), values() for module inspection
+- **Math Module Constants**: Added PI, E, MAX_INT constants
+- **Random Module Renaming**: Renamed rand module to random for better naming
+- **Integer Overflow Detection**: Automatic BigInt promotion for arithmetic overflow
+- **Test Organization**: Cleaned up test suite and integrated random module tests
 
 ### **BigInt & Bitwise Operations Enhancement (2025)**
 - **Full BigInt Support**: Added arbitrary-precision integers with no size limitations

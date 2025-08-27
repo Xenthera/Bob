@@ -63,6 +63,8 @@ private:
 
     std::shared_ptr<Stmt> forStatement();
 
+    std::shared_ptr<Stmt> foreachStatement();
+
     std::shared_ptr<Stmt> breakStatement();
 
     std::shared_ptr<Stmt> continueStatement();

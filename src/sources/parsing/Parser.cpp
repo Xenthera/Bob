@@ -600,6 +600,7 @@ sptr(Stmt) Parser::statement()
     if(match({DO})) return doWhileStatement();
     if(match({WHILE})) return whileStatement();
     if(match({FOR})) return forStatement();
+    if(match({FOREACH})) return foreachStatement();
     if(match({BREAK})) return breakStatement();
     if(match({CONTINUE})) return continueStatement();
     if(match({OPEN_BRACE})) return msptr(BlockStmt)(block());
@@ -757,6 +758,29 @@ sptr(Stmt) Parser::forStatement()
     
     // Return the for statement directly instead of desugaring
     return msptr(ForStmt)(initializer, condition, increment, body);
+}
+
+sptr(Stmt) Parser::foreachStatement()
+{
+    // Parse: foreach(var x : collection) { body }
+    consume(OPEN_PAREN, "Expected '(' after 'foreach'.");
+    
+    // Parse variable declaration: var x
+    consume(VAR, "Expected 'var' in foreach loop.");
+    Token varName = consume(IDENTIFIER, "Expected variable name in foreach loop.");
+    
+    // Parse colon separator
+    consume(COLON, "Expected ':' after variable name in foreach loop.");
+    
+    // Parse collection expression
+    sptr(Expr) collection = expression();
+    
+    consume(CLOSE_PAREN, "Expected ')' after collection in foreach loop.");
+    
+    // Parse body
+    sptr(Stmt) body = statement();
+    
+    return msptr(ForeachStmt)(varName, collection, body);
 }
 
 sptr(Stmt) Parser::breakStatement()

@@ -1,5 +1,0 @@
-extension any { func tag() { return "<" + toString(this) + ">"; } }
-var plain = { "x": 1 };
-print(plain.tag());
-
-

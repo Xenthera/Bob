@@ -1,0 +1,7 @@
+print("Testing simple module...");
+
+// Test with a built-in module that we know works
+import math;
+print("Math module imported successfully");
+print("math.PI:", math.PI);
+print("math.abs(-5):", math.abs(-5));

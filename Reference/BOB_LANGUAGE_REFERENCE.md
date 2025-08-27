@@ -87,6 +87,21 @@ var empty = [];
 print(empty.length);    // 0
 print(empty.first);     // none
 print(empty.empty);     // true
+
+// Array methods
+var fruits = ["apple", "banana", "cherry"];
+print(fruits.contains("banana"));  // true
+print(fruits.contains("grape"));   // false
+
+var numbers = [1, 2, 3, 4, 5];
+var slice = numbers.slice(1, 4);   // [2, 3, 4]
+var reversed = numbers.slice(0);   // Copy
+reversed.reverse();                // [5, 4, 3, 2, 1]
+
+// Array concatenation
+var arr1 = [1, 2];
+var arr2 = [3, 4];
+var combined = arr1 + arr2;        // [1, 2, 3, 4]
 ```
 
 ### Dictionaries
@@ -251,6 +266,34 @@ for (var i = 0; i < 10; i = i + 1) {
 }
 ```
 
+### Foreach Loops
+```go
+// Iterate over arrays
+var numbers = [1, 2, 3, 4, 5];
+foreach(var num : numbers) {
+    print(num);
+}
+
+// Iterate over dictionaries (provides [key, value] pairs)
+var person = {"name": "Alice", "age": 30};
+foreach(var pair : person) {
+    print(pair[0], ":", pair[1]);  // key : value
+}
+
+// Iterate over strings (character by character)
+var text = "Hello";
+foreach(var char : text) {
+    print(char);  // H, e, l, l, o
+}
+
+// Control flow works in foreach loops
+foreach(var num : [1, 2, 3, 4, 5]) {
+    if (num == 3) break;
+    if (num % 2 == 0) continue;
+    print(num);  // prints 1
+}
+```
+
 ## Functions
 
 ### Basic Functions
@@ -366,6 +409,16 @@ sleep(1.5);                   // Sleep for 1.5 seconds
 rand.random();                // Random number 0-1
 eval("print('Hello');");     // Execute string as code
 exit(0);                     // Exit program
+
+// Range function (Python-style)
+range(5);                     // [0, 1, 2, 3, 4]
+range(1, 5);                  // [1, 2, 3, 4]
+range(0, 10, 2);              // [0, 2, 4, 6, 8]
+
+// Introspection functions
+dir(math);                    // Lists all members of math module
+functions(math);              // Lists function members only
+values(math);                 // Lists non-function members (constants)
 ```
 
 ### File I/O
@@ -404,6 +457,10 @@ The following built-ins are available by default. Unless specified, functions th
 - rand.random(): float in [0,1)
 - eval(code): executes code string in current environment
 - exit(code?): terminates the program
+- range(start?, end?, step?): creates sequence of numbers (Python-style)
+- dir(obj): lists all members of object/module
+- functions(obj): lists function members only
+- values(obj): lists non-function members (constants/values)
 
 Notes:
 - Arrays support properties: length, first, last, empty
@@ -512,17 +569,71 @@ var x = undefined_variable;  // Error: Undefined variable 'undefined_variable' a
 var result = "hello" / 5;    // Error: Cannot divide string by number
 ```
 
+## Built-in Modules
+
+### Math Module
+```go
+import math;
+
+// Mathematical constants
+print(math.PI);      // 3.141592653589793
+print(math.E);       // 2.718281828459045
+print(math.MAX_INT); // 9223372036854775807
+
+// Mathematical functions
+print(math.abs(-5));     // 5
+print(math.floor(3.7));  // 3
+print(math.ceil(3.2));   // 4
+print(math.round(3.5));  // 4
+print(math.max(1, 2, 3)); // 3
+print(math.min(1, 2, 3)); // 1
+```
+
+### Random Module
+```go
+import random;
+
+// Set seed for reproducible results
+random.seed(42);
+
+// Generate random numbers
+print(random.random());           // Random float between 0 and 1
+print(random.randint(1, 10));     // Random integer between 1 and 10
+print(random.choice([1, 2, 3]));  // Random choice from array
+```
+
+### Other Built-in Modules
+```go
+import io;      // File I/O operations
+import os;      // Operating system interface
+import time;    // Time-related functions
+import path;    // Path manipulation
+import json;    // JSON parsing and generation
+import base64;  // Base64 encoding/decoding
+import sys;     // System information
+```
+
 ## Interactive Mode (REPL)
 
-Bob includes an interactive mode for experimenting:
+Bob includes an interactive mode with enhanced features:
 
 ```bash
 $ ./build/bin/bob
-Bob Interactive Mode
-> var x = 42;
-> print(x * 2);
+Bob v0.0.3, 2025
+-> var x = 42;
+-> print(x * 2);
 84
-> exit();
+-> history;  # Show command history
+-> clear;    # Clear history
+-> exit();
+```
+
+**REPL Features:**
+- **Arrow key navigation** (up/down for history)
+- **Line editing** (left/right arrows, backspace, insert)
+- **Command history** (persistent across sessions)
+- **Special commands:** `history`, `clear`
+- **Cross-platform** (works on Windows, macOS, Linux)
 ```
 
 ## Examples
@@ -545,7 +656,13 @@ var people = [
     {"name": "Bob", "age": 25}
 ];
 
-for (var i = 0; i < people.len(); i = i + 1) {
+// Using foreach (cleaner syntax)
+foreach(var person : people) {
+    print(person["name"] + " is " + person["age"] + " years old");
+}
+
+// Using range for iteration
+foreach(var i : range(people.len())) {
     var person = people[i];
     print(person["name"] + " is " + person["age"] + " years old");
 }

@@ -747,6 +747,15 @@ struct Value {
         if (!isString() && !isNumber() && other.isString()) {
             return Value(toString() + other.string_value);
         }
+        if (isArray() && other.isArray()) {
+            std::vector<Value> result;
+            const std::vector<Value>& arr1 = *array_value;
+            const std::vector<Value>& arr2 = *other.array_value;
+            result.reserve(arr1.size() + arr2.size());
+            result.insert(result.end(), arr1.begin(), arr1.end());
+            result.insert(result.end(), arr2.begin(), arr2.end());
+            return Value(result);
+        }
         throw std::runtime_error(ErrorUtils::makeOperatorError("+", getType(), other.getType()));
     }
 
@@ -871,6 +880,7 @@ struct Value {
             }
             return Value(result);
         }
+
         throw std::runtime_error(ErrorUtils::makeOperatorError("*", getType(), other.getType()));
     }
 

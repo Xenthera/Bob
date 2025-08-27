@@ -169,6 +169,8 @@ public:
     void registerModule(const std::string& name, std::function<void(ModuleBuilder&)> init) {
         builtinModules.registerModule(name, std::move(init));
     }
+    
+    ModuleRegistry& getModuleRegistry() { return builtinModules; }
     // Global environment helpers
     bool defineGlobalVar(const std::string& name, const Value& value);
     bool tryGetGlobalVar(const std::string& name, Value& out) const;

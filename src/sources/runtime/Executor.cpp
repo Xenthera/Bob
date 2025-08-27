@@ -258,6 +258,126 @@ void Executor::visitForStmt(const std::shared_ptr<ForStmt>& statement, Execution
     }
 }
 
+void Executor::visitForeachStmt(const std::shared_ptr<ForeachStmt>& statement, ExecutionContext* context) {
+    // Evaluate the collection
+    Value collection = statement->collection->accept(evaluator);
+    Value thrown; int tl=0, tc=0;
+    if (interpreter->consumePendingThrow(thrown, &tl, &tc)) { 
+        if (context) { context->hasThrow = true; context->thrownValue = thrown; context->throwLine = tl; context->throwColumn = tc; } 
+        return; 
+    }
+    
+    // Create a new environment for the loop body
+    auto loopEnv = std::make_shared<Environment>(interpreter->getEnvironment());
+    std::shared_ptr<Environment> previous = interpreter->getEnvironment();
+    interpreter->setEnvironment(loopEnv);
+    
+    ExecutionContext loopContext;
+    if (context) {
+        loopContext.isFunctionBody = context->isFunctionBody;
+    }
+    
+    // Iterate over the collection
+    if (collection.isArray()) {
+        const std::vector<Value>& arr = collection.asArray();
+        for (const auto& element : arr) {
+            // Define the variable in the loop environment
+            loopEnv->define(statement->varName.lexeme, element);
+            
+            // Execute the loop body
+            execute(statement->body, &loopContext);
+            
+            // Handle control flow
+            if (loopContext.hasThrow) { 
+                if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; } 
+                break; 
+            }
+            if (loopContext.hasReturn) {
+                if (context) {
+                    context->hasReturn = true;
+                    context->returnValue = loopContext.returnValue;
+                }
+                break;
+            }
+            if (loopContext.shouldBreak) {
+                break;
+            }
+            if (loopContext.shouldContinue) {
+                loopContext.shouldContinue = false;
+                continue;
+            }
+        }
+    } else if (collection.isDict()) {
+        const std::unordered_map<std::string, Value>& dict = collection.asDict();
+        for (const auto& pair : dict) {
+            // For dictionaries, create a pair array [key, value]
+            std::vector<Value> pairArray = {Value(pair.first), pair.second};
+            loopEnv->define(statement->varName.lexeme, Value(pairArray));
+            
+            // Execute the loop body
+            execute(statement->body, &loopContext);
+            
+            // Handle control flow
+            if (loopContext.hasThrow) { 
+                if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; } 
+                break; 
+            }
+            if (loopContext.hasReturn) {
+                if (context) {
+                    context->hasReturn = true;
+                    context->returnValue = loopContext.returnValue;
+                }
+                break;
+            }
+            if (loopContext.shouldBreak) {
+                break;
+            }
+            if (loopContext.shouldContinue) {
+                loopContext.shouldContinue = false;
+                continue;
+            }
+        }
+    } else if (collection.isString()) {
+        const std::string& str = collection.asString();
+        for (char c : str) {
+            // For strings, iterate over each character
+            loopEnv->define(statement->varName.lexeme, Value(std::string(1, c)));
+            
+            // Execute the loop body
+            execute(statement->body, &loopContext);
+            
+            // Handle control flow
+            if (loopContext.hasThrow) { 
+                if (context) { context->hasThrow = true; context->thrownValue = loopContext.thrownValue; } 
+                break; 
+            }
+            if (loopContext.hasReturn) {
+                if (context) {
+                    context->hasReturn = true;
+                    context->returnValue = loopContext.returnValue;
+                }
+                break;
+            }
+            if (loopContext.shouldBreak) {
+                break;
+            }
+            if (loopContext.shouldContinue) {
+                loopContext.shouldContinue = false;
+                continue;
+            }
+        }
+    } else {
+        // Error: collection is not iterable
+        interpreter->setEnvironment(previous);
+        interpreter->reportError(statement->varName.line, statement->varName.column, "Runtime Error", 
+            "Cannot iterate over non-iterable type: " + interpreter->stringify(collection), "");
+        throw std::runtime_error("Cannot iterate over non-iterable type");
+    }
+    
+    // Restore the previous environment
+    interpreter->setEnvironment(previous);
+}
+
 void Executor::visitBreakStmt(const std::shared_ptr<BreakStmt>& statement, ExecutionContext* context) {
     if (context) {
         context->shouldBreak = true;

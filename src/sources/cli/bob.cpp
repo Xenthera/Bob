@@ -2,6 +2,7 @@
 
 #include "bob.h"
 #include "Parser.h"
+#include "LineEditor.h"
 
 void Bob::ensureInterpreter(bool interactive) {
     if (!interpreter) interpreter = msptr(Interpreter)(interactive);
@@ -21,15 +22,39 @@ void Bob::runPrompt()
 {
     ensureInterpreter(true);
     std::cout << "Bob v" << VERSION << ", 2025\n";
+    
+    LineEditor editor;
+    editor.setHistorySize(100);
+    
     while(true)
     {
-        std::string line;
-        std::cout << "\033[0;36m" << "-> " << "\033[0;37m";
-        std::getline(std::cin, line);
+        std::string line = editor.getLine("\033[0;36m-> \033[0;37m");
 
         if(std::cin.eof())
         {
             break;
+        }
+        
+        // Skip empty lines but don't quit
+        if(line.empty())
+        {
+            continue;
+        }
+
+
+
+        // Handle special REPL commands
+        if (line == "history" || line == "history;") {
+            std::cout << "Command History:\n";
+            const auto& hist = editor.getHistory();
+            for (size_t i = 0; i < hist.size(); ++i) {
+                std::cout << "  " << (i + 1) << ": " << hist[i] << "\n";
+            }
+            continue;
+        } else if (line == "clear" || line == "clear;") {
+            editor.clearHistory();
+            std::cout << "History cleared.\n";
+            continue;
         }
 
         // Reset error state before each REPL command

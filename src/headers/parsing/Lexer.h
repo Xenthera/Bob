@@ -24,7 +24,7 @@ enum TokenType{
 
     IDENTIFIER, STRING, NUMBER, INTEGER, BIGINT, KW_BOOL,
 
-    AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR,
+    AND, OR, TRUE, FALSE, IF, ELSE, FUNCTION, FOR, FOREACH,
     WHILE, DO, VAR, CLASS, EXTENDS, EXTENSION, SUPER, THIS, NONE, RETURN, BREAK, CONTINUE,
     IMPORT, FROM, AS,
     TRY, CATCH, FINALLY, THROW,
@@ -55,7 +55,7 @@ inline std::string enum_mapping[] = {"OPEN_PAREN", "CLOSE_PAREN", "OPEN_BRACE", 
 
                            "IDENTIFIER", "STRING", "NUMBER", "INTEGER", "BIGINT", "KW_BOOL",
 
-                           "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR",
+                           "AND", "OR", "TRUE", "FALSE", "IF", "ELSE", "FUNCTION", "FOR", "FOREACH",
                            "WHILE", "DO", "VAR", "CLASS", "EXTENDS", "EXTENSION", "SUPER", "THIS", "NONE", "RETURN", "BREAK", "CONTINUE",
                            "IMPORT", "FROM", "AS",
                            "TRY", "CATCH", "FINALLY", "THROW",
@@ -77,6 +77,7 @@ const std::map<std::string, TokenType> KEYWORDS {
         {"else", ELSE},
         {"func", FUNCTION},
         {"for", FOR},
+        {"foreach", FOREACH},
         {"while", WHILE},
         {"do", DO},
         {"var", VAR},

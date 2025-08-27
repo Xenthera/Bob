@@ -36,8 +36,7 @@ Value Evaluator::visitLiteralExpr(const std::shared_ptr<LiteralExpr>& expr) {
         if (expr->value == "true") return TRUE_VALUE;
         if (expr->value == "false") return FALSE_VALUE;
     }
-    if (expr->value == "0") return Value(0LL);
-    if (expr->value == "1") return Value(1LL);
+    // Don't auto-convert string literals to numbers - this breaks string multiplication
     return Value(expr->value);
 }
 
@@ -303,13 +302,8 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     if (expression->oper.type == PLUS_PLUS) {
         if (currentValue.isInteger()) {
             long long currentInt = currentValue.asInteger();
-            // Check for overflow
-            if (currentInt == LLONG_MAX) {
-                // Promote to BigInt to avoid overflow
-                newValue = Value(GMPWrapper::BigInt::fromLongLong(currentInt) + GMPWrapper::BigInt(1));
-            } else {
-                newValue = Value(currentInt + 1);
-            }
+            // Use proper overflow detection
+            newValue = Value::handleIntegerOverflow(currentInt, 1, '+');
         } else if (currentValue.isBigInt()) {
             // Handle BigInt increment
             newValue = Value(currentValue.asBigInt() + GMPWrapper::BigInt(1));
@@ -320,13 +314,8 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     } else if (expression->oper.type == MINUS_MINUS) {
         if (currentValue.isInteger()) {
             long long currentInt = currentValue.asInteger();
-            // Check for underflow
-            if (currentInt == LLONG_MIN) {
-                // Promote to BigInt to avoid underflow
-                newValue = Value(GMPWrapper::BigInt::fromLongLong(currentInt) - GMPWrapper::BigInt(1));
-            } else {
-                newValue = Value(currentInt - 1);
-            }
+            // Use proper overflow detection
+            newValue = Value::handleIntegerOverflow(currentInt, 1, '-');
         } else if (currentValue.isBigInt()) {
             // Handle BigInt decrement
             newValue = Value(currentValue.asBigInt() - GMPWrapper::BigInt(1));
@@ -730,6 +719,87 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
                 Value v = arr.back();
                 arr.pop_back();
                 return v;
+            });
+            return Value(bf);
+        } else if (propertyName == "contains") {
+            auto bf = std::make_shared<BuiltinFunction>("array.contains", [object](std::vector<Value> args, int, int){
+                if (args.size() != 1) {
+                    throw std::runtime_error("array.contains() expects 1 argument: array.contains(value)");
+                }
+                const std::vector<Value>& arr = object.asArray();
+                const Value& searchValue = args[0];
+                
+                for (const auto& value : arr) {
+                    if (value.equals(searchValue)) {
+                        return Value(true);
+                    }
+                }
+                return Value(false);
+            });
+            return Value(bf);
+        } else if (propertyName == "slice") {
+            auto bf = std::make_shared<BuiltinFunction>("array.slice", [object](std::vector<Value> args, int, int){
+                if (args.size() < 1 || args.size() > 3) {
+                    throw std::runtime_error("array.slice() expects 1-3 arguments: array.slice(start, end?) or array.slice(start, end, step)");
+                }
+                
+                const std::vector<Value>& arr = object.asArray();
+                int size = static_cast<int>(arr.size());
+                
+                // Parse start index
+                if (!args[0].isNumeric()) {
+                    throw std::runtime_error("array.slice() start index must be numeric");
+                }
+                int start = args[0].isInteger() ? static_cast<int>(args[0].asInteger()) : static_cast<int>(args[0].asNumber());
+                
+                // Handle negative indices
+                if (start < 0) start += size;
+                if (start < 0) start = 0;
+                if (start > size) start = size;
+                
+                // Parse end index
+                int end = size;
+                if (args.size() >= 2) {
+                    if (!args[1].isNumeric()) {
+                        throw std::runtime_error("array.slice() end index must be numeric");
+                    }
+                    end = args[1].isInteger() ? static_cast<int>(args[1].asInteger()) : static_cast<int>(args[1].asNumber());
+                    if (end < 0) end += size;
+                    if (end < 0) end = 0;
+                    if (end > size) end = size;
+                }
+                
+                // Parse step
+                int step = 1;
+                if (args.size() == 3) {
+                    if (!args[2].isNumeric()) {
+                        throw std::runtime_error("array.slice() step must be numeric");
+                    }
+                    step = args[2].isInteger() ? static_cast<int>(args[2].asInteger()) : static_cast<int>(args[2].asNumber());
+                    if (step == 0) {
+                        throw std::runtime_error("array.slice() step cannot be zero");
+                    }
+                }
+                
+                std::vector<Value> result;
+                if (step > 0) {
+                    for (int i = start; i < end; i += step) {
+                        result.push_back(arr[i]);
+                    }
+                } else {
+                    for (int i = start; i > end; i += step) {
+                        result.push_back(arr[i]);
+                    }
+                }
+                
+                return Value(result);
+            });
+            return Value(bf);
+        } else if (propertyName == "reverse") {
+            auto bf = std::make_shared<BuiltinFunction>("array.reverse", [object](std::vector<Value>, int, int){
+                std::vector<Value> arr = object.asArray(); // Copy the array
+                std::reverse(arr.begin(), arr.end());
+                return Value(arr);
             });
             return Value(bf);
         }

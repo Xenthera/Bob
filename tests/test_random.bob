@@ -1,0 +1,14 @@
+print("\n--- Test: random module ---");
+import random;
+
+random.seed(1234);
+var r1 = random.random();
+var r2 = random.random();
+assert(r1 >= 0 && r1 < 1 && r2 >= 0 && r2 < 1, "random.random range");
+var i = random.randint(1, 10);
+assert(i >= 1 && i <= 10, "random.randint range");
+var choice = random.choice(["a","b","c"]);
+assert(choice == "a" || choice == "b" || choice == "c", "random.choice");
+print("random: PASS");
+
+

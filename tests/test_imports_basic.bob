@@ -29,7 +29,7 @@ assert(before == after, "module executed once (cached)");
 
 // Cross-file visibility in same interpreter: eval user file after importing here
 import eval as E;
-E.evalFile("../tests/import_user_of_mod_hello.bob");
+E.evalFile("tests/import_user_of_mod_hello.bob");
 
 // Immutability: cannot reassign module binding
 var immFail = false;

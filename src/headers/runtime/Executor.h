@@ -35,6 +35,7 @@ public:
     void visitWhileStmt(const std::shared_ptr<WhileStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitForStmt(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context = nullptr) override;
+    void visitForeachStmt(const std::shared_ptr<ForeachStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitBreakStmt(const std::shared_ptr<BreakStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitContinueStmt(const std::shared_ptr<ContinueStmt>& statement, ExecutionContext* context = nullptr) override;
     void visitAssignStmt(const std::shared_ptr<AssignStmt>& statement, ExecutionContext* context = nullptr) override;

@@ -65,8 +65,9 @@ void registerMathModule(Interpreter& interpreter) {
             }
             return Value(mval);
         });
-        m.val("pi", Value(3.14159265358979323846));
-        m.val("e", Value(2.71828182845904523536));
+        m.val("PI", Value(3.14159265358979323846));
+        m.val("E", Value(2.71828182845904523536));
+        m.val("MAX_INT", Value(LLONG_MAX));  // Maximum integer value (9223372036854775807)
     });
 }
 

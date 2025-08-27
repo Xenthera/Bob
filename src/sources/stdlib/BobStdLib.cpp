@@ -42,15 +42,12 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Create a built-in print function
     auto printFunc = std::make_shared<BuiltinFunction>("print", 
         [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
-            if (args.size() != 1) {
-                if (errorReporter) {
-                    errorReporter->reportError(line, column, "StdLib Error", 
-                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
-                }
-                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            // Handle multiple arguments by joining them with spaces
+            for (size_t i = 0; i < args.size(); ++i) {
+                if (i > 0) std::cout << " ";
+                std::cout << interpreter.stringify(args[i]);
             }
-            // Use the interpreter's stringify function
-            std::cout << interpreter.stringify(args[0]) << '\n';
+            std::cout << '\n';
             return NONE_VALUE;
         });
     env->define("print", Value(printFunc));
@@ -407,12 +404,8 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 if (bigint.fitsInLongLong()) {
                     return Value(bigint.toLongLong());
                 } else {
-                    // If it doesn't fit, truncate to long long max/min
-                    if (bigint < GMPWrapper::BigInt(0)) {
-                        return Value(LLONG_MIN);
-                    } else {
-                        return Value(LLONG_MAX);
-                    }
+                    // If it doesn't fit, throw an error instead of truncating
+                    throw std::runtime_error("BigInt value too large to convert to integer");
                 }
             } else {
                 // For numbers (doubles), truncate to long long
@@ -509,6 +502,28 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     env->define("functions", Value(functionsFunc));
     interpreter.getFunctionRegistry().addBuiltinFunction(functionsFunc);
 
+    auto valuesFunc = std::make_shared<BuiltinFunction>("values",
+        [](std::vector<Value> args, int, int) -> Value {
+            if (args.size() != 1) return Value(std::vector<Value>{});
+            Value obj = args[0];
+            std::vector<Value> out;
+            auto pushIfValue = [&out](const std::pair<const std::string, Value>& kv){
+                if (!kv.second.isFunction() && !kv.second.isBuiltinFunction()) out.push_back(Value(kv.first));
+            };
+            if (obj.isModule()) {
+                auto* mod = obj.asModule();
+                if (mod && mod->exports) {
+                    for (const auto& kv : *mod->exports) pushIfValue(kv);
+                }
+            } else if (obj.isDict()) {
+                const auto& d = obj.asDict();
+                for (const auto& kv : d) pushIfValue(kv);
+            }
+            return Value(out);
+        });
+    env->define("values", Value(valuesFunc));
+    interpreter.getFunctionRegistry().addBuiltinFunction(valuesFunc);
+
     // random moved to rand module
 
     // (eval and evalFile moved to eval module)
@@ -518,5 +533,59 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // (file I/O moved to io module)
 
     // memoryUsage moved to sys module
+
+    // Array utility functions
+    auto rangeFunc = std::make_shared<BuiltinFunction>("range",
+        [](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() < 1 || args.size() > 3) {
+                throw std::runtime_error("range() expects 1-3 arguments: range(end) or range(start, end) or range(start, end, step)");
+            }
+            
+            long long start = 0, end, step = 1;
+            
+            if (args.size() == 1) {
+                // range(end)
+                if (!args[0].isNumeric()) {
+                    throw std::runtime_error("range() argument must be numeric");
+                }
+                end = args[0].isInteger() ? args[0].asInteger() : static_cast<long long>(args[0].asNumber());
+            } else if (args.size() == 2) {
+                // range(start, end)
+                if (!args[0].isNumeric() || !args[1].isNumeric()) {
+                    throw std::runtime_error("range() arguments must be numeric");
+                }
+                start = args[0].isInteger() ? args[0].asInteger() : static_cast<long long>(args[0].asNumber());
+                end = args[1].isInteger() ? args[1].asInteger() : static_cast<long long>(args[1].asNumber());
+            } else {
+                // range(start, end, step)
+                if (!args[0].isNumeric() || !args[1].isNumeric() || !args[2].isNumeric()) {
+                    throw std::runtime_error("range() arguments must be numeric");
+                }
+                start = args[0].isInteger() ? args[0].asInteger() : static_cast<long long>(args[0].asNumber());
+                end = args[1].isInteger() ? args[1].asInteger() : static_cast<long long>(args[1].asNumber());
+                step = args[2].isInteger() ? args[2].asInteger() : static_cast<long long>(args[2].asNumber());
+            }
+            
+            if (step == 0) {
+                throw std::runtime_error("range() step cannot be zero");
+            }
+            
+            std::vector<Value> result;
+            if (step > 0) {
+                for (long long i = start; i < end; i += step) {
+                    result.push_back(Value(i));
+                }
+            } else {
+                for (long long i = start; i > end; i += step) {
+                    result.push_back(Value(i));
+                }
+            }
+            
+            return Value(result);
+        });
+    env->define("range", Value(rangeFunc));
+    interpreter.getFunctionRegistry().addBuiltinFunction(rangeFunc);
+
+
 
 } 

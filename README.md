@@ -19,9 +19,12 @@ A modern programming language with all the features/sytax I prefer
 
 - **Core Types**: Numbers (integer, float, BigInt), strings, booleans, arrays, dictionaries, functions
 - **Advanced Functions**: First-class functions, closures, anonymous functions, tail call optimization
-- **Control Flow**: If/else statements, while/do-while/for loops, break/continue
+- **Control Flow**: If/else statements, while/do-while/for loops, foreach loops, break/continue
 - **Operators**: Arithmetic, logical, bitwise (full BigInt support), comparison, compound assignment (+=, -=, etc.)
-- **Built-in Functions**: print, input, assert, len, push, pop, keys, values, type conversion (toString, toNumber, toInt)
+- **Built-in Functions**: print, input, assert, len, push, pop, keys, values, type conversion (toString, toNumber, toInt), range, dir, functions, values
+- **Collections**: Array methods (contains, slice, reverse), array concatenation, string iteration
+- **Modules**: Math, random, io, os, time, path, json, base64, sys
+- **REPL**: Interactive mode with arrow key navigation, command history, line editing
 - **Other Stuff**: String interpolation, escape sequences, file I/O, eval, time/sleep, random
 - **Memory**: Automatic cleanup, no manual memory management
 

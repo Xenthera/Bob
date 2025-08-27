@@ -1,6 +1,0 @@
-class M0 { func name() { return "M0"; } }
-class M1 extends M0 {}
-extension M1 { func name() { return super.name() + "*"; } }
-print(M1().name());
-
-

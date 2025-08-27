@@ -3,7 +3,7 @@
 #include <random>
 
 void registerRandModule(Interpreter& interpreter) {
-    interpreter.registerModule("rand", [](Interpreter::ModuleBuilder& m) {
+    interpreter.registerModule("random", [](Interpreter::ModuleBuilder& m) {
         static std::mt19937_64 rng{std::random_device{}()};
         m.fn("seed", [](std::vector<Value> a, int, int) -> Value {
             if (a.size() == 1 && a[0].isNumeric()) {

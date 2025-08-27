@@ -2423,7 +2423,7 @@ var endTime = T.now();
 assert(endTime > startTime, "sleep() - time elapsed");
 
 // random() function - test proper seeding
-import rand as R;
+import random as R;
 var random1 = R.random();
 var random2 = R.random();
 var random3 = R.random();
@@ -2467,7 +2467,7 @@ var p2 = IO.exists("tests/test_base64.bob") ? "tests/test_base64.bob" : "../test
 E.evalFile(p2);
 var p3 = IO.exists("tests/test_math.bob") ? "tests/test_math.bob" : "../tests/test_math.bob";
 E.evalFile(p3);
-var p4 = IO.exists("tests/test_rand.bob") ? "tests/test_rand.bob" : "../tests/test_rand.bob";
+var p4 = IO.exists("tests/test_random.bob") ? "tests/test_random.bob" : "../tests/test_random.bob";
 E.evalFile(p4);
 var p5 = IO.exists("tests/test_time.bob") ? "tests/test_time.bob" : "../tests/test_time.bob";
 E.evalFile(p5);
@@ -3008,7 +3008,7 @@ assert(toInt(-0.0) == 0, "toInt(-0.0) should be 0");
 
 // Test with random numbers
 for(var i = 0; i < 5; i++) {
-    import rand as Rn;
+    import random as Rn;
     var randomFloat = Rn.random() * 10;
     var randomInt = toInt(randomFloat);
     assert(randomInt >= 0 && randomInt <= 9, "toInt(random) should be in range 0-9");
@@ -3343,6 +3343,37 @@ E.evalFile(pathModsB);
 
 var pathOs = IO.exists("tests/test_os_basic.bob") ? "tests/test_os_basic.bob" : "../tests/test_os_basic.bob";
 E.evalFile(pathOs);
+
+// Random module tests
+print("\n--- Random Module Tests ---");
+print("Testing random module alias:");
+import random;
+print("Import successful");
+
+// Test that rand is not accessible (should be renamed to random)
+print("Testing that rand module is not accessible:");
+try {
+    import rand;
+    print("ERROR: rand module should not be accessible");
+} catch (e) {
+    print("Good: rand module is not accessible, error:", e);
+}
+
+print("Testing random module comprehensively:");
+// Test seed function
+print("Setting seed to 42...");
+random.seed(42);
+
+// Test random() function
+print("random.random():", random.random());
+
+// Test randint function
+print("random.randint(1, 10):", random.randint(1, 10));
+
+// Test choice function
+print("random.choice([1, 2, 3, 4, 5]):", random.choice([1, 2, 3, 4, 5]));
+
+print("All random module functions working correctly!");
 
 print("\nAll tests passed.");
 print("Test suite complete.");

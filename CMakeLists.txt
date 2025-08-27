@@ -50,6 +50,7 @@ file(GLOB_RECURSE BOB_PARSING_SOURCES CONFIGURE_DEPENDS "src/sources/parsing/*.c
 file(GLOB_RECURSE BOB_STDLIB_SOURCES CONFIGURE_DEPENDS "src/sources/stdlib/*.cpp")
 file(GLOB_RECURSE BOB_BUILTIN_SOURCES CONFIGURE_DEPENDS "src/sources/builtinModules/*.cpp")
 file(GLOB_RECURSE BOB_CLI_SOURCES CONFIGURE_DEPENDS "src/sources/cli/*.cpp")
+file(GLOB_RECURSE BOB_COMMON_SOURCES CONFIGURE_DEPENDS "src/sources/common/*.cpp")
 
 # All source files
 set(BOB_ALL_SOURCES
@@ -58,6 +59,7 @@ set(BOB_ALL_SOURCES
     ${BOB_STDLIB_SOURCES}
     ${BOB_BUILTIN_SOURCES}
     ${BOB_CLI_SOURCES}
+    ${BOB_COMMON_SOURCES}
 )
 
 # Create the executable
