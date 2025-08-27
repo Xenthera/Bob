@@ -3,6 +3,7 @@
 #include "ErrorReporter.h"
 #include "Lexer.h"
 #include "Parser.h"
+#include "GMPWrapper.h"
 #include <chrono>
 #include <thread>
 #include <ctime>
@@ -161,7 +162,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             }
             
             std::string typeName;
-            if (args[0].isNumber()) {
+            if (args[0].isNumeric()) {
                 typeName = "number";
             } else if (args[0].isString()) {
                 typeName = "string";
@@ -209,6 +210,51 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
     // Store the shared_ptr in the interpreter to keep it alive
     interpreter.getFunctionRegistry().addBuiltinFunction(typeFunc);
 
+    // Create a built-in typeRaw function (debug version that shows actual internal types)
+    auto typeRawFunc = std::make_shared<BuiltinFunction>("typeRaw",
+        [&interpreter, errorReporter](std::vector<Value> args, int line, int column) -> Value {
+            if (args.size() != 1) {
+                if (errorReporter) {
+                    errorReporter->reportError(line, column, "StdLib Error", 
+                        "Expected 1 argument but got " + std::to_string(args.size()) + ".", "", true);
+                }
+                throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
+            }
+            
+            std::string typeName;
+            if (args[0].isNumber()) {
+                typeName = "number";
+            } else if (args[0].isInteger()) {
+                typeName = "integer";
+            } else if (args[0].isBigInt()) {
+                typeName = "bigint";
+            } else if (args[0].isString()) {
+                typeName = "string";
+            } else if (args[0].isBoolean()) {
+                typeName = "boolean";
+            } else if (args[0].isNone()) {
+                typeName = "none";
+            } else if (args[0].isFunction()) {
+                typeName = "function";
+            } else if (args[0].isBuiltinFunction()) {
+                typeName = "builtin_function";
+            } else if (args[0].isArray()) {
+                typeName = "array";
+            } else if (args[0].isDict()) {
+                typeName = "dict";
+            } else if (args[0].isModule()) {
+                typeName = "module";
+            } else {
+                typeName = "unknown";
+            }
+            
+            return Value(typeName);
+        });
+    env->define("typeRaw", Value(typeRawFunc));
+    
+    // Store the shared_ptr in the interpreter to keep it alive
+    interpreter.getFunctionRegistry().addBuiltinFunction(typeRawFunc);
+
     // Create a built-in toNumber function for string-to-number conversion
     auto toNumberFunc = std::make_shared<BuiltinFunction>("toNumber",
         [](std::vector<Value> args, int line, int column) -> Value {
@@ -222,20 +268,109 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             
             std::string str = args[0].asString();
             
-            // Remove leading/trailing whitespace
-            str.erase(0, str.find_first_not_of(" \t\n\r"));
-            str.erase(str.find_last_not_of(" \t\n\r") + 1);
+            // Remove any invisible characters that might cause conversion to fail
+            str.erase(std::remove_if(str.begin(), str.end(), [](char c) {
+                return c < 32 && c != '\t' && c != '\n' && c != '\r';
+            }), str.end());
             
+            // Also remove any non-printable characters
+            str.erase(std::remove_if(str.begin(), str.end(), [](char c) {
+                return !std::isprint(c) && c != '\t' && c != '\n' && c != '\r';
+            }), str.end());
+            
+            // Handle empty string
             if (str.empty()) {
                 return NONE_VALUE;  // Return none for empty string
             }
             
+            // Trim whitespace
+            str.erase(0, str.find_first_not_of(" \t\n\r"));
+            str.erase(str.find_last_not_of(" \t\n\r") + 1);
+            
+            // Handle special cases first
+            if (str == "0" || str == "0.0" || str == "-0" || str == "-0.0") {
+                return Value(0.0);
+            }
+            
+            // Check if it's a valid number format (integer or decimal)
+            bool isValidNumber = true;
+            bool hasDecimal = false;
+            bool hasExponent = false;
+            bool hasSign = false;
+            
+            for (size_t i = 0; i < str.length(); i++) {
+                char c = str[i];
+                if (c == '+' || c == '-') {
+                    if (i == 0) {
+                        hasSign = true;
+                    } else if (str[i-1] == 'e' || str[i-1] == 'E') {
+                        // Exponent sign is valid
+                    } else {
+                        isValidNumber = false;
+                        break;
+                    }
+                } else if (c == '.') {
+                    if (hasDecimal || hasExponent) {
+                        isValidNumber = false;
+                        break;
+                    }
+                    hasDecimal = true;
+                } else if (c == 'e' || c == 'E') {
+                    if (hasExponent) {
+                        isValidNumber = false;
+                        break;
+                    }
+                    hasExponent = true;
+                } else if (c < '0' || c > '9') {
+                    isValidNumber = false;
+                    break;
+                }
+            }
+            
+            if (!isValidNumber) {
+                return NONE_VALUE;  // Return none for invalid format
+            }
+            
+            // Try to convert as a regular number first
             try {
                 double value = std::stod(str);
+                
+                // Check if this is an integer that's too large for double precision
+                if (!hasDecimal && !hasExponent) {
+                    // For integers, check if they're too large
+                    const double MAX_SAFE_INTEGER = 9007199254740991.0; // 2^53 - 1
+                    if (value > MAX_SAFE_INTEGER || value < -MAX_SAFE_INTEGER) {
+                        try {
+                            GMPWrapper::BigInt bigint = GMPWrapper::BigInt::fromString(str);
+                            return Value(bigint);
+                        } catch (...) {
+                            // If bigint creation fails, fall back to double
+                        }
+                    }
+                }
+                
                 return Value(value);
             } catch (const std::invalid_argument&) {
+                // If std::stod fails, try as bigint for integers
+                if (!hasDecimal && !hasExponent) {
+                    try {
+                        GMPWrapper::BigInt bigint = GMPWrapper::BigInt::fromString(str);
+                        return Value(bigint);
+                    } catch (...) {
+                        // If bigint creation fails, return none
+                    }
+                }
                 return NONE_VALUE;  // Return none for invalid conversion
             } catch (const std::out_of_range&) {
+                // If std::stod fails due to range, try as bigint for integers
+                if (!hasDecimal && !hasExponent) {
+                    try {
+                        GMPWrapper::BigInt bigint = GMPWrapper::BigInt::fromString(str);
+                        return Value(bigint);
+                    } catch (...) {
+                        // If bigint creation fails, return none
+                    }
+                }
                 return NONE_VALUE;  // Return none for out of range
             }
         });
@@ -255,7 +390,7 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                 throw std::runtime_error("Expected 1 argument but got " + std::to_string(args.size()) + ".");
             }
             
-            if (!args[0].isNumber()) {
+            if (!args[0].isNumeric()) {
                 if (errorReporter) {
                     errorReporter->reportError(line, column, "StdLib Error", 
                         "toInt() can only be used on numbers", "", true);
@@ -264,8 +399,26 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             }
             
             // Convert to integer by truncating (same as | 0)
-            double value = args[0].asNumber();
-            return Value(static_cast<double>(static_cast<long long>(value)));
+            if (args[0].isInteger()) {
+                return args[0]; // Already an integer
+            } else if (args[0].isBigInt()) {
+                // For BigInt, check if it fits in long long range
+                const GMPWrapper::BigInt& bigint = args[0].asBigInt();
+                if (bigint.fitsInLongLong()) {
+                    return Value(bigint.toLongLong());
+                } else {
+                    // If it doesn't fit, truncate to long long max/min
+                    if (bigint < GMPWrapper::BigInt(0)) {
+                        return Value(LLONG_MIN);
+                    } else {
+                        return Value(LLONG_MAX);
+                    }
+                }
+            } else {
+                // For numbers (doubles), truncate to long long
+                double value = args[0].asNumber();
+                return Value(static_cast<long long>(value));
+            }
         });
     env->define("toInt", Value(toIntFunc));
     

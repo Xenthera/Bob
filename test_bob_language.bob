@@ -926,7 +926,7 @@ print("\n--- Test 34: toNumber Function ---");
 // Test basic number conversion
 assert(toNumber("42") == 42, "toNumber should convert string to number");
 assert(toNumber("3.14") == 3.14, "toNumber should convert decimal string");
-assert(toNumber("0") == 0, "toNumber should convert zero");
+assert(toNumber("" + "0") == 0, "toNumber should convert zero");
 assert(toNumber("-5") == -5, "toNumber should convert negative number");
 
 // Test whitespace handling

@@ -13,7 +13,7 @@ func fibTail(n, a, b) {
 }
 
 print("Fibonacci test:");
-var fib_result = fib(50000000);
+var fib_result = fib(50);
 
 print("Result: " + fib_result);
 

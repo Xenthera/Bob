@@ -96,6 +96,43 @@ namespace GMPWrapper {
             return result;
         }
         
+        // Bitwise operations
+        BigInt operator&(const BigInt& other) const {
+            BigInt result;
+            mpz_and(result.value, value, other.value);
+            return result;
+        }
+        
+        BigInt operator|(const BigInt& other) const {
+            BigInt result;
+            mpz_ior(result.value, value, other.value);
+            return result;
+        }
+        
+        BigInt operator^(const BigInt& other) const {
+            BigInt result;
+            mpz_xor(result.value, value, other.value);
+            return result;
+        }
+        
+        BigInt operator~() const {
+            BigInt result;
+            mpz_com(result.value, value);
+            return result;
+        }
+        
+        BigInt operator<<(unsigned long shift) const {
+            BigInt result;
+            mpz_mul_2exp(result.value, value, shift);
+            return result;
+        }
+        
+        BigInt operator>>(unsigned long shift) const {
+            BigInt result;
+            mpz_fdiv_q_2exp(result.value, value, shift);
+            return result;
+        }
+        
         // Comparison operators
         bool operator==(const BigInt& other) const {
             return mpz_cmp(value, other.value) == 0;

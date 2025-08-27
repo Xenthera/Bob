@@ -47,4 +47,5 @@ public:
 
 private:
     void execute(const std::shared_ptr<Stmt>& statement, ExecutionContext* context);
+    bool fastPathSimpleLoop(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context);
 };

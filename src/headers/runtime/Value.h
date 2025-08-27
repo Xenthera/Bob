@@ -10,6 +10,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <algorithm>
+#include <iostream>
 
 // Forward declarations
 struct Environment;
@@ -192,6 +193,16 @@ struct Value {
     inline bool isNone() const { return type == ValueType::VAL_NONE; }
     inline bool isInteger() const { return type == ValueType::VAL_INTEGER; }
     inline bool isBigInt() const { return type == ValueType::VAL_BIGINT; }
+    inline bool isNumeric() const { return type == ValueType::VAL_NUMBER || type == ValueType::VAL_INTEGER || type == ValueType::VAL_BIGINT; }
+    
+    // Preprocessor method to automatically downgrade BigInt to regular integer if possible
+    // (Kept for backward compatibility, but now we have full BigInt bitwise support)
+    inline Value preprocessForBitwise() const {
+        if (isBigInt() && bigint_value->fitsInLongLong()) {
+            return Value(bigint_value->toLongLong());
+        }
+        return *this;
+    }
 
     // Get type name as string for error messages
     inline std::string getType() const {
@@ -258,6 +269,59 @@ struct Value {
 
     // Equality comparison - inline for performance
     inline bool equals(const Value& other) const {
+        // Special handling for numeric types - allow cross-type comparison
+        if (isNumeric() && other.isNumeric()) {
+            if (isInteger() && other.isInteger()) {
+                return integer == other.integer;
+            }
+            if (isNumber() && other.isNumber()) {
+                return number == other.number;
+            }
+            if (isInteger() && other.isNumber()) {
+                return static_cast<double>(integer) == other.number;
+            }
+            if (isNumber() && other.isInteger()) {
+                return number == static_cast<double>(other.integer);
+            }
+            if (isBigInt() && other.isBigInt()) {
+                return *bigint_value == *other.bigint_value;
+            }
+            // For mixed bigint comparisons, convert appropriately
+            if (isBigInt() && other.isInteger()) {
+                return *bigint_value == GMPWrapper::BigInt::fromLongLong(other.integer);
+            }
+            if (isInteger() && other.isBigInt()) {
+                return GMPWrapper::BigInt::fromLongLong(integer) == *other.bigint_value;
+            }
+            if (isBigInt() && other.isNumber()) {
+                return *bigint_value == GMPWrapper::doubleToBigInt(other.number);
+            }
+            if (isNumber() && other.isBigInt()) {
+                return GMPWrapper::doubleToBigInt(number) == *other.bigint_value;
+            }
+        }
+        
+        // JavaScript-like truthiness comparison
+        if (isBoolean() && other.isNumeric()) {
+            if (other.isInteger()) {
+                return (boolean && other.integer != 0) || (!boolean && other.integer == 0);
+            } else if (other.isNumber()) {
+                return (boolean && other.number != 0.0) || (!boolean && other.number == 0.0);
+            } else if (other.isBigInt()) {
+                return (boolean && *other.bigint_value != GMPWrapper::BigInt(0)) || (!boolean && *other.bigint_value == GMPWrapper::BigInt(0));
+            }
+        }
+        
+        if (isNumeric() && other.isBoolean()) {
+            if (isInteger()) {
+                return (other.boolean && integer != 0) || (!other.boolean && integer == 0);
+            } else if (isNumber()) {
+                return (other.boolean && number != 0.0) || (!other.boolean && number == 0.0);
+            } else if (isBigInt()) {
+                return (other.boolean && *bigint_value != GMPWrapper::BigInt(0)) || (!other.boolean && *bigint_value == GMPWrapper::BigInt(0));
+            }
+        }
+        
         if (type != other.type) return false;
         
         switch (type) {
@@ -357,7 +421,148 @@ struct Value {
         return !equals(other);
     }
 
-    // Fast path for common integer operations
+    // Comparison operators
+    bool operator<(const Value& other) const {
+        // Special handling for numeric types - allow cross-type comparison
+        if (isNumeric() && other.isNumeric()) {
+            if (isInteger() && other.isInteger()) {
+                return integer < other.integer;
+            }
+            if (isNumber() && other.isNumber()) {
+                return number < other.number;
+            }
+            if (isInteger() && other.isNumber()) {
+                return static_cast<double>(integer) < other.number;
+            }
+            if (isNumber() && other.isInteger()) {
+                return number < static_cast<double>(other.integer);
+            }
+            if (isBigInt() && other.isBigInt()) {
+                return *bigint_value < *other.bigint_value;
+            }
+            // For mixed bigint comparisons, convert appropriately
+            if (isBigInt() && other.isInteger()) {
+                return *bigint_value < GMPWrapper::BigInt::fromLongLong(other.integer);
+            }
+            if (isInteger() && other.isBigInt()) {
+                return GMPWrapper::BigInt::fromLongLong(integer) < *other.bigint_value;
+            }
+            if (isBigInt() && other.isNumber()) {
+                return *bigint_value < GMPWrapper::doubleToBigInt(other.number);
+            }
+            if (isNumber() && other.isBigInt()) {
+                return GMPWrapper::doubleToBigInt(number) < *other.bigint_value;
+            }
+        }
+        throw std::runtime_error(ErrorUtils::makeOperatorError("<", getType(), other.getType()));
+    }
+
+    bool operator<=(const Value& other) const {
+        // Special handling for numeric types - allow cross-type comparison
+        if (isNumeric() && other.isNumeric()) {
+            if (isInteger() && other.isInteger()) {
+                return integer <= other.integer;
+            }
+            if (isNumber() && other.isNumber()) {
+                return number <= other.number;
+            }
+            if (isInteger() && other.isNumber()) {
+                return static_cast<double>(integer) <= other.number;
+            }
+            if (isNumber() && other.isInteger()) {
+                return number <= static_cast<double>(other.integer);
+            }
+            if (isBigInt() && other.isBigInt()) {
+                return *bigint_value <= *other.bigint_value;
+            }
+            // For mixed bigint comparisons, convert appropriately
+            if (isBigInt() && other.isInteger()) {
+                return *bigint_value <= GMPWrapper::BigInt::fromLongLong(other.integer);
+            }
+            if (isInteger() && other.isBigInt()) {
+                return GMPWrapper::BigInt::fromLongLong(integer) <= *other.bigint_value;
+            }
+            if (isBigInt() && other.isNumber()) {
+                return *bigint_value <= GMPWrapper::doubleToBigInt(other.number);
+            }
+            if (isNumber() && other.isBigInt()) {
+                return GMPWrapper::doubleToBigInt(number) <= *other.bigint_value;
+            }
+        }
+        throw std::runtime_error(ErrorUtils::makeOperatorError("<=", getType(), other.getType()));
+    }
+
+    bool operator>(const Value& other) const {
+        // Special handling for numeric types - allow cross-type comparison
+        if (isNumeric() && other.isNumeric()) {
+            if (isInteger() && other.isInteger()) {
+                return integer > other.integer;
+            }
+            if (isNumber() && other.isNumber()) {
+                return number > other.number;
+            }
+            if (isInteger() && other.isNumber()) {
+                return static_cast<double>(integer) > other.number;
+            }
+            if (isNumber() && other.isInteger()) {
+                return number > static_cast<double>(other.integer);
+            }
+            if (isBigInt() && other.isBigInt()) {
+                return *bigint_value > *other.bigint_value;
+            }
+            // For mixed bigint comparisons, convert appropriately
+            if (isBigInt() && other.isInteger()) {
+                return *bigint_value > GMPWrapper::BigInt::fromLongLong(other.integer);
+            }
+            if (isInteger() && other.isBigInt()) {
+                return GMPWrapper::BigInt::fromLongLong(integer) > *other.bigint_value;
+            }
+            if (isBigInt() && other.isNumber()) {
+                return *bigint_value > GMPWrapper::doubleToBigInt(other.number);
+            }
+            if (isNumber() && other.isBigInt()) {
+                return GMPWrapper::doubleToBigInt(number) > *other.bigint_value;
+            }
+        }
+        throw std::runtime_error(ErrorUtils::makeOperatorError(">", getType(), other.getType()));
+    }
+
+    bool operator>=(const Value& other) const {
+        // Special handling for numeric types - allow cross-type comparison
+        if (isNumeric() && other.isNumeric()) {
+            if (isInteger() && other.isInteger()) {
+                return integer >= other.integer;
+            }
+            if (isNumber() && other.isNumber()) {
+                return number >= other.number;
+            }
+            if (isInteger() && other.isNumber()) {
+                return static_cast<double>(integer) >= other.number;
+            }
+            if (isNumber() && other.isInteger()) {
+                return number >= static_cast<double>(other.integer);
+            }
+            if (isBigInt() && other.isBigInt()) {
+                return *bigint_value >= *other.bigint_value;
+            }
+            // For mixed bigint comparisons, convert appropriately
+            if (isBigInt() && other.isInteger()) {
+                return *bigint_value >= GMPWrapper::BigInt::fromLongLong(other.integer);
+            }
+            if (isInteger() && other.isBigInt()) {
+                return GMPWrapper::BigInt::fromLongLong(integer) >= *other.bigint_value;
+            }
+            if (isBigInt() && other.isNumber()) {
+                return *bigint_value >= GMPWrapper::doubleToBigInt(other.number);
+            }
+            if (isNumber() && other.isBigInt()) {
+                return GMPWrapper::doubleToBigInt(number) >= *other.bigint_value;
+            }
+        }
+        throw std::runtime_error(ErrorUtils::makeOperatorError(">=", getType(), other.getType()));
+    }
+
+    // Fast path for common integer operations (deprecated - using regular operators now)
     static Value fastIntegerAdd(long long a, long long b) {
         long long result = a + b;
         // Check for overflow
@@ -383,21 +588,84 @@ struct Value {
     static Value fastIntegerMul(long long a, long long b) {
         // Check for overflow in multiplication
         if (a != 0 && b != 0) {
-            long long result = a * b;
-            if (result / a != b) {
+            // More robust overflow detection
+            if (a > 0 && b > 0 && a > LLONG_MAX / b) {
                 // Overflow occurred, promote to bigint
                 return Value(GMPWrapper::BigInt::fromLongLong(a) * GMPWrapper::BigInt::fromLongLong(b));
             }
+            if (a < 0 && b < 0 && a < LLONG_MAX / b) {
+                // Overflow occurred, promote to bigint
+                return Value(GMPWrapper::BigInt::fromLongLong(a) * GMPWrapper::BigInt::fromLongLong(b));
+            }
+            if (a > 0 && b < 0 && b < LLONG_MIN / a) {
+                // Overflow occurred, promote to bigint
+                return Value(GMPWrapper::BigInt::fromLongLong(a) * GMPWrapper::BigInt::fromLongLong(b));
+            }
+            if (a < 0 && b > 0 && a < LLONG_MIN / b) {
+                // Overflow occurred, promote to bigint
+                return Value(GMPWrapper::BigInt::fromLongLong(a) * GMPWrapper::BigInt::fromLongLong(b));
+            }
+            long long result = a * b;
             return Value(result);
         }
         return Value(0LL);
     }
     
+    // Helper function to handle integer overflow and promote to BigInt when needed
+    static Value handleIntegerOverflow(long long a, long long b, char operation) {
+        long long result;
+        bool overflow = false;
+        
+        switch (operation) {
+            case '+':
+                // Check for addition overflow
+                if (b > 0 && a > LLONG_MAX - b) overflow = true;
+                else if (b < 0 && a < LLONG_MIN - b) overflow = true;
+                else result = a + b;
+                break;
+            case '-':
+                // Check for subtraction overflow
+                if (b < 0 && a > LLONG_MAX + b) overflow = true;
+                else if (b > 0 && a < LLONG_MIN + b) overflow = true;
+                else result = a - b;
+                break;
+            case '*':
+                // Check for multiplication overflow
+                if (a != 0 && b != 0) {
+                    if (a > 0 && b > 0 && a > LLONG_MAX / b) overflow = true;
+                    else if (a > 0 && b < 0 && b < LLONG_MIN / a) overflow = true;
+                    else if (a < 0 && b > 0 && a < LLONG_MIN / b) overflow = true;
+                    else if (a < 0 && b < 0 && a < LLONG_MAX / b) overflow = true;
+                    else result = a * b;
+                } else {
+                    result = 0;
+                }
+                break;
+            default:
+                result = 0LL; // Shouldn't happen
+        }
+        
+        if (overflow) {
+            // Promote to BigInt to handle overflow
+            GMPWrapper::BigInt big_a = GMPWrapper::BigInt::fromLongLong(a);
+            GMPWrapper::BigInt big_b = GMPWrapper::BigInt::fromLongLong(b);
+            
+            switch (operation) {
+                case '+': return Value(big_a + big_b);
+                case '-': return Value(big_a - big_b);
+                case '*': return Value(big_a * big_b);
+                default: return Value(0LL);
+            }
+        }
+        
+        return Value(result);
+    }
+
     // Arithmetic operators
     Value operator+(const Value& other) const {
-        // Integer + Integer (fast native operations)
+        // Integer + Integer (fast native operations with overflow detection)
         if (isInteger() && other.isInteger()) {
-            return fastIntegerAdd(integer, other.integer);
+            return handleIntegerOverflow(integer, other.integer, '+');
         }
         
         // Number + Number (existing logic)
@@ -430,6 +698,33 @@ struct Value {
             GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
             return Value(*bigint_value + other_bigint);
         }
+        if (isInteger() && other.isNumber()) {
+            // Convert integer to double and add
+            double result = static_cast<double>(integer) + other.number;
+            // Check if result is actually an integer that fits in long long
+            if (result == std::floor(result) && result >= LLONG_MIN && result <= LLONG_MAX) {
+                return Value(static_cast<long long>(result));
+            }
+            return Value(result);
+        }
+        if (isNumber() && other.isInteger()) {
+            // For large integers, avoid double precision loss by doing integer arithmetic
+            if (other.integer > 9007199254740991LL || other.integer < -9007199254740991LL) {
+                // Convert double to long long if it's a whole number, otherwise keep as double
+                if (number == std::floor(number) && number >= LLONG_MIN && number <= LLONG_MAX) {
+                    long long num_int = static_cast<long long>(number);
+                    long long result = num_int + other.integer;
+                    return Value(result);
+                }
+            }
+            // Convert other integer to double and add
+            double result = number + static_cast<double>(other.integer);
+            // Check if result is actually an integer that fits in long long
+            if (result == std::floor(result) && result >= LLONG_MIN && result <= LLONG_MAX) {
+                return Value(static_cast<long long>(result));
+            }
+            return Value(result);
+        }
         if (isString() && other.isString()) {
             return Value(string_value + other.string_value);
         }
@@ -456,9 +751,9 @@ struct Value {
     }
 
     Value operator-(const Value& other) const {
-        // Integer - Integer (fast native operations)
+        // Integer - Integer (fast native operations with overflow detection)
         if (isInteger() && other.isInteger()) {
-            return fastIntegerSub(integer, other.integer);
+            return handleIntegerOverflow(integer, other.integer, '-');
         }
         
         // Number - Number (existing logic)
@@ -491,13 +786,21 @@ struct Value {
             GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
             return Value(*bigint_value - other_bigint);
         }
+        if (isInteger() && other.isNumber()) {
+            // Convert integer to double and subtract
+            return Value(static_cast<double>(integer) - other.number);
+        }
+        if (isNumber() && other.isInteger()) {
+            // Convert other integer to double and subtract
+            return Value(number - static_cast<double>(other.integer));
+        }
         throw std::runtime_error(ErrorUtils::makeOperatorError("-", getType(), other.getType()));
     }
 
     Value operator*(const Value& other) const {
-        // Integer * Integer (fast native operations)
+        // Integer * Integer (fast native operations with overflow detection)
         if (isInteger() && other.isInteger()) {
-            return fastIntegerMul(integer, other.integer);
+            return handleIntegerOverflow(integer, other.integer, '*');
         }
         
         // Number * Number (existing logic)
@@ -532,9 +835,24 @@ struct Value {
             GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
             return Value(*bigint_value * other_bigint);
         }
+        if (isInteger() && other.isNumber()) {
+            // Convert integer to double and multiply
+            return Value(static_cast<double>(integer) * other.number);
+        }
+        if (isNumber() && other.isInteger()) {
+            // Convert other integer to double and multiply
+            return Value(number * static_cast<double>(other.integer));
+        }
         if (isString() && other.isNumber()) {
             std::string result;
             for (int i = 0; i < static_cast<int>(other.number); ++i) {
+                result += string_value;
+            }
+            return Value(result);
+        }
+        if (isString() && other.isInteger()) {
+            std::string result;
+            for (int i = 0; i < static_cast<int>(other.integer); ++i) {
                 result += string_value;
             }
             return Value(result);
@@ -546,10 +864,24 @@ struct Value {
             }
             return Value(result);
         }
+        if (isInteger() && other.isString()) {
+            std::string result;
+            for (int i = 0; i < static_cast<int>(integer); ++i) {
+                result += other.string_value;
+            }
+            return Value(result);
+        }
         throw std::runtime_error(ErrorUtils::makeOperatorError("*", getType(), other.getType()));
     }
 
     Value operator/(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            if (other.integer == 0) {
+                throw std::runtime_error("Division by zero");
+            }
+            // Integer division - convert to double for result
+            return Value(static_cast<double>(integer) / static_cast<double>(other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             if (other.number == 0) {
                 throw std::runtime_error("Division by zero");
@@ -574,10 +906,34 @@ struct Value {
             GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
             return Value(*bigint_value / other_bigint);
         }
+        if (isInteger() && other.isNumber()) {
+            // Convert integer to double and divide
+            return Value(static_cast<double>(integer) / other.number);
+        }
+        if (isNumber() && other.isInteger()) {
+            // Convert other integer to double and divide
+            return Value(number / static_cast<double>(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            // Convert integer to bigint and divide
+            GMPWrapper::BigInt int_bigint = GMPWrapper::BigInt::fromLongLong(integer);
+            return Value(int_bigint / *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            // Convert other integer to bigint and divide
+            GMPWrapper::BigInt other_bigint = GMPWrapper::BigInt::fromLongLong(other.integer);
+            return Value(*bigint_value / other_bigint);
+        }
         throw std::runtime_error(ErrorUtils::makeOperatorError("/", getType(), other.getType()));
     }
 
     Value operator%(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            if (other.integer == 0) {
+                throw std::runtime_error("Modulo by zero");
+            }
+            return Value(integer % other.integer);
+        }
         if (isNumber() && other.isNumber()) {
             double result = fmod(number, other.number);
             // Auto-promote to bigint if needed
@@ -599,40 +955,208 @@ struct Value {
             GMPWrapper::BigInt other_bigint = GMPWrapper::doubleToBigInt(other.number);
             return Value(*bigint_value % other_bigint);
         }
+        if (isInteger() && other.isNumber()) {
+            // Convert integer to double and modulo
+            return Value(fmod(static_cast<double>(integer), other.number));
+        }
+        if (isNumber() && other.isInteger()) {
+            // Convert other integer to double and modulo
+            return Value(fmod(number, static_cast<double>(other.integer)));
+        }
+        if (isInteger() && other.isBigInt()) {
+            // Convert integer to bigint and modulo
+            GMPWrapper::BigInt int_bigint = GMPWrapper::BigInt::fromLongLong(integer);
+            return Value(int_bigint % *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            // Convert other integer to bigint and modulo
+            GMPWrapper::BigInt other_bigint = GMPWrapper::BigInt::fromLongLong(other.integer);
+            return Value(*bigint_value % other_bigint);
+        }
         throw std::runtime_error(ErrorUtils::makeOperatorError("%", getType(), other.getType()));
     }
 
     Value operator&(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            return Value(static_cast<long long>(integer & other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) & static_cast<long>(other.number)));
+        }
+        if (isInteger() && other.isNumber()) {
+            return Value(static_cast<long long>(integer & static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isInteger()) {
+            return Value(static_cast<long long>(static_cast<long long>(number) & other.integer));
+        }
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value & *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value & GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) & *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            return Value(*bigint_value & GMPWrapper::BigInt::fromLongLong(static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(static_cast<long long>(number)) & *other.bigint_value);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("&", getType(), other.getType()));
     }
 
     Value operator|(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            return Value(static_cast<long long>(integer | other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) | static_cast<long>(other.number)));
+        }
+        if (isInteger() && other.isNumber()) {
+            return Value(static_cast<long long>(integer | static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isInteger()) {
+            return Value(static_cast<long long>(static_cast<long long>(number) | other.integer));
+        }
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value | *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value | GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) | *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            return Value(*bigint_value | GMPWrapper::BigInt::fromLongLong(static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(static_cast<long long>(number)) | *other.bigint_value);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("|", getType(), other.getType()));
     }
 
     Value operator^(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            return Value(static_cast<long long>(integer ^ other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) ^ static_cast<long>(other.number)));
+        }
+        if (isInteger() && other.isNumber()) {
+            return Value(static_cast<long long>(integer ^ static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isInteger()) {
+            return Value(static_cast<long long>(static_cast<long long>(number) ^ other.integer));
+        }
+        if (isBigInt() && other.isBigInt()) {
+            return Value(*bigint_value ^ *other.bigint_value);
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value ^ GMPWrapper::BigInt::fromLongLong(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(integer) ^ *other.bigint_value);
+        }
+        if (isBigInt() && other.isNumber()) {
+            return Value(*bigint_value ^ GMPWrapper::BigInt::fromLongLong(static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isBigInt()) {
+            return Value(GMPWrapper::BigInt::fromLongLong(static_cast<long long>(number)) ^ *other.bigint_value);
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("^", getType(), other.getType()));
     }
 
     Value operator<<(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            return Value(static_cast<long long>(integer << other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) << static_cast<long>(other.number)));
+        }
+        if (isInteger() && other.isNumber()) {
+            return Value(static_cast<long long>(integer << static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isInteger()) {
+            return Value(static_cast<long long>(static_cast<long long>(number) << other.integer));
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value << static_cast<unsigned long>(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            // For shift operations, we need to check if the shift amount fits in unsigned long
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(GMPWrapper::BigInt::fromLongLong(integer) << static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
+        }
+        if (isBigInt() && other.isBigInt()) {
+            // For shift operations, we need to check if the shift amount fits in unsigned long
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(*bigint_value << static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
+        }
+        if (isBigInt() && other.isNumber()) {
+            long long shift = static_cast<long long>(other.number);
+            if (shift >= 0) {
+                return Value(*bigint_value << static_cast<unsigned long>(shift));
+            }
+            throw std::runtime_error("Negative shift amount not allowed");
+        }
+        if (isNumber() && other.isBigInt()) {
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(GMPWrapper::BigInt::fromLongLong(static_cast<long long>(number)) << static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError("<<", getType(), other.getType()));
     }
 
     Value operator>>(const Value& other) const {
+        if (isInteger() && other.isInteger()) {
+            return Value(static_cast<long long>(integer >> other.integer));
+        }
         if (isNumber() && other.isNumber()) {
             return Value(static_cast<double>(static_cast<long>(number) >> static_cast<long>(other.number)));
+        }
+        if (isInteger() && other.isNumber()) {
+            return Value(static_cast<long long>(integer >> static_cast<long long>(other.number)));
+        }
+        if (isNumber() && other.isInteger()) {
+            return Value(static_cast<long long>(static_cast<long long>(number) >> other.integer));
+        }
+        if (isBigInt() && other.isInteger()) {
+            return Value(*bigint_value >> static_cast<unsigned long>(other.integer));
+        }
+        if (isInteger() && other.isBigInt()) {
+            // For shift operations, we need to check if the shift amount fits in unsigned long
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(GMPWrapper::BigInt::fromLongLong(integer) >> static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
+        }
+        if (isBigInt() && other.isBigInt()) {
+            // For shift operations, we need to check if the shift amount fits in unsigned long
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(*bigint_value >> static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
+        }
+        if (isBigInt() && other.isNumber()) {
+            long long shift = static_cast<long long>(other.number);
+            if (shift >= 0) {
+                return Value(*bigint_value >> static_cast<unsigned long>(shift));
+            }
+            throw std::runtime_error("Negative shift amount not allowed");
+        }
+        if (isNumber() && other.isBigInt()) {
+            if (other.bigint_value->fitsInLongLong() && other.bigint_value->toLongLong() >= 0) {
+                return Value(GMPWrapper::BigInt::fromLongLong(static_cast<long long>(number)) >> static_cast<unsigned long>(other.bigint_value->toLongLong()));
+            }
+            throw std::runtime_error("Shift amount too large for BigInt operations");
         }
         throw std::runtime_error(ErrorUtils::makeOperatorError(">>", getType(), other.getType()));
     }

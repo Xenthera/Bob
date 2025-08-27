@@ -7,7 +7,7 @@ Bob is a mature, working programming language with a modern architecture and com
 ### ✅ **Core Language Features (Complete)**
 
 #### **Data Types & Variables**
-- **Numbers**: Integers, floats, automatic conversion
+- **Numbers**: Integers, floats, BigInt (arbitrary-precision), automatic type promotion
 - **Strings**: Literals, concatenation, multiplication, escape sequences
 - **Booleans**: `true`, `false`
 - **None**: Null value representation
@@ -21,7 +21,7 @@ Bob is a mature, working programming language with a modern architecture and com
 - **Arithmetic**: `+`, `-`, `*`, `/`, `%`, unary `-`
 - **Comparison**: `==`, `!=`, `>`, `<`, `>=`, `<=`
 - **Logical**: `&&`, `||`, `!` (with short-circuit evaluation)
-- **Bitwise**: `&`, `|`, `^`, `<<`, `>>`, `~`
+- **Bitwise**: `&`, `|`, `^`, `<<`, `>>`, `~` (full BigInt support with Python-like behavior)
 - **Compound Assignment**: `+=`, `-=`, `*=`, `/=`, `%=`, `&=`, `|=`, `^=`, `<<=`, `>>=`
 - **Ternary**: `condition ? valueIfTrue : valueIfFalse`
 - **Increment/Decrement**: `++`, `--` (for array elements)
@@ -53,7 +53,7 @@ Bob is a mature, working programming language with a modern architecture and com
 
 #### **Standard Library (Complete)**
 - **I/O Functions**: `print()`, `printRaw()`, `input()`
-- **Type System**: `type()`, `toString()`, `toNumber()`, `toInt()`, `toBoolean()`
+- **Type System**: `type()`, `toString()`, `toNumber()`, `toInt()`, `toBoolean()` (supports BigInt)
 - **Testing**: `assert()` with custom error messages
 - **Timing**: `time()` (microsecond precision), `sleep()`
 - **Utility**: `rand.random()` (properly seeded), `eval.eval()`, `sys.exit()`
@@ -286,6 +286,13 @@ async func fetchData() {
 - **[Crafting Interpreters](https://craftinginterpreters.com/)** - Helpful book for language implementation
 
 ## **Recent Work**
+
+### **BigInt & Bitwise Operations Enhancement (2025)**
+- **Full BigInt Support**: Added arbitrary-precision integers with no size limitations
+- **Python-like Bitwise Operations**: Complete bitwise support for BigInt values
+- **Automatic Type Promotion**: Seamless conversion between integer, number, and BigInt types
+- **GMP Integration**: Efficient implementation using GNU Multiple Precision Arithmetic Library
+- **Comprehensive Testing**: Verified all operations work correctly with extensive test suite
 
 ### **Architecture Cleanup (2025)**
 - Split the interpreter into separate components (Evaluator/Executor/RuntimeDiagnostics)

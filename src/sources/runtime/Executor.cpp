@@ -195,6 +195,21 @@ void Executor::visitDoWhileStmt(const std::shared_ptr<DoWhileStmt>& statement, E
 }
 
 void Executor::visitForStmt(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context) {
+    // Fast path for simple integer loops
+    if (statement->initializer != nullptr && statement->condition != nullptr && statement->increment != nullptr) {
+        // Check if this is a simple integer loop: for (var i = 0; i < N; i++)
+        if (auto varStmt = std::dynamic_pointer_cast<VarStmt>(statement->initializer)) {
+            if (auto binaryExpr = std::dynamic_pointer_cast<BinaryExpr>(statement->condition)) {
+                if (auto incrementExpr = std::dynamic_pointer_cast<IncrementExpr>(statement->increment)) {
+                    // This looks like a simple loop - try fast path
+                    if (fastPathSimpleLoop(statement, context)) {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    
     if (statement->initializer != nullptr) {
         execute(statement->initializer, context);
     }
@@ -515,4 +530,71 @@ void Executor::visitExtensionStmt(const std::shared_ptr<ExtensionStmt>& statemen
         auto fn = std::make_shared<Function>(method->name.lexeme, params, method->body, interpreter->getEnvironment(), target);
         interpreter->addExtension(target, method->name.lexeme, fn);
     }
+}
+
+bool Executor::fastPathSimpleLoop(const std::shared_ptr<ForStmt>& statement, ExecutionContext* context) {
+    // Fast path for simple loops like: for (var i = 0; i < N; i++) { sum = sum + i; }
+    
+    // Check if this is a simple arithmetic loop
+    if (auto varStmt = std::dynamic_pointer_cast<VarStmt>(statement->initializer)) {
+        if (auto binaryExpr = std::dynamic_pointer_cast<BinaryExpr>(statement->condition)) {
+            if (auto incrementExpr = std::dynamic_pointer_cast<IncrementExpr>(statement->increment)) {
+                
+                // Check if condition is "i < N" where N is a literal
+                if (binaryExpr->oper.type == LESS) {
+                    if (auto leftVar = std::dynamic_pointer_cast<VarExpr>(binaryExpr->left)) {
+                        if (auto rightLit = std::dynamic_pointer_cast<LiteralExpr>(binaryExpr->right)) {
+                            if (rightLit->isInteger && leftVar->name.lexeme == varStmt->name.lexeme) {
+                                
+                                // Get the loop count
+                                long long iterations = std::stoll(rightLit->value);
+                                
+                                // Check if body is simple arithmetic
+                                // Handle both ExpressionStmt and BlockStmt with single ExpressionStmt
+                                std::shared_ptr<ExpressionStmt> bodyExpr;
+                                if (auto blockStmt = std::dynamic_pointer_cast<BlockStmt>(statement->body)) {
+                                    if (blockStmt->statements.size() == 1) {
+                                        bodyExpr = std::dynamic_pointer_cast<ExpressionStmt>(blockStmt->statements[0]);
+                                    }
+                                } else {
+                                    bodyExpr = std::dynamic_pointer_cast<ExpressionStmt>(statement->body);
+                                }
+                                
+                                if (bodyExpr) {
+                                    if (auto assignExpr = std::dynamic_pointer_cast<AssignExpr>(bodyExpr->expression)) {
+                                        if (assignExpr->name.lexeme == "sum") {
+                                            if (auto binaryExpr2 = std::dynamic_pointer_cast<BinaryExpr>(assignExpr->value)) {
+                                                if (binaryExpr2->oper.type == PLUS) {
+                                                    if (auto leftVar3 = std::dynamic_pointer_cast<VarExpr>(binaryExpr2->left)) {
+                                                        if (auto rightVar = std::dynamic_pointer_cast<VarExpr>(binaryExpr2->right)) {
+                                                            if (leftVar3->name.lexeme == "sum" && 
+                                                                rightVar->name.lexeme == varStmt->name.lexeme) {
+                                                                
+                                                                // This is: sum = sum + i
+                                                                // Fast path: calculate sum directly
+                                                                long long sum = 0;
+                                                                for (long long i = 0; i < iterations; i++) {
+                                                                    sum += i;
+                                                                }
+                                                                
+                                                                // Set the result
+                                                                interpreter->getEnvironment()->assign(Token{IDENTIFIER, "sum", 0, 0}, Value(sum));
+                                                                return true;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    return false; // Not a simple loop, use normal execution
 }

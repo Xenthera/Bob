@@ -51,19 +51,25 @@ Value Evaluator::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 
     switch (expression->oper.type) {
         case MINUS:
-            if (!right.isNumber()) {
-                throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
+            if (right.isInteger()) {
+                return Value(-right.asInteger());
             }
-            return Value(-right.asNumber());
+            if (right.isNumber()) {
+                return Value(-right.asNumber());
+            }
+            throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
 
         case BANG:
             return Value(!interpreter->isTruthy(right));
 
         case BIN_NOT:
-            if (!right.isNumber()) {
-                throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
+            if (right.isInteger()) {
+                return Value(static_cast<long long>(~right.asInteger()));
             }
-            return Value(static_cast<double>(~(static_cast<long>(right.asNumber()))));
+            if (right.isNumber()) {
+                return Value(static_cast<double>(~(static_cast<long>(right.asNumber()))));
+            }
+            throw std::runtime_error("Operand must be a number when using: " + expression->oper.lexeme);
 
         default:
             interpreter->reportError(expression->oper.line, expression->oper.column, "Runtime Error", 
@@ -73,24 +79,6 @@ Value Evaluator::visitUnaryExpr(const std::shared_ptr<UnaryExpr>& expression)
 }
 
 Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) {
-    // Fast path for common integer operations
-    if (expression->oper.type == PLUS || expression->oper.type == MINUS) {
-        // Try to evaluate left and right directly for integers
-        if (auto leftLit = std::dynamic_pointer_cast<LiteralExpr>(expression->left)) {
-            if (auto rightLit = std::dynamic_pointer_cast<LiteralExpr>(expression->right)) {
-                if (leftLit->isInteger && rightLit->isInteger) {
-                    long long leftVal = std::stoll(leftLit->value);
-                    long long rightVal = std::stoll(rightLit->value);
-                    if (expression->oper.type == PLUS) {
-                        return Value::fastIntegerAdd(leftVal, rightVal);
-                    } else if (expression->oper.type == MINUS) {
-                        return Value::fastIntegerSub(leftVal, rightVal);
-                    }
-                }
-            }
-        }
-    }
-    
     Value left = interpreter->evaluate(expression->left);
     Value right = interpreter->evaluate(expression->right);
 
@@ -138,6 +126,85 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             }
         }
         
+        // Mixed integer/number comparisons
+        if (left.isInteger() && right.isNumber()) {
+            double leftNum = static_cast<double>(left.asInteger());
+            double rightNum = right.asNumber();
+            
+            switch (expression->oper.type) {
+                case GREATER: return Value(leftNum > rightNum);
+                case GREATER_EQUAL: return Value(leftNum >= rightNum);
+                case LESS: return Value(leftNum < rightNum);
+                case LESS_EQUAL: return Value(leftNum <= rightNum);
+                default: break; // Unreachable
+            }
+        }
+        
+        if (left.isNumber() && right.isInteger()) {
+            double leftNum = left.asNumber();
+            double rightNum = static_cast<double>(right.asInteger());
+            
+            switch (expression->oper.type) {
+                case GREATER: return Value(leftNum > rightNum);
+                case GREATER_EQUAL: return Value(leftNum >= rightNum);
+                case LESS: return Value(leftNum < rightNum);
+                case LESS_EQUAL: return Value(leftNum <= rightNum);
+                default: break; // Unreachable
+            }
+        }
+        
+        // BigInt comparisons
+        if (left.isBigInt() && right.isBigInt()) {
+            switch (expression->oper.type) {
+                case GREATER: return Value(left.asBigInt() > right.asBigInt());
+                case GREATER_EQUAL: return Value(left.asBigInt() >= right.asBigInt());
+                case LESS: return Value(left.asBigInt() < right.asBigInt());
+                case LESS_EQUAL: return Value(left.asBigInt() <= right.asBigInt());
+                default: break; // Unreachable
+            }
+        }
+        
+        // Mixed BigInt comparisons
+        if (left.isBigInt() && right.isInteger()) {
+            switch (expression->oper.type) {
+                case GREATER: return Value(left.asBigInt() > GMPWrapper::BigInt::fromLongLong(right.asInteger()));
+                case GREATER_EQUAL: return Value(left.asBigInt() >= GMPWrapper::BigInt::fromLongLong(right.asInteger()));
+                case LESS: return Value(left.asBigInt() < GMPWrapper::BigInt::fromLongLong(right.asInteger()));
+                case LESS_EQUAL: return Value(left.asBigInt() <= GMPWrapper::BigInt::fromLongLong(right.asInteger()));
+                default: break; // Unreachable
+            }
+        }
+        
+        if (left.isInteger() && right.isBigInt()) {
+            switch (expression->oper.type) {
+                case GREATER: return Value(GMPWrapper::BigInt::fromLongLong(left.asInteger()) > right.asBigInt());
+                case GREATER_EQUAL: return Value(GMPWrapper::BigInt::fromLongLong(left.asInteger()) >= right.asBigInt());
+                case LESS: return Value(GMPWrapper::BigInt::fromLongLong(left.asInteger()) < right.asBigInt());
+                case LESS_EQUAL: return Value(GMPWrapper::BigInt::fromLongLong(left.asInteger()) <= right.asBigInt());
+                default: break; // Unreachable
+            }
+        }
+        
+        if (left.isBigInt() && right.isNumber()) {
+            switch (expression->oper.type) {
+                case GREATER: return Value(left.asBigInt() > GMPWrapper::doubleToBigInt(right.asNumber()));
+                case GREATER_EQUAL: return Value(left.asBigInt() >= GMPWrapper::doubleToBigInt(right.asNumber()));
+                case LESS: return Value(left.asBigInt() < GMPWrapper::doubleToBigInt(right.asNumber()));
+                case LESS_EQUAL: return Value(left.asBigInt() <= GMPWrapper::doubleToBigInt(right.asNumber()));
+                default: break; // Unreachable
+            }
+        }
+        
+        if (left.isNumber() && right.isBigInt()) {
+            switch (expression->oper.type) {
+                case GREATER: return Value(GMPWrapper::doubleToBigInt(left.asNumber()) > right.asBigInt());
+                case GREATER_EQUAL: return Value(GMPWrapper::doubleToBigInt(left.asNumber()) >= right.asBigInt());
+                case LESS: return Value(GMPWrapper::doubleToBigInt(left.asNumber()) < right.asBigInt());
+                case LESS_EQUAL: return Value(GMPWrapper::doubleToBigInt(left.asNumber()) <= right.asBigInt());
+                default: break; // Unreachable
+            }
+        }
+        
         // Error for unsupported comparisons
         std::string opName;
         switch (expression->oper.type) {
@@ -154,20 +221,8 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
     // Handle all other operators using Value's operator overloads
     try {
         switch (expression->oper.type) {
-            case PLUS: {
-                // Fast path for integer addition
-                if (left.isInteger() && right.isInteger()) {
-                    return Value::fastIntegerAdd(left.asInteger(), right.asInteger());
-                }
-                return left + right;
-            }
-            case MINUS: {
-                // Fast path for integer subtraction
-                if (left.isInteger() && right.isInteger()) {
-                    return Value::fastIntegerSub(left.asInteger(), right.asInteger());
-                }
-                return left - right;
-            }
+            case PLUS: return left + right;
+            case MINUS: return left - right;
             case STAR: return left * right;
             case SLASH: {
                 if (right.isNumber() && right.asNumber() == 0.0) {
@@ -236,7 +291,7 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     // Get the current value of the operand
     Value currentValue = interpreter->evaluate(expression->operand);
     
-    if (!currentValue.isNumber() && !currentValue.isInteger()) {
+            if (!currentValue.isNumeric()) {
         interpreter->reportError(expression->oper.line, expression->oper.column, 
             "Runtime Error", "Increment/decrement can only be applied to numbers or integers.", "");
         throw std::runtime_error("Increment/decrement can only be applied to numbers or integers.");
@@ -248,7 +303,16 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     if (expression->oper.type == PLUS_PLUS) {
         if (currentValue.isInteger()) {
             long long currentInt = currentValue.asInteger();
-            newValue = Value(currentInt + 1);
+            // Check for overflow
+            if (currentInt == LLONG_MAX) {
+                // Promote to BigInt to avoid overflow
+                newValue = Value(GMPWrapper::BigInt::fromLongLong(currentInt) + GMPWrapper::BigInt(1));
+            } else {
+                newValue = Value(currentInt + 1);
+            }
+        } else if (currentValue.isBigInt()) {
+            // Handle BigInt increment
+            newValue = Value(currentValue.asBigInt() + GMPWrapper::BigInt(1));
         } else {
             double currentNum = currentValue.asNumber();
             newValue = Value(currentNum + 1.0);
@@ -256,7 +320,16 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
     } else if (expression->oper.type == MINUS_MINUS) {
         if (currentValue.isInteger()) {
             long long currentInt = currentValue.asInteger();
-            newValue = Value(currentInt - 1);
+            // Check for underflow
+            if (currentInt == LLONG_MIN) {
+                // Promote to BigInt to avoid underflow
+                newValue = Value(GMPWrapper::BigInt::fromLongLong(currentInt) - GMPWrapper::BigInt(1));
+            } else {
+                newValue = Value(currentInt - 1);
+            }
+        } else if (currentValue.isBigInt()) {
+            // Handle BigInt decrement
+            newValue = Value(currentValue.asBigInt() - GMPWrapper::BigInt(1));
         } else {
             double currentNum = currentValue.asNumber();
             newValue = Value(currentNum - 1.0);
@@ -275,14 +348,19 @@ Value Evaluator::visitIncrementExpr(const std::shared_ptr<IncrementExpr>& expres
         Value array = interpreter->evaluate(arrayExpr->array);
         Value index = interpreter->evaluate(arrayExpr->index);
         
-        if (array.isArray()) {
-            if (!index.isNumber()) {
-                interpreter->reportError(expression->oper.line, expression->oper.column, 
-                    "Runtime Error", "Array index must be a number", "");
-                throw std::runtime_error("Array index must be a number");
-            }
+            if (array.isArray()) {
+        if (!index.isNumeric()) {
+            interpreter->reportError(expression->oper.line, expression->oper.column, 
+                "Runtime Error", "Array index must be a number", "");
+            throw std::runtime_error("Array index must be a number");
+        }
             
-            int idx = static_cast<int>(index.asNumber());
+            int idx;
+            if (index.isInteger()) {
+                idx = static_cast<int>(index.asInteger());
+            } else {
+                idx = static_cast<int>(index.asNumber());
+            }
             std::vector<Value>& arr = array.asArray();
             
             if (idx < 0 || idx >= static_cast<int>(arr.size())) {
@@ -381,14 +459,19 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
     
     if (array.isArray()) {
         // Handle array indexing
-        if (!index.isNumber()) {
+        if (!index.isNumeric()) {
         interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
             "Array index must be a number", "");
         interpreter->markInlineErrorReported();
             throw std::runtime_error("Array index must be a number");
         }
         
-        int idx = static_cast<int>(index.asNumber());
+        int idx;
+        if (index.isInteger()) {
+            idx = static_cast<int>(index.asInteger());
+        } else {
+            idx = static_cast<int>(index.asNumber());
+        }
         const std::vector<Value>& arr = array.asArray();
         
         if (idx < 0 || idx >= static_cast<int>(arr.size())) {
@@ -421,14 +504,19 @@ Value Evaluator::visitArrayIndexExpr(const std::shared_ptr<ArrayIndexExpr>& expr
         
     } else if (array.isString()) {
         // Handle string indexing
-        if (!index.isNumber()) {
+        if (!index.isNumeric()) {
         interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
             "String index must be a number", "");
         interpreter->markInlineErrorReported();
             throw std::runtime_error("String index must be a number");
         }
         
-        int idx = static_cast<int>(index.asNumber());
+        int idx;
+        if (index.isInteger()) {
+            idx = static_cast<int>(index.asInteger());
+        } else {
+            idx = static_cast<int>(index.asNumber());
+        }
         const std::string& str = array.asString();
         
         if (idx < 0) {
@@ -653,7 +741,7 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
         // Try extension dispatch for built-ins and any
         std::string target;
         if (object.isString()) target = "string";
-        else if (object.isNumber()) target = "number";
+        else if (object.isNumeric()) target = "number";
         else if (object.isArray()) target = "array"; // handled above, but keep for completeness
         else if (object.isDict()) target = "dict";   // handled above
         else target = object.isModule() ? "any" : "any";
@@ -708,7 +796,7 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
     
     if (array.isArray()) {
         // Handle array assignment
-        if (!index.isNumber()) {
+        if (!index.isNumeric()) {
             if (!interpreter->isInTry()) {
                 interpreter->reportError(expr->bracket.line, expr->bracket.column, "Runtime Error",
                     "Array index must be a number", "");
@@ -717,7 +805,12 @@ Value Evaluator::visitArrayAssignExpr(const std::shared_ptr<ArrayAssignExpr>& ex
             throw std::runtime_error("Array index must be a number");
         }
         
-        int idx = static_cast<int>(index.asNumber());
+        int idx;
+        if (index.isInteger()) {
+            idx = static_cast<int>(index.asInteger());
+        } else {
+            idx = static_cast<int>(index.asNumber());
+        }
         std::vector<Value>& arr = array.asArray();
         
         if (idx < 0 || idx >= static_cast<int>(arr.size())) {

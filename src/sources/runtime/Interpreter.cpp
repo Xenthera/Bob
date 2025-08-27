@@ -658,7 +658,7 @@ Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
         if (callInfo.receiver.isString()) target = "string";
         else if (callInfo.receiver.isArray()) target = "array";
         else if (callInfo.receiver.isDict()) target = "dict";
-        else if (callInfo.receiver.isNumber()) target = "number";
+        else if (callInfo.receiver.isNumeric()) target = "number";
         if (!target.empty()) {
             if (auto sel = extensionRegistry.lookupExtensionOverload(target, callInfo.methodName, callInfo.arguments.size())) {
                 functionShared = sel;
@@ -693,7 +693,7 @@ Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
             if (callInfo.receiver.isString()) target = "string";
             else if (callInfo.receiver.isArray()) target = "array";
             else if (callInfo.receiver.isDict()) target = "dict";
-            else if (callInfo.receiver.isNumber()) target = "number";
+            else if (callInfo.receiver.isNumeric()) target = "number";
             if (!target.empty()) {
                 if (auto sel = extensionRegistry.lookupExtensionOverload(target, callInfo.methodName, callInfo.arguments.size())) { 
                     functionShared = sel; 

@@ -17,10 +17,34 @@ ninja -C build
 ## Data Types
 
 ### Numbers
+Bob supports three numeric types with automatic type promotion:
+
 ```go
-var integer = 42;
-var float = 3.14;
-var negative = -10;
+var integer = 42;                    // Regular integer (long long)
+var float = 3.14;                    // Floating-point number (double)
+var negative = -10;                  // Negative numbers
+var bigint = 9999999999999999999;    // BigInt (arbitrary-precision)
+```
+
+**Type System:**
+- **`integer`**: 64-bit signed integers (long long range)
+- **`number`**: 64-bit floating-point numbers (double)
+- **`bigint`**: Arbitrary-precision integers (no size limit)
+
+**Automatic Type Promotion:**
+- Integers automatically promote to BigInt when they exceed long long range
+- Arithmetic operations between different types work seamlessly
+- Use `type()` to check the runtime type of a value
+
+**Examples:**
+```go
+var small = 42;                      // type: "integer"
+var large = 9999999999999999999;     // type: "bigint"
+var result = small + large;          // type: "bigint"
+
+print(type(42));                     // "integer"
+print(type(3.14));                   // "number"
+print(type(9999999999999999999));    // "bigint"
 ```
 
 ### Strings
@@ -116,8 +140,61 @@ z++;              // Increment (for array elements)
 ```
 
 ### Bitwise
+Bob supports full bitwise operations on all numeric types, including BigInt:
+
 ```go
 & | ^ << >> ~     // Bitwise operations
+```
+
+**Supported Types:**
+- **`integer`**: Full bitwise support
+- **`number`**: Converted to integer for bitwise operations
+- **`bigint`**: Full arbitrary-precision bitwise support (Python-like)
+
+**BigInt Bitwise Operations:**
+Bob provides Python-like BigInt bitwise operations with no size limitations:
+
+```go
+var big_num = 9999999999999999999;
+print(big_num & 10);     // 10 (type: bigint)
+print(big_num | 10);     // 9999999999999999999 (type: bigint)
+print(big_num ^ 10);     // 9999999999999999989 (type: bigint)
+print(big_num << 2);     // 39999999999999999996 (type: bigint)
+print(big_num >> 2);     // 2499999999999999999 (type: bigint)
+```
+
+**Mixed Type Operations:**
+Bitwise operations work seamlessly between different numeric types:
+
+```go
+var small = 42;
+var large = 9999999999999999999;
+
+print(small & large);    // 42 (type: bigint)
+print(large & small);    // 42 (type: bigint)
+print(small | large);    // 9999999999999999999 (type: bigint)
+```
+
+**Examples:**
+```go
+// Basic bitwise operations
+var a = 42;
+var b = 10;
+print(a & b);    // 10 (AND)
+print(a | b);    // 42 (OR)
+print(a ^ b);    // 32 (XOR)
+print(a << 2);   // 168 (left shift)
+print(a >> 1);   // 21 (right shift)
+
+// BigInt operations
+var huge = 9999999999999999999;
+print(huge & 255);       // 255 (works with any size)
+print(huge << 10);       // 10239999999999999998976
+print(huge >> 10);       // 9765624999999999
+
+// Mixed operations
+print(42 & huge);        // 42 (automatic type conversion)
+print(huge & 42);        // 42 (same result)
 ```
 
 ### Compound Assignment
@@ -230,8 +307,21 @@ toString(42);        // "42"
 toNumber("3.14");    // 3.14
 toInt(3.9);         // 3
 toBoolean(1);       // true
-type(42);           // "number"
+type(42);           // "number" (user-friendly)
+type(3.14);         // "number"
+type(9999999999999999999); // "number"
+typeRaw(42);        // "integer" (debug - actual internal type)
+typeRaw(3.14);      // "number"
+typeRaw(9999999999999999999); // "bigint"
 ```
+
+**Type System:**
+- `type()` returns user-friendly type: `"number"` for all numeric types, `"string"`, `"boolean"`, `"array"`, `"dict"`, `"function"`, `"none"`
+- `typeRaw()` returns actual internal type: `"integer"`, `"number"`, `"bigint"`, `"string"`, `"boolean"`, `"array"`, `"dict"`, `"function"`, `"none"`
+- `toNumber()` converts strings to numbers (including BigInt for large values)
+- `toInt()` truncates numbers to integers (handles BigInt overflow gracefully)
+- Automatic type promotion occurs for arithmetic operations
+- **Overflow Detection**: All arithmetic operations automatically promote to BigInt when they would overflow
 
 ### Arrays, Strings, and Dictionaries: Method style (preferred)
 ```go
@@ -253,6 +343,19 @@ Note: Global forms like `len(x)`, `push(arr, ...)`, `pop(arr)`, `keys(dict)`, `v
 ```go
 toInt(3.9);        // 3 (global)
 (3.9).toInt();     // 3 (method on number)
+```
+
+### Integer Overflow Detection
+Bob automatically detects integer overflow and promotes to BigInt to prevent precision loss:
+
+```go
+var max_int = 9223372036854775807;  // LLONG_MAX
+max_int++;                          // 9223372036854775808 (BigInt)
+max_int + 1;                        // 9223372036854775808 (BigInt)
+max_int * 2;                        // 18446744073709551614 (BigInt)
+
+// All arithmetic operators support overflow detection:
+// +, -, *, ++, --, +=, -=, *=
 ```
 
 ### Utility
@@ -281,10 +384,11 @@ The following built-ins are available by default. Unless specified, functions th
 - printRaw(x): prints x without newline
 - input(prompt?): reads a line from stdin (optional prompt)
 - toString(x): returns string representation
-- toNumber(s): parses string to number or returns none
+- toNumber(s): parses string to number (including BigInt for large values) or returns none
 - toInt(n): truncates number to integer
 - toBoolean(x): converts to boolean using truthiness rules
-- type(x): returns the type name as string
+- type(x): returns the user-friendly type name as string
+- typeRaw(x): returns the actual internal type name as string (for debugging)
 - len(x) / x.len(): length of array/string/dict
 - push(arr, ...values) / arr.push(...values): appends values to array in place, returns arr
 - pop(arr) / arr.pop(): removes and returns last element

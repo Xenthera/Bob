@@ -6,8 +6,9 @@ void registerRandModule(Interpreter& interpreter) {
     interpreter.registerModule("rand", [](Interpreter::ModuleBuilder& m) {
         static std::mt19937_64 rng{std::random_device{}()};
         m.fn("seed", [](std::vector<Value> a, int, int) -> Value {
-            if (a.size() == 1 && a[0].isNumber()) {
-                rng.seed(static_cast<uint64_t>(a[0].asNumber()));
+            if (a.size() == 1 && a[0].isNumeric()) {
+                double seedValue = a[0].isInteger() ? static_cast<double>(a[0].asInteger()) : a[0].asNumber();
+                rng.seed(static_cast<uint64_t>(seedValue));
             }
             return NONE_VALUE;
         });
@@ -16,9 +17,9 @@ void registerRandModule(Interpreter& interpreter) {
             return Value(dist(rng));
         });
         m.fn("randint", [](std::vector<Value> a, int, int) -> Value {
-            if (a.size() != 2 || !a[0].isNumber() || !a[1].isNumber()) return NONE_VALUE;
-            long long lo = static_cast<long long>(a[0].asNumber());
-            long long hi = static_cast<long long>(a[1].asNumber());
+            if (a.size() != 2 || !a[0].isNumeric() || !a[1].isNumeric()) return NONE_VALUE;
+            long long lo = a[0].isInteger() ? a[0].asInteger() : static_cast<long long>(a[0].asNumber());
+            long long hi = a[1].isInteger() ? a[1].asInteger() : static_cast<long long>(a[1].asNumber());
             if (hi < lo) std::swap(lo, hi);
             std::uniform_int_distribution<long long> dist(lo, hi);
             return Value(static_cast<double>(dist(rng)));
