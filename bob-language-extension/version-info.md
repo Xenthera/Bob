@@ -1,8 +1,51 @@
-# Bob Language Extension v0.4.0
+# Bob Language Extension v0.6.1
 
 ## What's New
 
 ### ✨ New Features Added
+
+#### **Foreach Loops**
+- **foreach loops**: `foreach (item in collection)` for arrays, dictionaries, and strings
+- **Range-based iteration**: `foreach (i in range(0, 10))` for Python-style iteration
+- **Enhanced loop control**: Works with break and continue statements
+
+#### **Big Number Support (GMP Integration)**
+- **BigInt literals**: `123456789n` for arbitrary-precision integers
+- **Automatic promotion**: Large numbers automatically promote to BigInt
+- **Bitwise operations**: Full support for BigInt bitwise operations
+- **Cross-type arithmetic**: Seamless mixing of regular integers and BigInt
+
+#### **Enhanced Error Reporting**
+- **Accurate line/column reporting**: AST-based error location extraction
+- **Module context preservation**: Errors in imported modules show correct source
+- **Source context display**: Shows surrounding code for better debugging
+- **File name titles**: Clear indication of which file contains the error
+
+#### **New Array Methods**
+- **contains()**: Check if array contains a value
+- **slice()**: Extract subarray from start to end
+- **reverse()**: Reverse array in place
+- **Array concatenation**: `array1 + array2` for combining arrays
+
+#### **Enhanced Built-in Functions**
+- **range()**: Python-style range function for iteration
+- **dir()**: Get object members for introspection
+- **functions()**: Get object functions for introspection
+- **values()**: Get dictionary values (alongside existing keys() and has())
+
+#### **Math Module Enhancements**
+- **Math constants**: `math.PI`, `math.E`, `math.MAX_INT`
+- **Enhanced mathematical operations**: Better precision and range
+
+#### **Module System Improvements**
+- **rand module renamed to random**: More intuitive naming
+- **Enhanced REPL**: Arrow key navigation, history, and line editing
+- **Cross-platform terminal input**: Better input handling across platforms
+
+#### **Try-Catch Error Handling**
+- **try-catch blocks**: `try { ... } catch (error) { ... }`
+- **throw statements**: `throw "error message"`
+- **finally blocks**: Optional cleanup code
 
 #### **Dictionary Support**
 - **Dictionary literals**: `{"key": "value", "number": 42}`
@@ -22,7 +65,29 @@
 - `dictassign` - Assign to dictionary key
 - `keys`, `values`, `has` - Built-in function snippets
 
+#### **New Code Snippets**
+- `foreach` - Foreach loop for collections
+- `range` - Range-based iteration
+- `contains` - Check if array contains value
+- `slice` - Slice array from start to end
+- `reverse` - Reverse array in place
+- `concat` - Concatenate arrays
+- `try` - Try-catch block
+- `throw` - Throw error statement
+- `bigint` - BigInt literal
+- `import` - Import module
+- `importfrom` - Import specific items from module
+- `mathconst` - Math constants
+- `dir` - Get object members
+- `functions` - Get object functions
+
 ### 🎨 Syntax Highlighting Improvements
+- **Method call syntax highlighting** - `object.method()` patterns are now properly highlighted
+- **foreach loop** syntax highlighting
+- **try-catch blocks** syntax support
+- **BigInt literals** (numbers ending with 'n')
+- **New built-in functions**: range, contains, slice, reverse, dir, functions
+- **Enhanced keywords**: try, catch, finally, throw, foreach
 - Dictionary literal syntax highlighting
 - Dictionary indexing syntax support
 - Built-in function highlighting for `keys`, `values`, `has`

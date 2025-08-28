@@ -1,8 +1,8 @@
 {
   "name": "bob-language",
   "displayName": "Bob Language",
-  "description": "Syntax highlighting and language support for the Bob programming language - featuring arrays, dictionaries, auto-truncating float indices, increment/decrement operators, cross-type comparisons, and comprehensive built-in functions",
-  "version": "0.5.0",
+  "description": "Syntax highlighting and language support for the Bob programming language - featuring foreach loops, big number support, enhanced error reporting, arrays, dictionaries, auto-truncating float indices, increment/decrement operators, cross-type comparisons, and comprehensive built-in functions",
+  "version": "0.6.1",
   "engines": {
     "vscode": "^1.60.0"
   },
@@ -67,8 +67,9 @@
     "watch": "tsc -watch -p ./"
   },
   "devDependencies": {
-    "@types/vscode": "^1.60.0",
     "@types/node": "^16.0.0",
-    "typescript": "^4.5.0"
+    "@types/vscode": "^1.60.0",
+    "typescript": "^4.5.0",
+    "vsce": "^2.15.0"
   }
-} 
+}

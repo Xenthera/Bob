@@ -46,6 +46,15 @@
     ],
     "description": "Create a for loop"
   },
+  "Foreach Loop": {
+    "prefix": "foreach",
+    "body": [
+      "foreach (${1:item} in ${2:collection}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a foreach loop for arrays, dicts, and strings"
+  },
   "Variable Declaration": {
     "prefix": "var",
     "body": [
@@ -300,7 +309,7 @@
   "Random Number": {
     "prefix": "random",
     "body": [
-      "import rand; var randomValue = rand.random();"
+      "import random; var randomValue = random.random();"
     ],
     "description": "Generate random number"
   },
@@ -484,5 +493,105 @@
       "var exists = has(${1:dictionary}, \"${2:key}\");"
     ],
     "description": "Check if dictionary has key"
+  },
+  "Range Function": {
+    "prefix": "range",
+    "body": [
+      "foreach (${1:i} in range(${2:start}, ${3:end})) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a range-based loop"
+  },
+  "Array Contains": {
+    "prefix": "contains",
+    "body": [
+      "var found = contains(${1:array}, ${2:value});"
+    ],
+    "description": "Check if array contains value"
+  },
+  "Array Slice": {
+    "prefix": "slice",
+    "body": [
+      "var sliced = slice(${1:array}, ${2:start}, ${3:end});"
+    ],
+    "description": "Slice array from start to end"
+  },
+  "Array Reverse": {
+    "prefix": "reverse",
+    "body": [
+      "reverse(${1:array});"
+    ],
+    "description": "Reverse array in place"
+  },
+  "Array Concatenation": {
+    "prefix": "concat",
+    "body": [
+      "var combined = ${1:array1} + ${2:array2};"
+    ],
+    "description": "Concatenate two arrays"
+  },
+  "Try-Catch Block": {
+    "prefix": "try",
+    "body": [
+      "try {",
+      "\t$1",
+      "} catch (${2:error}) {",
+      "\t$0",
+      "}"
+    ],
+    "description": "Create a try-catch block"
+  },
+  "Throw Statement": {
+    "prefix": "throw",
+    "body": [
+      "throw \"${1:error message}\";"
+    ],
+    "description": "Throw an error"
+  },
+  "BigInt Literal": {
+    "prefix": "bigint",
+    "body": [
+      "var bigNumber = ${1:123456789}n;"
+    ],
+    "description": "Create a BigInt literal"
+  },
+  "Import Statement": {
+    "prefix": "import",
+    "body": [
+      "import ${1:module};"
+    ],
+    "description": "Import a module"
+  },
+  "Import From": {
+    "prefix": "importfrom",
+    "body": [
+      "import ${1:module} { ${2:item1}, ${3:item2} };"
+    ],
+    "description": "Import specific items from module"
+  },
+  "Math Constants": {
+    "prefix": "mathconst",
+    "body": [
+      "import math;",
+      "var pi = math.PI;",
+      "var e = math.E;",
+      "var maxInt = math.MAX_INT;"
+    ],
+    "description": "Use math constants"
+  },
+  "Dir Function": {
+    "prefix": "dir",
+    "body": [
+      "var members = dir(${1:object});"
+    ],
+    "description": "Get object members"
+  },
+  "Functions Function": {
+    "prefix": "functions",
+    "body": [
+      "var funcs = functions(${1:object});"
+    ],
+    "description": "Get object functions"
   }
 } 

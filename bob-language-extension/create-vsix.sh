@@ -8,6 +8,8 @@ echo "Creating Bob Language Extension VSIX package..."
 VERSION=$(grep '"version"' package.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
 echo "Building version: $VERSION"
 
+# Store the original directory
+ORIGINAL_DIR="$(pwd)"
 # Create a temporary directory for the package
 TEMP_DIR=$(mktemp -d)
 PACKAGE_DIR="$TEMP_DIR/bob-language-$VERSION"
@@ -21,6 +23,7 @@ cp language-configuration.json "$TEMP_DIR/extension/"
 cp -r syntaxes "$TEMP_DIR/extension/"
 cp -r snippets "$TEMP_DIR/extension/"
 cp -r themes "$TEMP_DIR/extension/"
+cp -r out "$TEMP_DIR/extension/"
 cp README.md "$TEMP_DIR/extension/"
 
 # Create the VSIX file (simple zip with .vsix extension)
@@ -28,7 +31,7 @@ cd "$TEMP_DIR"
 zip -r "bob-language-$VERSION.vsix" extension/
 
 # Move to the extension directory
-mv "bob-language-$VERSION.vsix" /Users/bobbylucero/Developer/Bob/bob-language-extension/
+mv "bob-language-$VERSION.vsix" "$ORIGINAL_DIR/"
 
 # Clean up
 rm -rf "$TEMP_DIR"

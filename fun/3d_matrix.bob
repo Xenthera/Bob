@@ -95,8 +95,10 @@ var size = canvas.getSize();
 var width = size[0];
 var height = size[1];
 
-// Create cube
-var cube = Cube();
+// Create multiple cubes
+var centralCube = Cube();
+var leftCube = Cube();
+var rightCube = Cube();
 
 // Animation variables
 var angleX = 0;
@@ -116,13 +118,6 @@ while (true) {
     
     // Create transformation matrices
     
-    // Model matrix: translate first, then rotate around the cube's center
-    var modelMatrix = matrix.identityMatrix();
-    modelMatrix = modelMatrix.multiply(matrix.translationMatrix(0, 0, -5)); // Move cube to position first
-    modelMatrix = modelMatrix.multiply(matrix.rotationXMatrix(angleX)); // Then rotate around its center
-    modelMatrix = modelMatrix.multiply(matrix.rotationYMatrix(angleY));
-    modelMatrix = modelMatrix.multiply(matrix.rotationZMatrix(angleZ));
-    
     // View matrix: fixed camera position
     var viewMatrix = matrix.lookAtMatrix(0, 2, 10, 0, 0, -5, 0, 1, 0);
     
@@ -130,16 +125,45 @@ while (true) {
     var aspect = width / height;
     var projectionMatrix = matrix.perspectiveMatrix(0.5, aspect, 0.1, 100.0);
     
-    // Transform and draw cube
-    cube.transform(modelMatrix, viewMatrix, projectionMatrix);
-    cube.draw(width, height);
+    // Draw central cube
+    canvas.setColor("cyan");
+    var centralModelMatrix = matrix.identityMatrix();
+    centralModelMatrix = centralModelMatrix.multiply(matrix.translationMatrix(0, 0, -5));
+    centralModelMatrix = centralModelMatrix.multiply(matrix.rotationXMatrix(angleX));
+    centralModelMatrix = centralModelMatrix.multiply(matrix.rotationYMatrix(angleY));
+    centralModelMatrix = centralModelMatrix.multiply(matrix.rotationZMatrix(angleZ));
+    centralCube.transform(centralModelMatrix, viewMatrix, projectionMatrix);
+    centralCube.draw(width, height);
+    
+    // Draw left cube (moving up and down on sin wave, no rotation)
+    canvas.setColor("red");
+    var leftModelMatrix = matrix.identityMatrix();
+    var leftY = math.sin(angleX * 2) * 3; // Sin wave movement
+    leftModelMatrix = leftModelMatrix.multiply(matrix.translationMatrix(-8, leftY, -5));
+    // No rotation - cube stays upright
+    leftCube.transform(leftModelMatrix, viewMatrix, projectionMatrix);
+    leftCube.draw(width, height);
+    
+    // Draw right cube (Y-axis rotation + sin wave movement away from camera)
+    canvas.setColor("green");
+    var rightModelMatrix = matrix.identityMatrix();
+    var rightZ = -8 + math.sin(angleX * 1.5) * 4; // Sin wave movement away from camera (further back, larger range)
+    rightModelMatrix = rightModelMatrix.multiply(matrix.translationMatrix(8, 0, rightZ));
+    rightModelMatrix = rightModelMatrix.multiply(matrix.rotationYMatrix(angleY)); // Only Y rotation
+    rightCube.transform(rightModelMatrix, viewMatrix, projectionMatrix);
+    rightCube.draw(width, height);
+    
+
     
     // Draw debug info
     canvas.setColor("yellow");
-    canvas.drawText(1, 1, "Matrix 3D Demo");
-    canvas.drawText(1, 2, "Model: X:" + angleX + " Y:" + angleY + " Z:" + angleZ);
-    canvas.drawText(1, 3, "Camera: Fixed at (0, 2, 10)");
-    canvas.drawText(1, 4, "Aspect: " + aspect);
+    canvas.drawText(1, 1, "Multi-Cube 3D Demo");
+    canvas.drawText(1, 2, "Central: Cyan (full rotation)");
+    canvas.drawText(1, 3, "Left: Red (sin wave movement, no rotation)");
+    canvas.drawText(1, 4, "Right: Green (Y-axis rotation + Z sin wave)");
+    canvas.drawText(1, 5, "Angles: X:" + angleX + " Y:" + angleY + " Z:" + angleZ);
+    canvas.drawText(1, 6, "Camera: Fixed at (0, 2, 10)");
+    canvas.drawText(1, 7, "Aspect: " + aspect);
     
     // Update animation
     angleX += 0.02;
