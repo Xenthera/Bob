@@ -14,6 +14,7 @@ private:
     const std::vector<Token> tokens;
     int current = 0;
     int functionDepth = 0; // Track nesting level of functions
+    std::string currentFunctionName = "";
     ErrorReporter* errorReporter = nullptr;
 
 public:
@@ -100,10 +101,17 @@ private:
     sptr(Expr) call();  // Handle call chains (function calls, array indexing, and dict indexing)
     
     // Helper methods for function scope tracking
-    void enterFunction() { functionDepth++; }
-    void exitFunction() { functionDepth--; }
+    void enterFunction(const std::string& functionName) { 
+        functionDepth++; 
+        currentFunctionName = functionName;
+    }
+    void exitFunction() { 
+        functionDepth--; 
+        if (functionDepth == 0) currentFunctionName = "";
+    }
     bool isInFunction() const { return functionDepth > 0; }
+    std::string getCurrentFunctionName() const { return currentFunctionName; }
     
     // Helper method for tail call detection
-    bool isTailCall(const std::shared_ptr<Expr>& expr);
+    bool isTailCall(const std::shared_ptr<Expr>& expr, const std::string& currentFunctionName = "");
 };

@@ -1,0 +1,156 @@
+// Canvas module for terminal drawing
+// Uses ANSI escape codes to draw pixels
+import terminal;
+import math;
+
+// ANSI color codes
+var colors = {
+    "black": 0,
+    "red": 1,
+    "green": 2,
+    "yellow": 3,
+    "blue": 4,
+    "magenta": 5,
+    "cyan": 6,
+    "white": 7,
+    "bright_black": 8,
+    "bright_red": 9,
+    "bright_green": 10,
+    "bright_yellow": 11,
+    "bright_blue": 12,
+    "bright_magenta": 13,
+    "bright_cyan": 14,
+    "bright_white": 15
+};
+
+// Current drawing color
+var currentColor = "white";
+
+// Terminal size (will be set by init)
+var termWidth = 80;
+var termHeight = 24;
+
+// Initialize canvas with terminal size
+func init() {
+    // Get terminal size from terminal module
+    var size = terminal.size();
+    termWidth = size[0];
+    termHeight = size[1];
+    // Hide cursor
+    printRaw("\e[?25l");
+    print("Canvas initialized: ", termWidth, "x", termHeight);
+}
+
+// Set drawing color
+func setColor(color) {
+    if (type(color) != "string") {
+        print("Error: setColor expects a string, got ", type(color));
+        return;
+    }
+    
+    if (colors[color] != none) {
+        currentColor = color;
+    } else {
+        print("Unknown color: ", color);
+    }
+}
+
+// Draw a pixel at x, y
+func putPixel(x, y) {
+    if (x < 0 || x >= termWidth || y < 0 || y >= termHeight) {
+        return; // Out of bounds
+    }
+    
+    // Move cursor to position (ANSI escape: \e[y;xH)
+    printRaw("\e[" + (y + 1) + ";" + (x + 1) + "H");
+    
+    // Set color (ANSI escape: \e[38;5;colorCodem)
+    var colorCode = colors[currentColor];
+    printRaw("\e[38;5;" + colorCode + "m");
+    
+    // Draw the pixel (using a block character)
+    printRaw("█");
+    //printRaw("0");
+    
+    // Reset color
+    printRaw("\e[0m");
+}
+
+// Clear the screen
+func clear() {
+    printRaw("\e[2J");
+    printRaw("\e[H");
+}
+
+// Draw a line from (x1, y1) to (x2, y2)
+func drawLine(x1, y1, x2, y2) {
+    var dx = x2 - x1;
+    var dy = y2 - y1;
+    var steps = math.max(math.abs(dx), math.abs(dy));
+    
+    if (steps == 0) {
+        putPixel(x1, y1);
+        return;
+    }
+    
+    var xIncrement = dx / steps;
+    var yIncrement = dy / steps;
+    var x = x1;
+    var y = y1;
+    
+    for (var i = 0; i <= steps; i++) {
+        putPixel(math.round(x), math.round(y));
+        x = x + xIncrement;
+        y = y + yIncrement;
+    }
+}
+
+// Draw a rectangle outline
+func drawRect(x, y, width, height) {
+    // Top and bottom lines
+    for (var i = 0; i < width; i++) {
+        putPixel(x + i, y);
+        putPixel(x + i, y + height - 1);
+    }
+    
+    // Left and right lines
+    for (var i = 0; i < height; i++) {
+        putPixel(x, y + i);
+        putPixel(x + width - 1, y + i);
+    }
+}
+
+// Fill a rectangle
+func fillRect(x, y, width, height) {
+    for (var i = 0; i < height; i++) {
+        for (var j = 0; j < width; j++) {
+            putPixel(x + j, y + i);
+        }
+    }
+}
+
+// Get terminal size
+func getSize() {
+    return [termWidth, termHeight];
+}
+
+// Draw text at x, y position
+func drawText(x, y, text) {
+    if (x < 0 || x >= termWidth || y < 0 || y >= termHeight) {
+        return; // Out of bounds
+    }
+    
+    // Move cursor to position (ANSI escape: \e[y;xH)
+    printRaw("\e[" + (y + 1) + ";" + (x + 1) + "H");
+    
+    // Set color (ANSI escape: \e[38;5;colorCodem)
+    var colorCode = colors[currentColor];
+    printRaw("\e[38;5;" + colorCode + "m");
+    
+    // Draw the text
+    printRaw(text);
+    
+    // Reset color
+    printRaw("\e[0m");
+}
+

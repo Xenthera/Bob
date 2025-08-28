@@ -4,6 +4,7 @@
 #include "AssignmentUtils.h"
 #include "helperFunctions/HelperFunctions.h"
 #include "ExecutionContext.h"
+#include "VariableAnalysis.h"
 
 Evaluator::Evaluator(Interpreter* interpreter) : interpreter(interpreter) {}
 
@@ -971,6 +972,8 @@ Value Evaluator::visitPropertyAssignExpr(const std::shared_ptr<PropertyAssignExp
     }
 }
 
+
+
 Value Evaluator::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expression) {
     std::vector<std::string> paramNames;
     for (const Token& param : expression->params) {
@@ -978,7 +981,13 @@ Value Evaluator::visitFunctionExpr(const std::shared_ptr<FunctionExpr>& expressi
     }
     
     auto closureEnv = std::make_shared<Environment>(*interpreter->getEnvironment());
-    closureEnv->pruneForClosureCapture();
+    
+    // Collect variables that are actually used by the function
+    auto usedVariables = VariableAnalysis::collectUsedVariables(expression->body);
+    
+    // Only prune variables that aren't used
+    closureEnv->pruneForClosureCapture(usedVariables);
+    
     auto function = std::make_shared<Function>("", paramNames, expression->body, closureEnv);
     return Value(function);
 }

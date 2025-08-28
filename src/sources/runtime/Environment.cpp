@@ -50,16 +50,22 @@ Value Environment::get(const Token& name) {
 
  
 
-void Environment::pruneForClosureCapture() {
+void Environment::pruneForClosureCapture(const std::unordered_set<std::string>& usedVariables) {
     for (auto &entry : variables) {
+        const std::string& varName = entry.first;
         Value &v = entry.second;
-        if (v.isArray()) {
-            entry.second = Value(std::vector<Value>{});
-        } else if (v.isDict()) {
-            entry.second = Value(std::unordered_map<std::string, Value>{});
+        
+        // Only prune heavy containers that aren't used by the function
+        // If usedVariables is empty, don't prune anything (be conservative)
+        if (!usedVariables.empty() && !usedVariables.count(varName)) {
+            if (v.isArray()) {
+                entry.second = Value(std::vector<Value>{});
+            } else if (v.isDict()) {
+                entry.second = Value(std::unordered_map<std::string, Value>{});
+            }
         }
     }
     if (parent) {
-        parent->pruneForClosureCapture();
+        parent->pruneForClosureCapture(usedVariables);
     }
 }

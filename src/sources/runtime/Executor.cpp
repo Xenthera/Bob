@@ -552,7 +552,9 @@ void Executor::visitClassStmt(const std::shared_ptr<ClassStmt>& statement, Execu
 
     // Attach methods as functions closed over a prototype env
     auto protoEnv = std::make_shared<Environment>(interpreter->getEnvironment());
-    protoEnv->pruneForClosureCapture();
+    // For class methods, we don't need to prune since they're not anonymous functions
+    std::unordered_set<std::string> emptySet;
+    protoEnv->pruneForClosureCapture(emptySet);
 
     for (const auto& method : statement->methods) {
         std::vector<std::string> paramNames;

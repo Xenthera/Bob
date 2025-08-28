@@ -1,0 +1,149 @@
+// Bouncing points animation
+import canvas;
+import time;
+import math;
+import random;
+
+// Vector2 class for 2D coordinates
+class Vector2 {
+    var x;
+    var y;
+    
+    func init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    func add(other) {
+        return Vector2(this.x + other.x, this.y + other.y);
+    }
+    
+    func multiply(scalar) {
+        return Vector2(this.x * scalar, this.y * scalar);
+    }
+}
+
+// BouncingPoint class
+class BouncingPoint {
+    var position;
+    var velocity;
+    var acceleration;
+    var color;
+    var maxSpeed;
+    
+    func init(x, y, vx, vy, color) {
+        this.position = Vector2(x, y);
+        this.velocity = Vector2(vx, vy);
+        this.acceleration = Vector2(0, 0);
+        this.color = color;
+        this.maxSpeed = 0.8;  // Reduced max speed for gentler movement
+        this.counter = 0;  // Counter for sine wave animation
+    }
+    
+    func update(width, height, deltaTime) {
+        // Scale delta time to make movement more visible (multiply by 60 for 60 FPS equivalent)
+        var scaledDeltaTime = deltaTime * 30.0;
+        
+        // Add random acceleration (firefly-like movement) - scaled up for visibility
+        this.acceleration = Vector2(
+            (random.random() - 0.5) * 2.0,  // Random acceleration between -1.0 and 1.0
+            (random.random() - 0.5) * 2.0
+        );
+        
+        // Apply acceleration to velocity with scaled delta time
+        this.velocity = this.velocity.add(this.acceleration.multiply(scaledDeltaTime));
+        
+        // Limit maximum speed
+        var speed = math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
+        if (speed > this.maxSpeed) {
+            this.velocity = this.velocity.multiply(this.maxSpeed / speed);
+        }
+        
+        // Add some damping to make movement more natural
+        this.velocity = this.velocity.multiply(0.98);
+        
+        // Update position with scaled delta time
+        this.position = this.position.add(this.velocity.multiply(scaledDeltaTime));
+        
+        // Bounce off walls with some energy loss
+        if (this.position.x <= 0 || this.position.x >= width - 1) {
+            this.velocity.x = -this.velocity.x * 0.8;  // Lose some energy on bounce
+        }
+        if (this.position.y <= 0 || this.position.y >= height - 1) {
+            this.velocity.y = -this.velocity.y * 0.8;  // Lose some energy on bounce
+        }
+        
+        // Keep within bounds
+        if (this.position.x < 0) this.position.x = 0;
+        if (this.position.x >= width) this.position.x = width - 1;
+        if (this.position.y < 0) this.position.y = 0;
+        if (this.position.y >= height) this.position.y = height - 1;
+        
+        // Increment counter for sine wave animation
+        this.counter++;
+    }
+    
+    func draw() {
+        // Create a sine wave-based yellow-green gradient with white blip
+        var sineValue = math.sin(this.counter * 0.1 + this.position.x * 0.05 + this.position.y * 0.05);
+        
+        // Map sine wave (-1 to 1) to yellow-green-white gradient
+        if (sineValue > 0.7) {
+            canvas.setColor("white");  // Brightest point - white blip
+        } else if (sineValue > 0.3) {
+            canvas.setColor("bright_yellow");
+        } else if (sineValue > 0) {
+            canvas.setColor("yellow");
+        } else if (sineValue > -0.3) {
+            canvas.setColor("green");
+        } else {
+            canvas.setColor("bright_green");
+        }
+        
+        canvas.putPixel(math.round(this.position.x), math.round(this.position.y));
+    }
+}
+
+// Initialize canvas
+canvas.init();
+var size = canvas.getSize();
+var width = size[0];
+var height = size[1];
+
+// Create two bouncing points
+var point1 = BouncingPoint(10, 10, 0.7, 0.3, "red");
+var point2 = BouncingPoint(20, 15, -0.5, 0.5, "blue");
+
+var points = [];
+
+
+var fireflyColors = ["red", "green", "blue", "yellow", "cyan", "magenta", "bright_red", "bright_green", "bright_blue", "bright_yellow"];
+for (var i = 0; i < 100; i++) {
+    // Start with moderate initial velocities for visible firefly-like movement
+    var vx = (random.random() - 0.5) * 0.8;  // Velocity between -0.4 and 0.4
+    var vy = (random.random() - 0.5) * 0.8;
+    points.push(BouncingPoint(random.randint(0, width), random.randint(0, height), vx, vy, random.choice(fireflyColors)));
+}
+canvas.clear();
+// Animation loop with delta time
+var lastTime = time.now();
+while (true) {
+    var currentTime = time.now();
+    var deltaTime = (currentTime - lastTime) / 1000000.0;  // Convert microseconds to seconds
+    lastTime = currentTime;
+    
+    // Limit delta time to prevent huge jumps if the program is paused
+    if (deltaTime > 0.1) deltaTime = 0.1;
+    
+    canvas.clear();
+    
+    foreach(var point : points) {
+        point.update(width, height, deltaTime);
+        point.draw();
+    }
+    
+    // Sleep
+    time.sleep(0.01);
+}
+
+

@@ -470,7 +470,7 @@ sptr(Stmt) Parser::classDeclaration() {
             }
             consume(CLOSE_PAREN, "Expected ')' after parameters.");
             consume(OPEN_BRACE, "Expected '{' before method body.");
-            enterFunction();
+            enterFunction(methodName.lexeme);
             std::vector<std::shared_ptr<Stmt>> body = block();
             exitFunction();
             methods.push_back(msptr(FunctionStmt)(methodName, parameters, body));
@@ -502,7 +502,7 @@ sptr(Stmt) Parser::extensionDeclaration() {
             }
             consume(CLOSE_PAREN, "Expected ')' after parameters.");
             consume(OPEN_BRACE, "Expected '{' before method body.");
-            enterFunction();
+            enterFunction(methodName.lexeme);
             std::vector<std::shared_ptr<Stmt>> body = block();
             exitFunction();
             methods.push_back(msptr(FunctionStmt)(methodName, parameters, body));
@@ -546,7 +546,7 @@ sptr(Stmt) Parser::functionDeclaration()
     consume(OPEN_BRACE, "Expected '{' before function body.");
     
     // Enter function scope
-    enterFunction();
+    enterFunction(name.lexeme);
     
     std::vector<sptr(Stmt)> body = block();
     
@@ -575,8 +575,8 @@ std::shared_ptr<Expr> Parser::functionExpression() {
     consume(CLOSE_PAREN, "Expect ')' after parameters.");
     consume(OPEN_BRACE, "Expect '{' before function body.");
     
-    // Enter function scope
-    enterFunction();
+    // Enter function scope (anonymous function, no name for TCO)
+    enterFunction("");
     
     std::vector<std::shared_ptr<Stmt>> body = block();
     
@@ -798,7 +798,7 @@ sptr(Stmt) Parser::continueStatement()
 }
 
 // Helper function to detect if an expression is a tail call
-bool Parser::isTailCall(const std::shared_ptr<Expr>& expr) {
+bool Parser::isTailCall(const std::shared_ptr<Expr>& expr, const std::string& currentFunctionName) {
     // Check if this is a direct function call (no operations on the result)
     if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(expr)) {
         // Check if all arguments are simple (not function calls)
@@ -809,7 +809,16 @@ bool Parser::isTailCall(const std::shared_ptr<Expr>& expr) {
             }
         }
         
-        return true;  // Direct function call in return statement with simple arguments
+        // Only mark as tail call if it's calling the same function (self-recursion)
+        if (!currentFunctionName.empty()) {
+            // Check if the callee is a variable expression with the same name as current function
+            if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(callExpr->callee)) {
+                return varExpr->name.lexeme == currentFunctionName;
+            }
+        }
+        
+        // If we can't determine the function name, be conservative and don't mark as tail call
+        return false;
     }
     return false;
 }
@@ -833,7 +842,7 @@ sptr(Stmt) Parser::returnStatement()
         value = expression();
         
         // Check if this is a tail call and mark it
-        if (isTailCall(value)) {
+        if (isTailCall(value, getCurrentFunctionName())) {
             if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(value)) {
                 callExpr->isTailCall = true;
             }

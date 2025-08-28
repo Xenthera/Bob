@@ -42,7 +42,7 @@ public:
     Value get(const Token& name);
     
     // Prune heavy containers in a snapshot to avoid capture cycles
-    void pruneForClosureCapture();
+    void pruneForClosureCapture(const std::unordered_set<std::string>& usedVariables);
     
     std::shared_ptr<Environment> getParent() const { return parent; }
     // Export all variables (shallow copy) for module namespace

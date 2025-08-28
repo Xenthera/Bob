@@ -8,6 +8,7 @@
 #include "math_module.h"
 #include "path_module.h"
 #include "base64_module.h"
+#include "terminal.h"
 
 void registerAllBuiltinModules(Interpreter& interpreter) {
     registerSysModule(interpreter);
@@ -19,6 +20,7 @@ void registerAllBuiltinModules(Interpreter& interpreter) {
     registerMathModule(interpreter);
     registerPathModule(interpreter);
     registerBase64Module(interpreter);
+    registerTerminalModule(interpreter);
     // registerJsonModule(interpreter); // deferred pending extensive testing
 }
 

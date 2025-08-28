@@ -1,0 +1,173 @@
+// 3D Rotating Cube Demo
+import canvas;
+import time;
+import math;
+
+// 3D Point class
+class Point3D {
+    var x;
+    var y;
+    var z;
+    
+    func init(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    
+    func rotateX(angle) {
+        var cosA = math.cos(angle);
+        var sinA = math.sin(angle);
+        var newY = this.y * cosA - this.z * sinA;
+        var newZ = this.y * sinA + this.z * cosA;
+        return Point3D(this.x, newY, newZ);
+    }
+    
+    func rotateY(angle) {
+        var cosA = math.cos(angle);
+        var sinA = math.sin(angle);
+        var newX = this.x * cosA + this.z * sinA;
+        var newZ = -this.x * sinA + this.z * cosA;
+        return Point3D(newX, this.y, newZ);
+    }
+    
+    func rotateZ(angle) {
+        var cosA = math.cos(angle);
+        var sinA = math.sin(angle);
+        var newX = this.x * cosA - this.y * sinA;
+        var newY = this.x * sinA + this.y * cosA;
+        return Point3D(newX, newY, this.z);
+    }
+    
+    func project(width, height, distance) {
+        var factor = distance / (distance + this.z);
+        // Scale the cube to fit the terminal and center it
+        var scale = math.min(width, height) / 8.0;  // Scale factor based on terminal size
+        var x = this.x * factor * scale + width / 2;
+        var y = this.y * factor * scale + height / 2;
+        return [x, y];
+    }
+}
+
+// Cube class
+class Cube {
+    var originalPoints;
+    var points;
+    var edges;
+    
+    func init() {
+        // Define cube vertices (8 points) - larger size
+        this.originalPoints = [
+            Point3D(-2, -2, -2),  // 0: back bottom left
+            Point3D(2, -2, -2),   // 1: back bottom right
+            Point3D(2, 2, -2),    // 2: back top right
+            Point3D(-2, 2, -2),   // 3: back top left
+            Point3D(-2, -2, 2),   // 4: front bottom left
+            Point3D(2, -2, 2),    // 5: front bottom right
+            Point3D(2, 2, 2),     // 6: front top right
+            Point3D(-2, 2, 2)     // 7: front top left
+        ];
+        
+        // Initialize rotated points to original
+        this.points = this.originalPoints;
+        
+        // Define cube edges (12 edges)
+        this.edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0],  // back face
+            [4, 5], [5, 6], [6, 7], [7, 4],  // front face
+            [0, 4], [1, 5], [2, 6], [3, 7]   // connecting edges
+        ];
+    }
+    
+    func rotate(xAngle, yAngle, zAngle) {
+        var rotatedPoints = [];
+        foreach(var point : this.originalPoints) {
+            var rotated = point.rotateX(xAngle).rotateY(yAngle).rotateZ(zAngle);
+            rotatedPoints.push(rotated);
+        }
+        this.points = rotatedPoints;
+    }
+    
+    func translate(x, y, z) {
+        var translatedPoints = [];
+        foreach(var point : this.points) {
+            var translated = Point3D(point.x + x, point.y + y, point.z + z);
+            translatedPoints.push(translated);
+        }
+        this.points = translatedPoints;
+    }
+    
+    func rotateAndTranslate(xAngle, yAngle, zAngle, x, y, z) {
+        var resultPoints = [];
+        foreach(var point : this.originalPoints) {
+            // First rotate
+            var rotated = point.rotateX(xAngle).rotateY(yAngle).rotateZ(zAngle);
+            // Then translate
+            var translated = Point3D(rotated.x + x, rotated.y + y, rotated.z + z);
+            resultPoints.push(translated);
+        }
+        this.points = resultPoints;
+    }
+    
+    func draw(width, height, distance) {
+        // Project all points to 2D
+        var projectedPoints = [];
+        foreach(var point : this.points) {
+            projectedPoints.push(point.project(width, height, distance));
+        }
+        
+        // Draw edges using canvas.drawLine
+        foreach(var edge : this.edges) {
+            var p1 = projectedPoints[edge[0]];
+            var p2 = projectedPoints[edge[1]];
+            
+            // Draw the edge line
+            canvas.drawLine(math.round(p1[0]), math.round(p1[1]), math.round(p2[0]), math.round(p2[1]));
+        }
+    }
+}
+
+
+
+// Initialize canvas
+canvas.init();
+var size = canvas.getSize();
+var width = size[0];
+var height = size[1];
+
+// Create cube
+var cube = Cube();
+
+// Animation variables
+var angleX = 0;
+var angleY = 0;
+var angleZ = 0;
+var distance = 8;  // Increased distance for better perspective
+
+// Animation loop
+while (true) {
+    canvas.clear();
+    
+    // Set color for cube edges
+    canvas.setColor("cyan");
+    
+    // Rotate cube with current absolute angles
+    cube.rotate(angleX, angleY, angleZ);
+    
+    // Draw cube
+    cube.draw(width, height, distance);
+    
+    // Draw debug info
+    canvas.setColor("yellow");
+    canvas.drawText(1, 1, "X: " + angleX);
+    canvas.drawText(1, 2, "Y: " + angleY);
+    canvas.drawText(1, 3, "Z: " + angleZ);
+    
+    // Update absolute rotation angles with fixed angular velocities
+    angleX += 0.02;  // Fixed angular velocity
+    angleY += 0.03;  // Fixed angular velocity
+    angleZ += 0.01;  // Fixed angular velocity
+    
+    // Sleep
+    time.sleep(0.01);
+}

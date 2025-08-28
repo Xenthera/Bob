@@ -82,6 +82,8 @@ bool Bob::evalFile(const std::string& path) {
 }
 
 bool Bob::evalString(const std::string& code, const std::string& filename) {
+    ensureInterpreter(false);
+    interpreter->addStdLibFunctions();
     errorReporter.loadSource(code, filename);
     interpreter->setErrorReporter(&errorReporter);
     try {
