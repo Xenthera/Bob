@@ -1,0 +1,21 @@
+import ppm;
+
+// Debug: Print what's available in the ppm module
+print("Available in ppm module:");
+print("type(ppm): " + type(ppm));
+
+// Try to access the module's exports
+if(type(ppm) == "module") {
+    print("Module name: " + ppm.name);
+    print("Module exports available");
+    
+    // Try to call createPPM directly
+    try {
+        var test = createPPM(10, 10);
+        print("createPPM works directly");
+    } catch (e) {
+        print("createPPM failed: " + e.message);
+    }
+} else {
+    print("ppm is not a module, it's: " + type(ppm));
+}

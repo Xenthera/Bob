@@ -1,0 +1,178 @@
+// Matrix module for 3D graphics transformations
+import math;
+
+// 4x4 Matrix class for 3D transformations
+class Matrix4x4 {
+    var data;
+    
+    func init() {
+        // Initialize as identity matrix
+        this.data = [
+            [1, 0, 0, 0],
+            [0, 1, 0, 0],
+            [0, 0, 1, 0],
+            [0, 0, 0, 1]
+        ];
+    }
+    
+    // Create matrix from 4x4 array
+    func fromArray(arr) {
+        this.data = arr;
+        return this;
+    }
+    
+    // Get element at row, col
+    func get(row, col) {
+        return this.data[row][col];
+    }
+    
+    // Set element at row, col
+    func set(row, col, value) {
+        this.data[row][col] = value;
+    }
+    
+    // Matrix multiplication
+    func multiply(other) {
+        var result = Matrix4x4();
+        for (var i = 0; i < 4; i++) {
+            for (var j = 0; j < 4; j++) {
+                var sum = 0;
+                for (var k = 0; k < 4; k++) {
+                    sum += this.data[i][k] * other.data[k][j];
+                }
+                result.data[i][j] = sum;
+            }
+        }
+        return result;
+    }
+    
+    // Transform a 3D point (x, y, z) to (x, y, z, w)
+    func transformPoint(x, y, z) {
+        var w = this.data[3][0] * x + this.data[3][1] * y + this.data[3][2] * z + this.data[3][3];
+        var newX = this.data[0][0] * x + this.data[0][1] * y + this.data[0][2] * z + this.data[0][3];
+        var newY = this.data[1][0] * x + this.data[1][1] * y + this.data[1][2] * z + this.data[1][3];
+        var newZ = this.data[2][0] * x + this.data[2][1] * y + this.data[2][2] * z + this.data[2][3];
+        
+        // Perspective divide
+        if (w != 0) {
+            newX = newX / w;
+            newY = newY / w;
+            newZ = newZ / w;
+        }
+        
+        return [newX, newY, newZ];
+    }
+}
+
+// Matrix factory functions
+func identityMatrix() {
+    return Matrix4x4();
+}
+
+// Translation matrix
+func translationMatrix(x, y, z) {
+    var matrix = Matrix4x4();
+    matrix.set(0, 3, x);
+    matrix.set(1, 3, y);
+    matrix.set(2, 3, z);
+    return matrix;
+}
+
+// Rotation matrices
+func rotationXMatrix(angle) {
+    var cosA = math.cos(angle);
+    var sinA = math.sin(angle);
+    var matrix = Matrix4x4();
+    matrix.set(1, 1, cosA);
+    matrix.set(1, 2, -sinA);
+    matrix.set(2, 1, sinA);
+    matrix.set(2, 2, cosA);
+    return matrix;
+}
+
+func rotationYMatrix(angle) {
+    var cosA = math.cos(angle);
+    var sinA = math.sin(angle);
+    var matrix = Matrix4x4();
+    matrix.set(0, 0, cosA);
+    matrix.set(0, 2, sinA);
+    matrix.set(2, 0, -sinA);
+    matrix.set(2, 2, cosA);
+    return matrix;
+}
+
+func rotationZMatrix(angle) {
+    var cosA = math.cos(angle);
+    var sinA = math.sin(angle);
+    var matrix = Matrix4x4();
+    matrix.set(0, 0, cosA);
+    matrix.set(0, 1, -sinA);
+    matrix.set(1, 0, sinA);
+    matrix.set(1, 1, cosA);
+    return matrix;
+}
+
+// Scale matrix
+func scaleMatrix(x, y, z) {
+    var matrix = Matrix4x4();
+    matrix.set(0, 0, x);
+    matrix.set(1, 1, y);
+    matrix.set(2, 2, z);
+    return matrix;
+}
+
+// Perspective projection matrix
+func perspectiveMatrix(fov, aspect, near, far) {
+    var f = 1.0 / math.tan(fov / 2.0);
+    var matrix = Matrix4x4();
+    matrix.set(0, 0, f / aspect);
+    matrix.set(1, 1, f);
+    matrix.set(2, 2, (far + near) / (near - far));
+    matrix.set(2, 3, (2 * far * near) / (near - far));
+    matrix.set(3, 2, -1);
+    matrix.set(3, 3, 0);
+    return matrix;
+}
+
+// Look-at view matrix
+func lookAtMatrix(eyeX, eyeY, eyeZ, targetX, targetY, targetZ, upX, upY, upZ) {
+    // Calculate forward vector
+    var forwardX = targetX - eyeX;
+    var forwardY = targetY - eyeY;
+    var forwardZ = targetZ - eyeZ;
+    var forwardLength = math.sqrt(forwardX * forwardX + forwardY * forwardY + forwardZ * forwardZ);
+    forwardX = forwardX / forwardLength;
+    forwardY = forwardY / forwardLength;
+    forwardZ = forwardZ / forwardLength;
+    
+    // Calculate right vector
+    var rightX = forwardY * upZ - forwardZ * upY;
+    var rightY = forwardZ * upX - forwardX * upZ;
+    var rightZ = forwardX * upY - forwardY * upX;
+    var rightLength = math.sqrt(rightX * rightX + rightY * rightY + rightZ * rightZ);
+    rightX = rightX / rightLength;
+    rightY = rightY / rightLength;
+    rightZ = rightZ / rightLength;
+    
+    // Calculate up vector
+    var upVecX = rightY * forwardZ - rightZ * forwardY;
+    var upVecY = rightZ * forwardX - rightX * forwardZ;
+    var upVecZ = rightX * forwardY - rightY * forwardX;
+    
+    // Build view matrix
+    var matrix = Matrix4x4();
+    matrix.set(0, 0, rightX);
+    matrix.set(0, 1, rightY);
+    matrix.set(0, 2, rightZ);
+    matrix.set(1, 0, upVecX);
+    matrix.set(1, 1, upVecY);
+    matrix.set(1, 2, upVecZ);
+    matrix.set(2, 0, -forwardX);
+    matrix.set(2, 1, -forwardY);
+    matrix.set(2, 2, -forwardZ);
+    matrix.set(0, 3, -(rightX * eyeX + rightY * eyeY + rightZ * eyeZ));
+    matrix.set(1, 3, -(upVecX * eyeX + upVecY * eyeY + upVecZ * eyeZ));
+    matrix.set(2, 3, -(-forwardX * eyeX - forwardY * eyeY - forwardZ * eyeZ));
+    
+    return matrix;
+}

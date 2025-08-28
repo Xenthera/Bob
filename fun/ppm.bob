@@ -1,0 +1,140 @@
+import os;
+import math;
+
+// PPM image writer module
+class PPMWriter {
+    var width;
+    var height;
+    var data;
+    
+    func init(width, height) {
+        this.width = width;
+        this.height = height;
+        this.data = [];
+        
+        // Initialize with black pixels
+        for(var y = 0; y < height; y++) {
+            var row = [];
+            for(var x = 0; x < width; x++) {
+                row.push([0, 0, 0]); // Black
+            }
+            this.data.push(row);
+        }
+    }
+    
+    func setPixel(x, y, r, g, b) {
+        if(x >= 0 && x < this.width && y >= 0 && y < this.height) {
+            this.data[y][x] = [r, g, b];
+        }
+    }
+    
+    func setPixelColor(x, y, color) {
+        // Convert color string to RGB
+        var r; var g; var b;
+        if(color == "red") { r = 255; g = 0; b = 0; }
+        else if(color == "green") { r = 0; g = 255; b = 0; }
+        else if(color == "blue") { r = 0; g = 0; b = 255; }
+        else if(color == "yellow") { r = 255; g = 255; b = 0; }
+        else if(color == "magenta") { r = 255; g = 0; b = 255; }
+        else if(color == "cyan") { r = 0; g = 255; b = 255; }
+        else if(color == "white") { r = 255; g = 255; b = 255; }
+        else if(color == "black") { r = 0; g = 0; b = 0; }
+        else { r = 128; g = 128; b = 128; } // Default gray
+        
+        this.setPixel(x, y, r, g, b);
+    }
+    
+    func clear(r, g, b) {
+        for(var y = 0; y < this.height; y++) {
+            for(var x = 0; x < this.width; x++) {
+                this.data[y][x] = [r, g, b];
+            }
+        }
+    }
+    
+    func clearColor(color) {
+        var r; var g; var b;
+        if(color == "black") { r = 0; g = 0; b = 0; }
+        else if(color == "white") { r = 255; g = 255; b = 255; }
+        else { r = 0; g = 0; b = 0; } // Default black
+        
+        this.clear(r, g, b);
+    }
+    
+    func writeToFile(filename) {
+        // Create PPM content as string
+        var content = "P3\n";
+        content += this.width + " " + this.height + "\n";
+        content += "255\n";
+        
+        // Add pixel data
+        for(var y = 0; y < this.height; y++) {
+            for(var x = 0; x < this.width; x++) {
+                var pixel = this.data[y][x];
+                content += pixel[0] + " " + pixel[1] + " " + pixel[2] + " ";
+            }
+            content += "\n";
+        }
+        
+        // Write to file using os.writeFile
+        return os.writeFile(filename, content);
+    }
+    
+    func drawLine(x1, y1, x2, y2, r, g, b) {
+        // Bresenham's line algorithm
+        var dx = math.abs(x2 - x1);
+        var dy = math.abs(y2 - y1);
+        var sx = x1 < x2 ? 1 : -1;
+        var sy = y1 < y2 ? 1 : -1;
+        var err = dx - dy;
+        
+        var x = x1;
+        var y = y1;
+        
+        while(true) {
+            this.setPixel(x, y, r, g, b);
+            
+            if(x == x2 && y == y2) break;
+            
+            var e2 = 2 * err;
+            if(e2 > -dy) {
+                err -= dy;
+                x += sx;
+            }
+            if(e2 < dx) {
+                err += dx;
+                y += sy;
+            }
+        }
+    }
+    
+    func drawLineColor(x1, y1, x2, y2, color) {
+        var r; var g; var b;
+        if(color == "red") { r = 255; g = 0; b = 0; }
+        else if(color == "green") { r = 0; g = 255; b = 0; }
+        else if(color == "blue") { r = 0; g = 0; b = 255; }
+        else if(color == "yellow") { r = 255; g = 255; b = 0; }
+        else if(color == "magenta") { r = 255; g = 0; b = 255; }
+        else if(color == "cyan") { r = 0; g = 255; b = 255; }
+        else if(color == "white") { r = 255; g = 255; b = 255; }
+        else { r = 128; g = 128; b = 128; } // Default gray
+        
+        this.drawLine(x1, y1, x2, y2, r, g, b);
+    }
+}
+
+// Convenience functions
+func createPPM(width, height) {
+    var a = [];
+    print(a[0]);
+    return PPMWriter(width, height);
+}
+
+func writePPM(filename, width, height, pixelData) {
+    // pixelData should be a 2D array of [r,g,b] values
+    var ppm = PPMWriter(width, height);
+    ppm.data = pixelData;
+    return ppm.writeToFile(filename);
+}
+
+

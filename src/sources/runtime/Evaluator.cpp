@@ -5,6 +5,7 @@
 #include "helperFunctions/HelperFunctions.h"
 #include "ExecutionContext.h"
 #include "VariableAnalysis.h"
+#include "ErrorReporter.h"
 
 Evaluator::Evaluator(Interpreter* interpreter) : interpreter(interpreter) {}
 
@@ -227,6 +228,12 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             case SLASH: {
                 if (right.isNumber() && right.asNumber() == 0.0) {
                     // Report precise site for division by zero
+                                        // Ensure we have the current module context for error reporting
+                    auto errorReporter = interpreter->getErrorReporter();
+                    if (errorReporter && !errorReporter->getCurrentModule().empty()) {
+                        // Load the module source for proper error reporting
+                        errorReporter->loadModuleSourceForError(errorReporter->getCurrentModule());
+                    }
                     interpreter->reportError(expression->oper.line, expression->oper.column,
                                              "Runtime Error", "Division by zero", "/");
                     throw std::runtime_error("Division by zero");
@@ -235,6 +242,12 @@ Value Evaluator::visitBinaryExpr(const std::shared_ptr<BinaryExpr>& expression) 
             }
             case PERCENT: {
                 if (right.isNumber() && right.asNumber() == 0.0) {
+                    // Ensure we have the current module context for error reporting
+                    auto errorReporter = interpreter->getErrorReporter();
+                    if (errorReporter && !errorReporter->getCurrentModule().empty()) {
+                        // Load the module source for proper error reporting
+                        errorReporter->loadModuleSourceForError(errorReporter->getCurrentModule());
+                    }
                     interpreter->reportError(expression->oper.line, expression->oper.column,
                                              "Runtime Error", "Modulo by zero", "%");
                     throw std::runtime_error("Modulo by zero");

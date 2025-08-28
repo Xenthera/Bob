@@ -194,8 +194,11 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
     std::string code((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     file.close();
 
-    // Prepare reporter with module source
-    if (errorReporter) errorReporter->pushSource(code, key);
+    // Prepare reporter with module source and cache it for runtime errors
+    if (errorReporter) {
+        errorReporter->pushSource(code, key);
+        errorReporter->cacheModuleSource(key, code);
+    }
 
     // New lexer and parser
     Lexer lx; if (errorReporter) lx.setErrorReporter(errorReporter);
@@ -208,6 +211,12 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
     auto modEnv = std::make_shared<Environment>(saved);
     modEnv->setErrorReporter(errorReporter);
     setEnvironment(modEnv);
+    
+    // Set the module filename for error reporting context
+    if (errorReporter) {
+        errorReporter->loadSource(code, key);
+        errorReporter->setCurrentModule(key);
+    }
 
     // Execute
     executor->interpret(stmts);
@@ -225,7 +234,11 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
 
     // Restore env and reporter
     setEnvironment(saved);
-    if (errorReporter) errorReporter->popSource();
+    // Clear module context and pop source context only after successful module execution
+    if (errorReporter) {
+        errorReporter->clearCurrentModule();
+        errorReporter->popSource();
+    }
     return moduleVal;
 }
 
@@ -499,15 +512,20 @@ Value Interpreter::resolveCallee(const CallInfo& callInfo) {
     }
     
     // Allow dispatchers (builtin) and plain functions
-    if (!(callee.isFunction() || callee.isBuiltinFunction())) {
-        std::string errorMsg = callInfo.isSuperCall ? ("Undefined super method '" + callInfo.methodName + "'")
-                                                   : ("Can only call functions, got " + callee.getType());
-        if (errorReporter) {
-            errorReporter->reportError(callInfo.line, callInfo.column, "Runtime Error",
-                errorMsg, "");
+            if (!(callee.isFunction() || callee.isBuiltinFunction())) {
+            std::string errorMsg = callInfo.isSuperCall ? ("Undefined super method '" + callInfo.methodName + "'")
+                                                       : ("Can only call functions, got " + callee.getType());
+            if (errorReporter) {
+                // Try to load module source for better error reporting
+                if (errorReporter->getCurrentFileName().empty()) {
+                    // If no current filename, try to find the module filename from the call context
+                    // This is a fallback - ideally the filename should be set by the module execution context
+                }
+                errorReporter->reportError(callInfo.line, callInfo.column, "Runtime Error",
+                    errorMsg, "");
+            }
+            throw std::runtime_error(errorMsg);
         }
-        throw std::runtime_error(errorMsg);
-    }
     
     return callee;
 }
@@ -726,6 +744,14 @@ Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
     ScopedEnv _env(environment);
     environment = std::make_shared<Environment>(function->closure);
     environment->setErrorReporter(errorReporter);
+    
+    // Restore module context for error reporting if this function is from a module
+    std::string moduleContext;
+    if (errorReporter && !function->sourceModule.empty()) {
+        moduleContext = errorReporter->getCurrentModule();
+        errorReporter->setCurrentModule(function->sourceModule);
+        errorReporter->loadModuleSourceForError(function->sourceModule);
+    }
     if (callInfo.isMethodCall) {
         environment->define("this", callInfo.receiver);
         if (callInfo.isSuperCall) environment->define("super", callInfo.receiver);
@@ -750,6 +776,11 @@ Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
         if (context.hasReturn) { 
             return context.returnValue; 
         }
+    }
+    
+    // Restore module context if it was preserved
+    if (errorReporter && !moduleContext.empty()) {
+        errorReporter->setCurrentModule(moduleContext);
     }
     
     return context.returnValue;

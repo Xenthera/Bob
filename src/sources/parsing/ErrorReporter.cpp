@@ -55,16 +55,77 @@ void ErrorReporter::reportError(const ErrorInfo& error) {
 
 void ErrorReporter::reportError(int line, int column, const std::string& errorType, 
                                const std::string& message, const std::string& lexeme, bool showArrow) {
-    ErrorInfo error(errorType, message, currentFileName, line, column, lexeme, showArrow);
+    
+    // If we don't have source lines loaded but we have a filename, try to load from cache
+    if (sourceLines.empty() && !currentFileName.empty()) {
+        loadModuleSourceForError(currentFileName);
+    }
+    
+    // If we're currently executing a module and don't have source lines, try to load the module source
+    if (sourceLines.empty() && !currentModule.empty()) {
+        loadModuleSourceForError(currentModule);
+    }
+    
+    // If we have module context, prioritize showing the module's source context
+    std::string displayFileName = currentFileName;
+    if (!currentModule.empty()) {
+        displayFileName = currentModule;
+    }
+    
+    ErrorInfo error(errorType, message, displayFileName, line, column, lexeme, showArrow);
     reportError(error);
 }
 
 void ErrorReporter::displayError(const ErrorInfo& error) {
     std::cout << "\n";
+    
+    // Display file name as title if available
+    if (!error.fileName.empty()) {
+        std::cout << colorize("File: ", Colors::CYAN) << colorize(error.fileName, Colors::BOLD) << "\n\n";
+    }
+    
+    // If we have module context and it's different from the current file, show both
+    if (!currentModule.empty() && currentModule != error.fileName) {
+        std::cout << colorize("Called from: ", Colors::YELLOW) << colorize(error.fileName, Colors::BOLD) << "\n";
+        std::cout << colorize("Error in module: ", Colors::YELLOW) << colorize(currentModule, Colors::BOLD) << "\n\n";
+    }
+    
     displaySourceContext(error);
     std::cout << colorize("Error: ", Colors::RED) << colorize(error.errorType, Colors::BOLD) << "\n";
     std::cout << colorize("Message: ", Colors::BOLD) << error.message << "\n\n";
 }
+
+void ErrorReporter::cacheModuleSource(const std::string& fileName, const std::string& source) {
+    std::vector<std::string> lines;
+    std::istringstream iss(source);
+    std::string line;
+    while (std::getline(iss, line)) {
+        lines.push_back(line);
+    }
+    moduleSourceCache[fileName] = lines;
+}
+
+void ErrorReporter::loadModuleSourceForError(const std::string& fileName) {
+    auto it = moduleSourceCache.find(fileName);
+    if (it != moduleSourceCache.end()) {
+        sourceLines = it->second;
+        currentFileName = fileName;
+    }
+}
+
+void ErrorReporter::setCurrentModule(const std::string& fileName) {
+    currentModule = fileName;
+}
+
+void ErrorReporter::clearCurrentModule() {
+    currentModule.clear();
+}
+
+std::string ErrorReporter::getCurrentModule() const {
+    return currentModule;
+}
+
+
 
 void ErrorReporter::displaySourceContext(const ErrorInfo& error) {
     if (sourceLines.empty()) {

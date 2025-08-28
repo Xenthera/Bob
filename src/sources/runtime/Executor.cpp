@@ -4,6 +4,7 @@
 #include "Environment.h"
 #include "Parser.h"
 #include "AssignmentUtils.h"
+#include "Expression.h"
 #include <iostream>
 
 Executor::Executor(Interpreter* interpreter, Evaluator* evaluator) 
@@ -46,18 +47,70 @@ void Executor::execute(const std::shared_ptr<Stmt>& statement, ExecutionContext*
     try {
         statement->accept(this, context);
     } catch (const std::runtime_error& e) {
+        // Capture line/column from the statement if available
+        int errorLine = 0;
+        int errorColumn = 0;
+        
+        // Try to get line/column from the statement
+        if (auto exprStmt = std::dynamic_pointer_cast<ExpressionStmt>(statement)) {
+            // Try to get line/column from the expression based on its type
+            if (auto binaryExpr = std::dynamic_pointer_cast<BinaryExpr>(exprStmt->expression)) {
+                errorLine = binaryExpr->oper.line;
+                errorColumn = binaryExpr->oper.column;
+            } else if (auto unaryExpr = std::dynamic_pointer_cast<UnaryExpr>(exprStmt->expression)) {
+                errorLine = unaryExpr->oper.line;
+                errorColumn = unaryExpr->oper.column;
+            } else if (auto callExpr = std::dynamic_pointer_cast<CallExpr>(exprStmt->expression)) {
+                errorLine = callExpr->paren.line;
+                errorColumn = callExpr->paren.column;
+            } else if (auto incrementExpr = std::dynamic_pointer_cast<IncrementExpr>(exprStmt->expression)) {
+                errorLine = incrementExpr->oper.line;
+                errorColumn = incrementExpr->oper.column;
+            } else if (auto arrayIndexExpr = std::dynamic_pointer_cast<ArrayIndexExpr>(exprStmt->expression)) {
+                errorLine = arrayIndexExpr->bracket.line;
+                errorColumn = arrayIndexExpr->bracket.column;
+            } else if (auto propertyExpr = std::dynamic_pointer_cast<PropertyExpr>(exprStmt->expression)) {
+                errorLine = propertyExpr->name.line;
+                errorColumn = propertyExpr->name.column;
+            } else if (auto arrayAssignExpr = std::dynamic_pointer_cast<ArrayAssignExpr>(exprStmt->expression)) {
+                errorLine = arrayAssignExpr->bracket.line;
+                errorColumn = arrayAssignExpr->bracket.column;
+            } else if (auto propertyAssignExpr = std::dynamic_pointer_cast<PropertyAssignExpr>(exprStmt->expression)) {
+                errorLine = propertyAssignExpr->name.line;
+                errorColumn = propertyAssignExpr->name.column;
+            } else if (auto varExpr = std::dynamic_pointer_cast<VarExpr>(exprStmt->expression)) {
+                errorLine = varExpr->name.line;
+                errorColumn = varExpr->name.column;
+            }
+            // Note: ArrayLiteralExpr, DictLiteralExpr, TernaryExpr don't have specific tokens for line/column
+            // They would need to be handled differently if needed
+        }
+        
+
         if (context) {
+            // Ensure module context is preserved for error reporting
+            auto errorReporter = interpreter->getErrorReporter();
+            if (errorReporter && !errorReporter->getCurrentModule().empty()) {
+                // Load the module source for proper error reporting
+                errorReporter->loadModuleSourceForError(errorReporter->getCurrentModule());
+            }
+            
             std::unordered_map<std::string, Value> err;
             err["type"] = Value(std::string("RuntimeError"));
             err["message"] = Value(std::string(e.what()));
             context->hasThrow = true;
             context->thrownValue = Value(err);
             
-            // Get line/column from the error reporter if available
-            if (context->throwLine == 0 && context->throwColumn == 0) {
+            // Use captured line/column information or get from error reporter
+            if (errorLine != 0 && errorColumn != 0) {
+                context->throwLine = errorLine;
+                context->throwColumn = errorColumn;
+            } else if (context->throwLine == 0 && context->throwColumn == 0) {
                 context->throwLine = interpreter->getLastErrorLine();
                 context->throwColumn = interpreter->getLastErrorColumn();
             }
+            
+
         }
     }
 }
@@ -116,10 +169,18 @@ void Executor::visitFunctionStmt(const std::shared_ptr<FunctionStmt>& statement,
         paramNames.push_back(param.lexeme);
     }
     
+    // Get the current module source if we're in a module context
+    std::string sourceModule;
+    if (interpreter->getErrorReporter()) {
+        sourceModule = interpreter->getErrorReporter()->getCurrentModule();
+    }
+    
     auto function = std::make_shared<Function>(statement->name.lexeme, 
                                    paramNames, 
                                    statement->body, 
-                                   interpreter->getEnvironment());
+                                   interpreter->getEnvironment(),
+                                   "", // ownerClass
+                                   sourceModule);
     // Register function; this also installs/updates a dispatcher in env under this name
     interpreter->addFunction(function);
 }

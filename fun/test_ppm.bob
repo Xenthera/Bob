@@ -1,0 +1,28 @@
+import ppm;
+
+print("test"); print(1/0); print("test2");
+
+// Test the PPM module
+var ppm = ppm.createPPM(100, 100);
+
+// Clear to black
+ppm.clearColor("black");
+
+// Draw some test patterns
+ppm.drawLineColor(10, 10, 90, 90, "red");
+ppm.drawLineColor(10, 90, 90, 10, "blue");
+ppm.drawLineColor(50, 10, 50, 90, "green");
+
+// Draw some pixels
+for(var i = 0; i < 20; i++) {
+    ppm.setPixelColor(20 + i, 20 + i, "yellow");
+    ppm.setPixelColor(80 - i, 20 + i, "magenta");
+}
+
+// Write to file
+var success = ppm.writeToFile("test_output.ppm");
+if(success) {
+    print("PPM file written successfully: test_output.ppm");
+} else {
+    print("Failed to write PPM file");
+}

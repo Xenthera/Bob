@@ -48,6 +48,10 @@ private:
     std::vector<std::vector<std::string>> sourceStack;
     std::vector<std::string> fileNameStack;
     
+    // Module source cache for runtime error reporting
+    std::unordered_map<std::string, std::vector<std::string>> moduleSourceCache;
+    std::string currentModule; // Track which module is currently executing
+    
     // Try/catch state management
     int tryDepth = 0;
     bool errorReported = false;
@@ -70,6 +74,17 @@ public:
     void pushSource(const std::string& source, const std::string& fileName);
     void popSource();
     
+    // Module source caching for runtime error reporting
+    void cacheModuleSource(const std::string& fileName, const std::string& source);
+    void loadModuleSourceForError(const std::string& fileName);
+    
+    // Module execution tracking
+    void setCurrentModule(const std::string& fileName);
+    void clearCurrentModule();
+    std::string getCurrentModule() const;
+    
+
+    
     // Try/catch integration
     void enterTry() { tryDepth++; }
     void exitTry() { if (tryDepth > 0) tryDepth--; }
@@ -82,6 +97,7 @@ public:
     void resetErrorState() { errorReported = false; tryDepth = 0; lastError = ErrorInfo(); }
     
     const std::string& getCurrentFileName() const { return currentFileName; }
+    const std::vector<std::string>& getSourceLines() const { return sourceLines; }
 
 private:
     void displayError(const ErrorInfo& error);

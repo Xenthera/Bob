@@ -1,0 +1,151 @@
+// 3D Matrix-based Demo with proper coordinate spaces
+import canvas;
+import time;
+import math;
+import matrix;
+
+// 3D Point class with matrix transformations
+class Point3D {
+    var x;
+    var y;
+    var z;
+    
+    func init(x, y, z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    
+    func transform(matrix) {
+        var result = matrix.transformPoint(this.x, this.y, this.z);
+        return Point3D(result[0], result[1], result[2]);
+    }
+    
+    func project(width, height) {
+        // Convert from NDC (-1 to 1) to screen coordinates
+        var screenX = (this.x + 1) * width / 2;
+        var screenY = (this.y + 1) * height / 2;
+        return [screenX, screenY];
+    }
+}
+
+// Cube class with matrix transformations
+class Cube {
+    var originalPoints;
+    var points;
+    var edges;
+    
+    func init() {
+        // Define cube vertices (8 points) - larger size
+        this.originalPoints = [
+            Point3D(-2, -2, -2),  // 0: back bottom left
+            Point3D(2, -2, -2),   // 1: back bottom right
+            Point3D(2, 2, -2),    // 2: back top right
+            Point3D(-2, 2, -2),   // 3: back top left
+            Point3D(-2, -2, 2),   // 4: front bottom left
+            Point3D(2, -2, 2),    // 5: front bottom right
+            Point3D(2, 2, 2),     // 6: front top right
+            Point3D(-2, 2, 2)     // 7: front top left
+        ];
+        
+        // Initialize rotated points to original
+        this.points = this.originalPoints;
+        
+        // Define cube edges (12 edges)
+        this.edges = [
+            [0, 1], [1, 2], [2, 3], [3, 0],  // back face
+            [4, 5], [5, 6], [6, 7], [7, 4],  // front face
+            [0, 4], [1, 5], [2, 6], [3, 7]   // connecting edges
+        ];
+    }
+    
+    func transform(modelMatrix, viewMatrix, projectionMatrix) {
+        // Combine all transformations: projection * view * model
+        var mvp = projectionMatrix.multiply(viewMatrix.multiply(modelMatrix));
+        
+        // Transform all points
+        var transformedPoints = [];
+        foreach(var point : this.originalPoints) {
+            transformedPoints.push(point.transform(mvp));
+        }
+        this.points = transformedPoints;
+    }
+    
+    func draw(width, height) {
+        // Project all points to 2D
+        var projectedPoints = [];
+        foreach(var point : this.points) {
+            projectedPoints.push(point.project(width, height));
+        }
+        
+        // Draw edges using canvas.drawLine
+        foreach(var edge : this.edges) {
+            var p1 = projectedPoints[edge[0]];
+            var p2 = projectedPoints[edge[1]];
+            
+            // Draw the edge line
+            canvas.drawLine(math.round(p1[0]), math.round(p1[1]), math.round(p2[0]), math.round(p2[1]));
+        }
+    }
+}
+
+// Initialize canvas
+canvas.init();
+var size = canvas.getSize();
+var width = size[0];
+var height = size[1];
+
+// Create cube
+var cube = Cube();
+
+// Animation variables
+var angleX = 0;
+var angleY = 0;
+var angleZ = 0;
+
+// Camera parameters
+var cameraDistance = 10;
+var cameraAngle = 0;
+
+// Animation loop
+while (true) {
+    canvas.clear();
+    
+    // Set color for cube edges
+    canvas.setColor("cyan");
+    
+    // Create transformation matrices
+    
+    // Model matrix: translate first, then rotate around the cube's center
+    var modelMatrix = matrix.identityMatrix();
+    modelMatrix = modelMatrix.multiply(matrix.translationMatrix(0, 0, -5)); // Move cube to position first
+    modelMatrix = modelMatrix.multiply(matrix.rotationXMatrix(angleX)); // Then rotate around its center
+    modelMatrix = modelMatrix.multiply(matrix.rotationYMatrix(angleY));
+    modelMatrix = modelMatrix.multiply(matrix.rotationZMatrix(angleZ));
+    
+    // View matrix: fixed camera position
+    var viewMatrix = matrix.lookAtMatrix(0, 2, 10, 0, 0, -5, 0, 1, 0);
+    
+    // Projection matrix: perspective
+    var aspect = width / height;
+    var projectionMatrix = matrix.perspectiveMatrix(0.5, aspect, 0.1, 100.0);
+    
+    // Transform and draw cube
+    cube.transform(modelMatrix, viewMatrix, projectionMatrix);
+    cube.draw(width, height);
+    
+    // Draw debug info
+    canvas.setColor("yellow");
+    canvas.drawText(1, 1, "Matrix 3D Demo");
+    canvas.drawText(1, 2, "Model: X:" + angleX + " Y:" + angleY + " Z:" + angleZ);
+    canvas.drawText(1, 3, "Camera: Fixed at (0, 2, 10)");
+    canvas.drawText(1, 4, "Aspect: " + aspect);
+    
+    // Update animation
+    angleX += 0.02;
+    angleY += 0.03;
+    angleZ += 0.01;
+    
+    // Sleep
+    time.sleep(0.01);
+}

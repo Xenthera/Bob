@@ -1,0 +1,15 @@
+import ppm;
+
+print("Testing PPM module...");
+
+// Try to create a PPM object
+var ppm_obj = ppm.createPPM(10, 10);
+print("PPM object created successfully");
+
+// Try to set a pixel
+ppm_obj.setPixelColor(5, 5, "red");
+print("Pixel set successfully");
+
+// Try to write to file
+var result = ppm_obj.writeToFile("simple_test.ppm");
+print("Write result: " + result);
