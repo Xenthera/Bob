@@ -49,6 +49,18 @@ int main(int argc, char* argv[]){
             return 0;
         }
         
+        // Handle install command
+        if (firstArg == "install" && argc > 2) {
+            std::string modulePath = argv[2];
+            try {
+                bobLang.installModule(modulePath);
+                return 0;
+            } catch (const std::exception& e) {
+                std::cerr << "Error: " << e.what() << std::endl;
+                return 1;
+            }
+        }
+        
         // Handle -i flag for interactive mode
         if (firstArg == "-i") {
             std::vector<std::string> args;

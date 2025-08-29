@@ -3,6 +3,7 @@
 #include "bob.h"
 #include "Parser.h"
 #include "LineEditor.h"
+#include "CppModuleLoader.h"
 
 void Bob::ensureInterpreter(bool interactive) {
     if (!interpreter) interpreter = msptr(Interpreter)(interactive);
@@ -95,6 +96,18 @@ bool Bob::evalString(const std::string& code, const std::string& filename) {
         interpreter->interpret(statements);
         return true;
     } catch (...) { return false; }
+}
+
+void Bob::installModule(const std::string& modulePath) {
+    // Ensure interpreter is initialized
+    ensureInterpreter(false);
+    
+    // Set up modules directory relative to current working directory
+    std::string modulesDirectory = "./bob-modules/";
+    interpreter->getModuleRegistry().setModulesDirectory(modulesDirectory);
+    
+    // Install the module
+    CppModuleLoader::installModule(modulePath, modulesDirectory);
 }
 
 

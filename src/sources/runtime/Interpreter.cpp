@@ -3,6 +3,7 @@
 #include "Evaluator.h"
 #include "Executor.h"
 #include "ValuePool.h"
+#include "ModuleDef.h"
 #include "BobStdLib.h"
 #include "ErrorReporter.h"
 #include "Environment.h"
@@ -167,22 +168,41 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
     auto it = moduleCache.find(key);
     if (it != moduleCache.end()) return it->second;
 
-    // If still not a path, it must be builtin or missing
+    // If still not a path, it must be builtin, installed, or missing
     if (!looksPath) {
-        if (!builtinModules.has(spec)) {
-            reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
-            throw std::runtime_error("Module not found");
+        // Check builtin modules first
+        if (builtinModules.has(spec)) {
+            // Builtin: return from cache or construct and cache
+            auto itc = moduleCache.find(key);
+            if (itc != moduleCache.end()) return itc->second;
+            Value v = builtinModules.create(spec, *this);
+            if (v.isNone()) { // cloaked by policy
+                reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
+                throw std::runtime_error("Module not found");
+            }
+            moduleCache[key] = v;
+            return v;
         }
-        // Builtin: return from cache or construct and cache
-        auto itc = moduleCache.find(key);
-        if (itc != moduleCache.end()) return itc->second;
-        Value v = builtinModules.create(spec, *this);
-        if (v.isNone()) { // cloaked by policy
-            reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
-            throw std::runtime_error("Module not found");
+        
+        // Check installed modules
+        if (builtinModules.isInstalledModule(spec)) {
+            try {
+                auto moduleDef = builtinModules.loadInstalledModule(spec);
+                // Register the module like builtin modules
+                moduleDef->registerModule(*this);
+                // The module is now registered and can be created like builtin modules
+                Value v = builtinModules.create(spec, *this);
+                moduleCache[key] = v;
+                return v;
+            } catch (const std::exception& e) {
+                reportError(line, column, "Import Error", "Failed to load installed module: " + std::string(e.what()), spec);
+                throw std::runtime_error("Failed to load installed module");
+            }
         }
-        moduleCache[key] = v;
-        return v;
+        
+        // Module not found
+        reportError(line, column, "Import Error", "Module not found: " + spec + ".bob", spec);
+        throw std::runtime_error("Module not found");
     }
 
     // File module: read and execute in isolated env

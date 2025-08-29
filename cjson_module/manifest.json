@@ -1,0 +1,14 @@
+{
+    "name": "cjson",
+    "version": "1.0.0",
+    "type": "cpp",
+    "description": "cJSON library bindings for Bob",
+    "author": "Bob Module System",
+    "license": "MIT",
+
+    "build": {
+        "type": "cmake",
+        "source": "source/cjson_module.cpp",
+        "libraries": []
+    }
+}

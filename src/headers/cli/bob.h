@@ -48,6 +48,7 @@ public:
     void runPrompt();
     bool evalFile(const std::string& path);
     bool evalString(const std::string& code, const std::string& filename = "<eval>");
+    void installModule(const std::string& modulePath);
 
     // Safety policy helpers (public API)
     // Set all safety-related policies at once
