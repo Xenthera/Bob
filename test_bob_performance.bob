@@ -1,0 +1,39 @@
+import time;
+
+print("Testing Bob's raw performance:");
+
+var startTime = time.now();
+var counter = 0;
+
+while (counter < 1000000) {
+    counter = counter + 1;
+}
+
+var endTime = time.now();
+var elapsed = (endTime - startTime) / 1000000; // Convert microseconds to seconds
+var opsPerSecond = counter / elapsed;
+
+print("Counter reached:", counter);
+print("Time elapsed:", elapsed, "seconds");
+print("Operations per second:", opsPerSecond);
+
+// Test with a more complex operation
+print("\nTesting with more complex operations:");
+
+startTime = time.now();
+counter = 0;
+
+while (counter < 100000) {
+    counter = counter + 1;
+    var temp = counter * 2;
+    var temp2 = temp + 1;
+    var temp3 = temp2 / 2;
+}
+
+endTime = time.now();
+elapsed = (endTime - startTime) / 1000000; // Convert microseconds to seconds
+opsPerSecond = counter / elapsed;
+
+print("Complex operations counter:", counter);
+print("Time elapsed:", elapsed, "seconds");
+print("Complex operations per second:", opsPerSecond);

@@ -187,9 +187,13 @@ Value Interpreter::importModule(const std::string& spec, int line, int column) {
         // Check installed modules
         if (builtinModules.isInstalledModule(spec)) {
             try {
-                auto moduleDef = builtinModules.loadInstalledModule(spec);
+                std::cout << "DEBUG: Loading installed module: " << spec << std::endl;
+    auto moduleDef = builtinModules.loadInstalledModule(spec);
+    std::cout << "DEBUG: Module loaded, registering..." << std::endl;
                 // Register the module like builtin modules
+                std::cout << "DEBUG: Calling registerModule..." << std::endl;
                 moduleDef->registerModule(*this);
+                std::cout << "DEBUG: registerModule completed" << std::endl;
                 // The module is now registered and can be created like builtin modules
                 Value v = builtinModules.create(spec, *this);
                 moduleCache[key] = v;
@@ -718,7 +722,7 @@ Value Interpreter::executeCall(const Value& callee, const CallInfo& callInfo) {
             const auto& d = callInfo.receiver.asDict();
             auto itc = d.find("__class");
             if (itc != d.end() && itc->second.isString()) {
-                std::string cls = itc->second.asString();
+                const std::string& cls = itc->second.asString(); // Use reference to avoid copy
                 if (auto sel = classRegistry.lookupClassMethodOverload(cls, callInfo.methodName, callInfo.arguments.size())) { 
                     functionShared = sel; 
                     function = sel.get(); 

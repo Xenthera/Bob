@@ -34,7 +34,6 @@ enum ValueType {
     VAL_DICT,
     VAL_MODULE,
     VAL_OBJECT  // Wrapped C++ objects
-
 };
 
 // Tagged value system (like Lua) - no heap allocation for simple values
@@ -50,10 +49,10 @@ struct Value {
     std::shared_ptr<std::vector<Value> > array_value; // Store arrays as shared_ptr for mutability
     std::shared_ptr<std::unordered_map<std::string, Value> > dict_value; // Store dictionaries as shared_ptr for mutability
     std::shared_ptr<Module> module_value; // Module object
-    std::shared_ptr<void> object_value; // Wrapped C++ object
-    std::string object_type; // Type name of the wrapped object
     
-
+    // Wrapped C++ objects
+    std::shared_ptr<void> object_value; // The wrapped C++ object
+    std::string object_type; // Type identifier (e.g., "raylib::Color")
     
     // Store functions as shared_ptr for proper reference counting
     std::shared_ptr<Function> function;
@@ -89,8 +88,6 @@ struct Value {
     static Value createWrappedObject(std::shared_ptr<T> obj, const std::string& typeName) {
         return Value(obj, typeName);
     }
-    
-
     
     // Destructor to clean up functions and thunks
     ~Value() {
@@ -292,8 +289,6 @@ struct Value {
         }
         return std::static_pointer_cast<T>(object_value);
     }
-    
-
 
     // Truthiness check - inline for performance
     inline bool isTruthy() const {

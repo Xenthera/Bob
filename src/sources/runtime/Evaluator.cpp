@@ -555,6 +555,7 @@ Value Evaluator::visitPropertyExpr(const std::shared_ptr<PropertyExpr>& expr) {
             if (it != mod->exports->end()) return it->second;
         }
         return NONE_VALUE;
+
     } else if (object.isDict()) {
         Value v = getDictProperty(object, propertyName);
         if (!v.isNone()) {

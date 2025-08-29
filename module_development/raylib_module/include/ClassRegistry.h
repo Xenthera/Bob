@@ -33,8 +33,6 @@ private:
     
     // Field initializers per class in source order (to evaluate across inheritance chain)
     std::unordered_map<std::string, std::vector<std::pair<std::string, std::shared_ptr<Expr>>>> classFieldInitializers; // className -> [(field, expr)]
-    
-
 
 public:
     ClassRegistry() = default;
@@ -44,7 +42,6 @@ public:
     void addClassMethodOverload(const std::string& className, std::shared_ptr<Function> function);
     std::shared_ptr<Function> lookupClassMethodOverload(const std::string& className, const std::string& methodName, size_t arity);
     std::shared_ptr<Function> lookupClassMethodDirect(const std::string& className, const std::string& methodName, size_t arity = 0);
-
     
     // Class inheritance
     void registerClass(const std::string& className, const std::string& parentName);

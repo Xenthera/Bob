@@ -28,8 +28,25 @@ void CppModuleLoader::installModule(const std::string& zipPath, const std::strin
         std::string tempDir = extractZip(zipPath);
         
         // 2. Parse manifest
+        // Try to find manifest.json in the extracted directory
         std::string manifestPath = tempDir + "/manifest.json";
         std::ifstream manifestFile(manifestPath);
+        if (!manifestFile.is_open()) {
+            // Try looking in subdirectories (common case when zip contains a folder)
+            std::filesystem::path tempPath(tempDir);
+            for (const auto& entry : std::filesystem::directory_iterator(tempPath)) {
+                if (entry.is_directory()) {
+                    std::string subManifestPath = entry.path().string() + "/manifest.json";
+                    std::ifstream subManifestFile(subManifestPath);
+                    if (subManifestFile.is_open()) {
+                        manifestPath = subManifestPath;
+                        manifestFile = std::move(subManifestFile);
+                        break;
+                    }
+                }
+            }
+        }
+        
         if (!manifestFile.is_open()) {
             throw std::runtime_error("Could not open manifest.json");
         }
@@ -64,24 +81,34 @@ void CppModuleLoader::installModule(const std::string& zipPath, const std::strin
 }
 
 std::shared_ptr<ModuleDef> CppModuleLoader::loadModule(const std::string& name, const std::string& modulesDirectory) {
+    std::cout << "DEBUG: loadModule called for " << name << " in " << modulesDirectory << std::endl;
     std::string libraryPath = modulesDirectory + "/" + name + "/lib" + name + getLibraryExtension();
+    std::cout << "DEBUG: Looking for library at " << libraryPath << std::endl;
     
     if (!std::filesystem::exists(libraryPath)) {
+        std::cout << "DEBUG: Library not found at " << libraryPath << std::endl;
         throw std::runtime_error("Module library not found: " + libraryPath);
     }
+    std::cout << "DEBUG: Library found at " << libraryPath << std::endl;
     
     // Load dynamic library
+    std::cout << "DEBUG: Loading dynamic library..." << std::endl;
     void* handle = loadDynamicLibrary(libraryPath);
     if (!handle) {
+        std::cout << "DEBUG: Failed to load dynamic library" << std::endl;
         throw std::runtime_error("Failed to load module library: " + libraryPath);
     }
+    std::cout << "DEBUG: Dynamic library loaded successfully" << std::endl;
     
     // Get module creation function
+    std::cout << "DEBUG: Getting createModule function..." << std::endl;
     ModuleDef* module = getCreateModuleFunction(handle);
     if (!module) {
+        std::cout << "DEBUG: Failed to get createModule function" << std::endl;
         dlclose(handle);
         throw std::runtime_error("Module does not export 'createModule' function");
     }
+    std::cout << "DEBUG: createModule function obtained successfully" << std::endl;
     
     return std::shared_ptr<ModuleDef>(module);
 }
@@ -153,7 +180,20 @@ std::string CppModuleLoader::compileModule(const std::string& tempDir, const Mod
     }
     
     // Configure with CMake (headers are bundled with module)
-    std::string configureCmd = "cmake -B " + buildDir + " -S " + tempDir;
+    // Find the actual module directory (might be in a subdirectory)
+    std::string moduleDir = tempDir;
+    std::filesystem::path tempPath(tempDir);
+    for (const auto& entry : std::filesystem::directory_iterator(tempPath)) {
+        if (entry.is_directory()) {
+            std::string subManifestPath = entry.path().string() + "/manifest.json";
+            if (std::filesystem::exists(subManifestPath)) {
+                moduleDir = entry.path().string();
+                break;
+            }
+        }
+    }
+    
+    std::string configureCmd = "cmake -B " + buildDir + " -S " + moduleDir;
     int result = system(configureCmd.c_str());
     if (result != 0) {
         throw std::runtime_error("CMake configuration failed");

@@ -185,7 +185,14 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
                     if (hasUserFunction) {
                         typeName = "function";
                     } else {
-                        typeName = "builtin_function";
+                        // Check if this is a class constructor (builtin function with class name)
+                        // Class constructors are typically named like "ClassName" or "module::ClassName"
+                        if (bf->name.find("::") != std::string::npos || 
+                            (bf->name[0] >= 'A' && bf->name[0] <= 'Z')) {
+                            typeName = "class: " + bf->name;
+                        } else {
+                            typeName = "builtin_function";
+                        }
                     }
                 } else {
                     typeName = "builtin_function";
@@ -193,7 +200,14 @@ void BobStdLib::addToEnvironment(std::shared_ptr<Environment> env, Interpreter& 
             } else if (args[0].isArray()) {
                 typeName = "array";
             } else if (args[0].isDict()) {
-                typeName = "dict";
+                // Check if this is a class instance
+                const auto& dict = args[0].asDict();
+                auto classIt = dict.find("__class");
+                if (classIt != dict.end() && classIt->second.isString()) {
+                    typeName = "object: " + classIt->second.asString();
+                } else {
+                    typeName = "dict";
+                }
             } else if (args[0].isModule()) {
                 typeName = "module";
             } else {

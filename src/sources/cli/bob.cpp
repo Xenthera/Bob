@@ -107,7 +107,12 @@ void Bob::installModule(const std::string& modulePath) {
     interpreter->getModuleRegistry().setModulesDirectory(modulesDirectory);
     
     // Install the module
-    CppModuleLoader::installModule(modulePath, modulesDirectory);
+    try {
+        CppModuleLoader::installModule(modulePath, modulesDirectory);
+        std::cout << "Module installed successfully!\n";
+    } catch (const std::exception& e) {
+        std::cout << "Failed to install module: " << e.what() << "\n";
+    }
 }
 
 

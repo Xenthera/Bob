@@ -1,0 +1,151 @@
+// Performance debug test for bouncing circles
+import raylib;
+import time;
+import math;
+import random;
+
+// Simplified Vector2 class for performance testing
+class Vector2 {
+    var x;
+    var y;
+    
+    func init(x, y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    func add(other) {
+        return Vector2(this.x + other.x, this.y + other.y);
+    }
+    
+    func multiply(scalar) {
+        return Vector2(this.x * scalar, this.y * scalar);
+    }
+}
+
+// Simplified BouncingCircle class
+class BouncingCircle {
+    var position;
+    var velocity;
+    var radius;
+    
+    func init(x, y, vx, vy, radius) {
+        this.position = Vector2(x, y);
+        this.velocity = Vector2(vx, vy);
+        this.radius = radius;
+    }
+    
+    func update(width, height, deltaTime) {
+        // Simple physics - no random acceleration, no damping
+        // this.position = this.position.add(this.velocity.multiply(deltaTime));
+        
+        // // Simple bounce
+        // if (this.position.x <= this.radius || this.position.x >= width - this.radius) {
+        //     this.velocity.x = -this.velocity.x;
+        // }
+        // if (this.position.y <= this.radius || this.position.y >= height - this.radius) {
+        //     this.velocity.y = -this.velocity.y;
+        // }
+        
+        // // Keep within bounds
+        // if (this.position.x < this.radius) this.position.x = this.radius;
+        // if (this.position.x >= width - this.radius) this.position.x = width - this.radius;
+        // if (this.position.y < this.radius) this.position.y = this.radius;
+        // if (this.position.y >= height - this.radius) this.position.y = height - this.radius;
+        //1 + 1;
+    }
+    
+    func draw() {
+        raylib.drawCircle(this.position.x, this.position.y, this.radius * 1.0, raylib.WHITE);
+    }
+}
+
+// Initialize raylib window
+raylib.initWindow(800, 600, "Performance Debug");
+raylib.setTargetFPS(60);
+
+var width = raylib.getScreenWidth();
+var height = raylib.getScreenHeight();
+
+print("Screen size: " + width + "x" + height);
+
+// Circle count cycling
+var circleCounts = [50, 100, 200, 500, 1000, 5000, 10000];
+var currentCountIndex = 0;
+var circles = [];
+
+// Function to create circles
+func createCircles(count) {
+    circles = [];
+    for (var i = 0; i < count; i++) {
+        var x = random.random() * width;
+        var y = random.random() * height;
+        var vx = (random.random() - 0.5) * 200;
+        var vy = (random.random() - 0.5) * 200;
+        circles.push(BouncingCircle(x, y, vx, vy, 5));
+    }
+}
+
+// Initialize with first count
+createCircles(circleCounts[currentCountIndex]);
+
+// Performance tracking
+var frameCount = 0;
+var lastFpsTime = time.now();
+var updateTime = 0;
+var drawTime = 0;
+
+// Animation loop
+var lastTime = time.now();
+while (!raylib.windowShouldClose()) {
+    var currentTime = time.now();
+    var deltaTime = (currentTime - lastTime) / 1000000.0;
+    lastTime = currentTime;
+    
+    if (deltaTime > 0.1) deltaTime = 0.1;
+    
+    raylib.beginDrawing();
+    raylib.clearBackground(raylib.Color(0, 0, 0, 255));
+    
+    // Measure update time
+    var updateStart = time.now();
+    foreach(var circle : circles) {
+        circle.update(width, height, deltaTime);
+        
+    }
+    var updateEnd = time.now();
+    updateTime = (updateEnd - updateStart) / 1000.0; // Convert to milliseconds
+    
+    // Handle space key to change circle count
+    if (raylib.isKeyPressed(32)) { // SPACE key
+        currentCountIndex = (currentCountIndex + 1) % circleCounts.len();
+        createCircles(circleCounts[currentCountIndex]);
+        print("Changed to " + circleCounts[currentCountIndex] + " circles");
+    }
+    
+    // Measure draw time
+    var drawStart = time.now();
+    foreach(var circle : circles) {
+        //circle.draw();
+        //raylib.drawCircle(circle.position.x, circle.position.y, circle.radius, raylib.BLUE);
+        1 + 10;
+    }
+    var drawEnd = time.now();
+    drawTime = (drawEnd - drawStart) / 1000.0; // Convert to milliseconds
+    
+    // Display performance info
+    var fps = raylib.getFPS();
+    raylib.drawText("FPS: " + fps, 10, 10, 20, raylib.Color(255, 255, 255, 255));
+    raylib.drawText("Circles: " + circleCounts[currentCountIndex], 10, 35, 20, raylib.Color(255, 255, 255, 255));
+    raylib.drawText("Update: " + updateTime + "ms", 10, 60, 20, raylib.Color(255, 255, 255, 255));
+    raylib.drawText("Draw: " + drawTime + "ms", 10, 85, 20, raylib.Color(255, 255, 255, 255));
+    raylib.drawText("Total: " + (updateTime + drawTime) + "ms", 10, 110, 20, raylib.Color(255, 255, 255, 255));
+    raylib.drawText("Press SPACE to change circle count", 10, 135, 16, raylib.Color(200, 200, 200, 255));
+    
+    raylib.endDrawing();
+    
+    // No circle count changes
+    frameCount++;
+}
+
+raylib.closeWindow();

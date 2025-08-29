@@ -1,0 +1,12 @@
+{
+    "name": "raylib",
+    "version": "1.0.0",
+    "type": "cpp",
+    "description": "Raylib graphics library bindings for Bob",
+    "author": "Bob Module System",
+    "license": "MIT",
+    "build": {
+        "type": "cmake",
+        "source": "source/raylib_module.cpp"
+    }
+}

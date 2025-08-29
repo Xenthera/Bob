@@ -42,6 +42,8 @@ std::shared_ptr<Function> ClassRegistry::lookupClassMethodDirect(const std::stri
     return nullptr;
 }
 
+
+
 void ClassRegistry::registerClass(const std::string& className, const std::string& parentName) {
     classParents[className] = parentName;
 }
